@@ -18,6 +18,9 @@ import { Route as AuthenticatedContestsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContestsIdRouteImport } from './routes/_authenticated/contests.$id'
 import { Route as AuthenticatedGamesIndexRouteImport } from './routes/_authenticated/games.index'
 import { Route as AuthenticatedGamesIdRouteImport } from './routes/_authenticated/games.$id'
+import { Route as AuthenticatedPoolsIndexRouteImport } from './routes/_authenticated/pools.index'
+import { Route as AuthenticatedPoolsIdRouteImport } from './routes/_authenticated/pools.$id'
+import { Route as AuthenticatedPoolsNewRouteImport } from './routes/_authenticated/pools.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +67,21 @@ const AuthenticatedGamesIdRoute = AuthenticatedGamesIdRouteImport.update({
   path: '/games/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPoolsIndexRoute = AuthenticatedPoolsIndexRouteImport.update({
+  id: '/pools/',
+  path: '/pools/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPoolsIdRoute = AuthenticatedPoolsIdRouteImport.update({
+  id: '/pools/$id',
+  path: '/pools/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPoolsNewRoute = AuthenticatedPoolsNewRouteImport.update({
+  id: '/pools/new',
+  path: '/pools/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,8 +90,11 @@ export interface FileRoutesByFullPath {
   '/results': typeof AuthenticatedResultsRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
+  '/pools/$id': typeof AuthenticatedPoolsIdRoute
+  '/pools/new': typeof AuthenticatedPoolsNewRoute
   '/contests/': typeof AuthenticatedContestsIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
+  '/pools/': typeof AuthenticatedPoolsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,8 +103,11 @@ export interface FileRoutesByTo {
   '/results': typeof AuthenticatedResultsRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
+  '/pools/$id': typeof AuthenticatedPoolsIdRoute
+  '/pools/new': typeof AuthenticatedPoolsNewRoute
   '/contests': typeof AuthenticatedContestsIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
+  '/pools': typeof AuthenticatedPoolsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,8 +118,11 @@ export interface FileRoutesById {
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/contests/$id': typeof AuthenticatedContestsIdRoute
   '/_authenticated/games/$id': typeof AuthenticatedGamesIdRoute
+  '/_authenticated/pools/$id': typeof AuthenticatedPoolsIdRoute
+  '/_authenticated/pools/new': typeof AuthenticatedPoolsNewRoute
   '/_authenticated/contests/': typeof AuthenticatedContestsIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
+  '/_authenticated/pools/': typeof AuthenticatedPoolsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,8 +133,11 @@ export interface FileRouteTypes {
     | '/results'
     | '/contests/$id'
     | '/games/$id'
+    | '/pools/$id'
+    | '/pools/new'
     | '/contests/'
     | '/games/'
+    | '/pools/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,8 +146,11 @@ export interface FileRouteTypes {
     | '/results'
     | '/contests/$id'
     | '/games/$id'
+    | '/pools/$id'
+    | '/pools/new'
     | '/contests'
     | '/games'
+    | '/pools'
   id:
     | '__root__'
     | '/'
@@ -127,8 +160,11 @@ export interface FileRouteTypes {
     | '/_authenticated/results'
     | '/_authenticated/contests/$id'
     | '/_authenticated/games/$id'
+    | '/_authenticated/pools/$id'
+    | '/_authenticated/pools/new'
     | '/_authenticated/contests/'
     | '/_authenticated/games/'
+    | '/_authenticated/pools/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +237,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pools/': {
+      id: '/_authenticated/pools/'
+      path: '/pools'
+      fullPath: '/pools/'
+      preLoaderRoute: typeof AuthenticatedPoolsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pools/$id': {
+      id: '/_authenticated/pools/$id'
+      path: '/pools/$id'
+      fullPath: '/pools/$id'
+      preLoaderRoute: typeof AuthenticatedPoolsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pools/new': {
+      id: '/_authenticated/pools/new'
+      path: '/pools/new'
+      fullPath: '/pools/new'
+      preLoaderRoute: typeof AuthenticatedPoolsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -210,8 +267,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedContestsIdRoute: typeof AuthenticatedContestsIdRoute
   AuthenticatedGamesIdRoute: typeof AuthenticatedGamesIdRoute
+  AuthenticatedPoolsIdRoute: typeof AuthenticatedPoolsIdRoute
+  AuthenticatedPoolsNewRoute: typeof AuthenticatedPoolsNewRoute
   AuthenticatedContestsIndexRoute: typeof AuthenticatedContestsIndexRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
+  AuthenticatedPoolsIndexRoute: typeof AuthenticatedPoolsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -220,8 +280,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedContestsIdRoute: AuthenticatedContestsIdRoute,
   AuthenticatedGamesIdRoute: AuthenticatedGamesIdRoute,
+  AuthenticatedPoolsIdRoute: AuthenticatedPoolsIdRoute,
+  AuthenticatedPoolsNewRoute: AuthenticatedPoolsNewRoute,
   AuthenticatedContestsIndexRoute: AuthenticatedContestsIndexRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
+  AuthenticatedPoolsIndexRoute: AuthenticatedPoolsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
