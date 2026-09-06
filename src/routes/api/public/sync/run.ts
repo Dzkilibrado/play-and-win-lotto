@@ -18,17 +18,22 @@ export const Route = createFileRoute("/api/public/sync/run")({
         );
         const admin = await getAdminClient();
 
-        // 1) avança trabalhos em andamento
+        // 1) avança trabalhos em andamento; se um estiver detido por outra
+        //    execução, tenta o próximo (permite alternar entre modalidades).
         const { data: jobs } = await admin
           .from("lottery_sync_jobs")
-          .select("id")
+          .select("id, current_contest")
           .in("status", ["pending", "running"])
           .order("created_at", { ascending: true })
-          .limit(1);
+          .limit(5);
 
-        if (jobs && jobs.length > 0) {
-          const job = await runJobBatch(jobs[0]!.id);
-          return Response.json({ mode: "job", jobId: job.id, status: job.status });
+        for (const candidate of jobs ?? []) {
+          const before = candidate.current_contest;
+          const job = await runJobBatch(candidate.id);
+          const advanced = job.current_contest !== before || job.finished_at !== null;
+          if (advanced) {
+            return Response.json({ mode: "job", jobId: job.id, status: job.status });
+          }
         }
 
         // 2) sem trabalhos pendentes: atualiza o último concurso de cada modalidade
