@@ -87,7 +87,16 @@ function ContestDetailPage() {
 
           <section className="grid gap-3 sm:grid-cols-2">
             <Info label="Local do sorteio" value={draw.draw_location ?? "—"} />
-            <Info label="Prêmio principal" value={formatCurrency(draw.main_prize)} />
+            <Info
+              label="Prêmio principal"
+              value={
+                draw.main_prize === null
+                  ? "—"
+                  : Number(draw.main_prize) === 0
+                    ? "Não houve ganhador na faixa principal"
+                    : formatCurrency(draw.main_prize)
+              }
+            />
             <Info label="Arrecadação" value={formatCurrency(draw.revenue)} />
             <Info
               label="Próximo concurso"
