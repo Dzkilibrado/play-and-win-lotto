@@ -78,25 +78,25 @@ export type Database = {
           draw_id: string
           hits: number
           id: string
-          prize_per_winner: number
+          prize_per_winner: number | null
           tier: string
-          winners: number
+          winners: number | null
         }
         Insert: {
           draw_id: string
           hits: number
           id?: string
-          prize_per_winner?: number
+          prize_per_winner?: number | null
           tier: string
-          winners?: number
+          winners?: number | null
         }
         Update: {
           draw_id?: string
           hits?: number
           id?: string
-          prize_per_winner?: number
+          prize_per_winner?: number | null
           tier?: string
-          winners?: number
+          winners?: number | null
         }
         Relationships: [
           {
@@ -552,7 +552,9 @@ export type Database = {
           finished_at: string | null
           id: string
           inserted: number
+          last_activity_at: string | null
           last_error: string | null
+          locked_at: string | null
           lottery_id: string
           processed: number
           start_contest: number | null
@@ -571,7 +573,9 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          last_activity_at?: string | null
           last_error?: string | null
+          locked_at?: string | null
           lottery_id: string
           processed?: number
           start_contest?: number | null
@@ -590,7 +594,9 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          last_activity_at?: string | null
           last_error?: string | null
+          locked_at?: string | null
           lottery_id?: string
           processed?: number
           start_contest?: number | null
@@ -967,6 +973,55 @@ export type Database = {
     }
     Functions: {
       can_read_game: { Args: { _game_id: string }; Returns: boolean }
+      claim_sync_job_batch: {
+        Args: { _batch_size: number; _job_id: string; _stale_after?: string }
+        Returns: {
+          claim_end: number
+          claim_start: number
+          is_final: boolean
+          job_id: string
+          lottery_id: string
+          resumed: boolean
+        }[]
+      }
+      complete_sync_job_batch: {
+        Args: {
+          _failed: number
+          _inserted: number
+          _is_final: boolean
+          _job_id: string
+          _last_error?: string
+          _processed: number
+          _updated: number
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          current_contest: number | null
+          end_contest: number | null
+          failed: number
+          finished_at: string | null
+          id: string
+          inserted: number
+          last_activity_at: string | null
+          last_error: string | null
+          locked_at: string | null
+          lottery_id: string
+          processed: number
+          start_contest: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+          type: Database["public"]["Enums"]["sync_job_type"]
+          updated: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lottery_sync_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -977,6 +1032,16 @@ export type Database = {
       is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
       is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
       owns_game: { Args: { _game_id: string }; Returns: boolean }
+      persist_official_draw: {
+        Args: {
+          _contest_number: number
+          _draw: Json
+          _lottery_id: string
+          _numbers: Json
+          _prizes: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "USER" | "ADMIN"
