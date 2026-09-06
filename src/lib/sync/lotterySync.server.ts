@@ -51,83 +51,48 @@ async function logAudit(
   });
 }
 
-/** UPSERT idempotente por (lottery_id, contest_number). */
+/**
+ * Persistência atômica por (lottery_id, contest_number).
+ * Toda a gravação (concurso + dezenas + faixas) acontece dentro de UMA
+ * transação no PostgreSQL, protegida por advisory lock do próprio concurso.
+ */
 async function persistDraw(
   admin: Admin,
   lottery: LotteryRow,
   draw: NormalizedDraw,
 ): Promise<"inserted" | "updated"> {
-  const now = new Date().toISOString();
-  const { data: existing, error: findError } = await admin
-    .from("lottery_draws")
-    .select("id, imported_at")
-    .eq("lottery_id", lottery.id)
-    .eq("contest_number", draw.contestNumber)
-    .maybeSingle();
-  if (findError) throw new SyncError("PERSISTENCE", findError.message);
-
-  const payload = {
-    lottery_id: lottery.id,
-    contest_number: draw.contestNumber,
-    draw_date: draw.drawDate,
-    draw_location: draw.drawLocation,
-    is_accumulated: draw.isAccumulated,
-    main_prize: draw.mainPrize,
-    estimated_next_prize: draw.estimatedNextPrize,
-    next_contest_number: draw.nextContestNumber,
-    next_draw_date: draw.nextDrawDate,
-    revenue: draw.revenue,
-    source: syncConfig.provider,
-    source_updated_at: now,
-    // imported_at original é preservado em atualizações.
-    imported_at: existing?.imported_at ?? now,
-    // verified_at só é gravado após as validações da aplicação (já executadas).
-    verified_at: now,
-  };
-
-  let drawId: string;
-  let outcome: "inserted" | "updated";
-
-  if (existing) {
-    const { error } = await admin.from("lottery_draws").update(payload).eq("id", existing.id);
-    if (error) throw new SyncError("PERSISTENCE", error.message);
-    drawId = existing.id;
-    outcome = "updated";
-  } else {
-    const { data, error } = await admin
-      .from("lottery_draws")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (error) throw new SyncError("PERSISTENCE", error.message);
-    drawId = data.id;
-    outcome = "inserted";
-  }
-
-  // Dezenas: substituídas apenas após termos um resultado válido em mãos.
-  const numberRows = draw.numbers.map((number, index) => ({
-    draw_id: drawId,
-    number,
-    position: index + 1,
-  }));
-  await admin.from("draw_numbers").delete().eq("draw_id", drawId);
-  const { error: numbersError } = await admin.from("draw_numbers").insert(numberRows);
-  if (numbersError) throw new SyncError("PERSISTENCE", numbersError.message);
-
-  if (draw.prizes.length > 0) {
-    const prizeRows = draw.prizes.map((prize) => ({
-      draw_id: drawId,
+  const { data, error } = await (
+    admin as unknown as {
+      rpc: (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: string | null; error: { message: string } | null }>;
+    }
+  ).rpc("persist_official_draw", {
+    _lottery_id: lottery.id,
+    _contest_number: draw.contestNumber,
+    _draw: {
+      draw_date: draw.drawDate,
+      draw_location: draw.drawLocation,
+      is_accumulated: draw.isAccumulated,
+      main_prize: draw.mainPrize,
+      estimated_next_prize: draw.estimatedNextPrize,
+      next_contest_number: draw.nextContestNumber,
+      next_draw_date: draw.nextDrawDate,
+      revenue: draw.revenue,
+      source: syncConfig.provider,
+    },
+    _numbers: draw.numbers.map((number, index) => ({ number, position: index + 1 })),
+    _prizes: draw.prizes.map((prize) => ({
       tier: prize.tier,
       hits: prize.hits,
       winners: prize.winners,
       prize_per_winner: prize.prizePerWinner,
-    }));
-    await admin.from("draw_prizes").delete().eq("draw_id", drawId);
-    const { error: prizesError } = await admin.from("draw_prizes").insert(prizeRows);
-    if (prizesError) throw new SyncError("PERSISTENCE", prizesError.message);
-  }
+    })),
+  });
 
-  return outcome;
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+  return data === "inserted" ? "inserted" : "updated";
 }
 
 async function recordError(
@@ -170,6 +135,23 @@ export async function syncSingleContest(
     return { ok: true, outcome, contest: draw.contestNumber };
   } catch (error) {
     await recordError(admin, jobId, lottery.id, contest, error);
+    const syncError =
+      error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
+    // Auditoria só para os eventos úteis a diagnóstico (não para falhas de rede comuns).
+    if (syncError.type === "VALIDATION" || syncError.type === "PERSISTENCE") {
+      await logAudit(
+        admin,
+        null,
+        syncError.type === "VALIDATION" ? "sync_validation_failed" : "contest_persist_failed",
+        jobId,
+        {
+          lottery: lottery.slug,
+          contest,
+          error_type: syncError.type,
+          message: syncError.message.slice(0, 300),
+        },
+      );
+    }
     return { ok: false, contest };
   }
 }
@@ -224,30 +206,74 @@ export async function createJob(
  * Chamado repetidamente pela tela administrativa e pelo endpoint agendado,
  * de modo que nenhuma execução dependa de um navegador aberto.
  */
-export async function runJobBatch(jobId: string, batchSize = syncConfig.batchSize) {
-  const admin = await getAdmin();
-  const { data: job, error } = await admin
+interface ClaimRow {
+  job_id: string;
+  lottery_id: string;
+  claim_start: number;
+  claim_end: number;
+  is_final: boolean;
+  resumed: boolean;
+}
+
+async function readJob(admin: Admin, jobId: string) {
+  const { data, error } = await admin
     .from("lottery_sync_jobs")
-    .select("*, lotteries!inner(id, slug, name)")
+    .select("*")
     .eq("id", jobId)
     .single();
-  if (error || !job) throw new SyncError("PERSISTENCE", error?.message ?? "Trabalho não encontrado.");
-  if (job.status === "completed" || job.status === "failed" || job.status === "completed_with_errors") {
+  if (error || !data) {
+    throw new SyncError("PERSISTENCE", error?.message ?? "Trabalho não encontrado.");
+  }
+  return data;
+}
+
+export async function runJobBatch(jobId: string, batchSize = syncConfig.batchSize) {
+  const admin = await getAdmin();
+  const rpc = admin as unknown as {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+
+  // Reserva atômica da faixa: ninguém mais processa esses concursos.
+  const { data: claimData, error: claimError } = await rpc.rpc("claim_sync_job_batch", {
+    _job_id: jobId,
+    _batch_size: batchSize,
+  });
+  if (claimError) throw new SyncError("PERSISTENCE", claimError.message);
+
+  const claim = (Array.isArray(claimData) ? (claimData[0] as ClaimRow | undefined) : undefined) ?? null;
+  if (!claim) {
+    // Job já concluído ou detido por outra execução ativa: encerra limpo.
+    const job = await readJob(admin, jobId);
+    if (job.status === "running") {
+      await logAudit(admin, job.created_by, "job_lock_failed", jobId, {
+        reason: "job já está sendo processado por outra execução",
+        current_contest: job.current_contest,
+      });
+    }
     return job;
   }
 
-  const lottery = job.lotteries as unknown as LotteryRow;
-  const start = job.current_contest ?? job.start_contest ?? 1;
-  const end = job.end_contest ?? start;
-  const contests: number[] = [];
-  for (let contest = start; contest <= end && contests.length < batchSize; contest += 1) {
-    contests.push(contest);
+  const { data: lotteryRow } = await admin
+    .from("lotteries")
+    .select("id, slug, name")
+    .eq("id", claim.lottery_id)
+    .single();
+  const lottery = (lotteryRow ?? { id: claim.lottery_id, slug: "", name: "" }) as LotteryRow;
+
+  if (claim.resumed) {
+    await logAudit(admin, null, "job_resumed", jobId, {
+      lottery: lottery.slug,
+      from_contest: claim.claim_start,
+    });
   }
 
-  await admin
-    .from("lottery_sync_jobs")
-    .update({ status: "running", started_at: job.started_at ?? new Date().toISOString() })
-    .eq("id", jobId);
+  const contests: number[] = [];
+  for (let contest = claim.claim_start; contest <= claim.claim_end; contest += 1) {
+    contests.push(contest);
+  }
 
   let inserted = 0;
   let updated = 0;
@@ -260,31 +286,24 @@ export async function runJobBatch(jobId: string, batchSize = syncConfig.batchSiz
     else updated += 1;
   });
 
-  const next = contests.length > 0 ? contests[contests.length - 1]! + 1 : end + 1;
-  const finished = next > end;
-  const totalFailed = job.failed + failed;
+  const { data: completed, error: completeError } = await rpc.rpc("complete_sync_job_batch", {
+    _job_id: jobId,
+    _processed: contests.length,
+    _inserted: inserted,
+    _updated: updated,
+    _failed: failed,
+    _is_final: claim.is_final,
+    _last_error: null,
+  });
+  if (completeError) throw new SyncError("PERSISTENCE", completeError.message);
 
-  const { data: updatedJob, error: updateError } = await admin
-    .from("lottery_sync_jobs")
-    .update({
-      current_contest: finished ? end : next,
-      processed: job.processed + contests.length,
-      inserted: job.inserted + inserted,
-      updated: job.updated + updated,
-      failed: totalFailed,
-      status: finished ? (totalFailed > 0 ? "completed_with_errors" : "completed") : "running",
-      finished_at: finished ? new Date().toISOString() : null,
-    })
-    .eq("id", jobId)
-    .select("*")
-    .single();
-  if (updateError) throw new SyncError("PERSISTENCE", updateError.message);
+  const updatedJob = (completed as Awaited<ReturnType<typeof readJob>>) ?? (await readJob(admin, jobId));
 
-  if (finished) {
+  if (claim.is_final) {
     await logAudit(
       admin,
-      job.created_by,
-      job.type === "HISTORICAL" ? "historical_import_completed" : "sync_completed",
+      updatedJob.created_by,
+      updatedJob.type === "HISTORICAL" ? "historical_import_completed" : "sync_completed",
       jobId,
       {
         lottery: lottery.slug,
