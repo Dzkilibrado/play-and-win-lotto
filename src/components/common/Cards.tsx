@@ -58,7 +58,7 @@ export function StatCard({
   return (
     <Link
       to={to}
-      search={search}
+      search={search ?? {}}
       className="surface-card block p-4 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary"
     >
       {content}
