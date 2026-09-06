@@ -63,6 +63,29 @@ function toNumberOrNull(value: unknown): number | null {
   return null;
 }
 
+/** Aceita número ou string numérica; ausência/valor inválido vira null (nunca 0). */
+function toNumberLoose(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const text = value.trim().replace(/\./g, "").replace(",", ".");
+    if (text === "") return null;
+    const parsed = Number(text);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+/** Extrai o número de acertos da descrição da faixa. null = não interpretável. */
+function parseHits(description: string, faixa: unknown): number | null {
+  const match = /(\d+)/.exec(description);
+  if (match) {
+    const hits = Number.parseInt(match[1]!, 10);
+    if (Number.isInteger(hits) && hits > 0) return hits;
+  }
+  void faixa;
+  return null;
+}
+
 function cleanText(value: unknown): string | null {
   if (typeof value !== "string") return null;
   // eslint-disable-next-line no-control-regex
