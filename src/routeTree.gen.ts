@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
+import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
+import { Route as AuthenticatedContestsIndexRouteImport } from './routes/_authenticated/contests.index'
+import { Route as AuthenticatedContestsIdRouteImport } from './routes/_authenticated/contests.$id'
 import { Route as AuthenticatedGamesIndexRouteImport } from './routes/_authenticated/games.index'
 import { Route as AuthenticatedGamesIdRouteImport } from './routes/_authenticated/games.$id'
 
@@ -29,6 +33,27 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
+  id: '/generate',
+  path: '/generate',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedResultsRoute = AuthenticatedResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContestsIndexRoute =
+  AuthenticatedContestsIndexRouteImport.update({
+    id: '/contests/',
+    path: '/contests/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContestsIdRoute = AuthenticatedContestsIdRouteImport.update({
+  id: '/contests/$id',
+  path: '/contests/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGamesIndexRoute = AuthenticatedGamesIndexRouteImport.update({
   id: '/games/',
   path: '/games/',
@@ -43,13 +68,21 @@ const AuthenticatedGamesIdRoute = AuthenticatedGamesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/generate': typeof AuthenticatedGenerateRoute
+  '/results': typeof AuthenticatedResultsRoute
+  '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
+  '/contests/': typeof AuthenticatedContestsIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/generate': typeof AuthenticatedGenerateRoute
+  '/results': typeof AuthenticatedResultsRoute
+  '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
+  '/contests': typeof AuthenticatedContestsIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRoutesById {
@@ -57,20 +90,44 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/generate': typeof AuthenticatedGenerateRoute
+  '/_authenticated/results': typeof AuthenticatedResultsRoute
+  '/_authenticated/contests/$id': typeof AuthenticatedContestsIdRoute
   '/_authenticated/games/$id': typeof AuthenticatedGamesIdRoute
+  '/_authenticated/contests/': typeof AuthenticatedContestsIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/games/$id' | '/games/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/generate'
+    | '/results'
+    | '/contests/$id'
+    | '/games/$id'
+    | '/contests/'
+    | '/games/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/games/$id' | '/games'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/generate'
+    | '/results'
+    | '/contests/$id'
+    | '/games/$id'
+    | '/contests'
+    | '/games'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_authenticated/dashboard'
+    | '/_authenticated/generate'
+    | '/_authenticated/results'
+    | '/_authenticated/contests/$id'
     | '/_authenticated/games/$id'
+    | '/_authenticated/contests/'
     | '/_authenticated/games/'
   fileRoutesById: FileRoutesById
 }
@@ -102,6 +159,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/generate': {
+      id: '/_authenticated/generate'
+      path: '/generate'
+      fullPath: '/generate'
+      preLoaderRoute: typeof AuthenticatedGenerateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/results': {
+      id: '/_authenticated/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof AuthenticatedResultsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contests/': {
+      id: '/_authenticated/contests/'
+      path: '/contests'
+      fullPath: '/contests/'
+      preLoaderRoute: typeof AuthenticatedContestsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contests/$id': {
+      id: '/_authenticated/contests/$id'
+      path: '/contests/$id'
+      fullPath: '/contests/$id'
+      preLoaderRoute: typeof AuthenticatedContestsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/games/': {
       id: '/_authenticated/games/'
       path: '/games'
@@ -121,13 +206,21 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
+  AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
+  AuthenticatedContestsIdRoute: typeof AuthenticatedContestsIdRoute
   AuthenticatedGamesIdRoute: typeof AuthenticatedGamesIdRoute
+  AuthenticatedContestsIndexRoute: typeof AuthenticatedContestsIndexRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
+  AuthenticatedResultsRoute: AuthenticatedResultsRoute,
+  AuthenticatedContestsIdRoute: AuthenticatedContestsIdRoute,
   AuthenticatedGamesIdRoute: AuthenticatedGamesIdRoute,
+  AuthenticatedContestsIndexRoute: AuthenticatedContestsIndexRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
 }
 
