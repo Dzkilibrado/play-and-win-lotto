@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ContestCard } from "@/components/lottery/ContestCard";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
@@ -32,6 +33,8 @@ function ResultsPage() {
     queryKey: ["results", slug],
     queryFn: () => lotteryDataService.listRecentResults(slug, 10),
   });
+
+  const rows = results.data ?? [];
 
   return (
     <div className="space-y-4">
@@ -65,12 +68,24 @@ function ResultsPage() {
         <LoadingState rows={3} />
       ) : results.isError ? (
         <ErrorState onRetry={() => results.refetch()} />
-      ) : (
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={Trophy}
           title="Nenhum resultado disponível"
-          description="A sincronização com a fonte oficial ainda não foi implementada. Nenhum número fictício é exibido aqui."
+          description="Nenhum concurso desta modalidade foi importado ainda. Nenhum número fictício é exibido aqui."
         />
+      ) : (
+        <>
+          <p className="text-xs text-text-secondary">
+            {rows.length} resultado{rows.length > 1 ? "s" : ""} mais recente
+            {rows.length > 1 ? "s" : ""}
+          </p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {rows.map((draw) => (
+              <ContestCard key={draw.id} draw={draw} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
