@@ -57,7 +57,13 @@ export function ContestCard({
         <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div>
             <dt className="text-text-secondary">Prêmio principal</dt>
-            <dd className="font-medium text-text-primary">{formatCurrency(draw.main_prize)}</dd>
+            <dd className="font-medium text-text-primary">
+              {draw.main_prize === null
+                ? "—"
+                : Number(draw.main_prize) === 0
+                  ? "Não houve ganhador"
+                  : formatCurrency(draw.main_prize)}
+            </dd>
           </div>
           <div>
             <dt className="text-text-secondary">Próximo concurso</dt>
