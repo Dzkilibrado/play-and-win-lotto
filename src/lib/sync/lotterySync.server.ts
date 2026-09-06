@@ -51,83 +51,48 @@ async function logAudit(
   });
 }
 
-/** UPSERT idempotente por (lottery_id, contest_number). */
+/**
+ * Persistência atômica por (lottery_id, contest_number).
+ * Toda a gravação (concurso + dezenas + faixas) acontece dentro de UMA
+ * transação no PostgreSQL, protegida por advisory lock do próprio concurso.
+ */
 async function persistDraw(
   admin: Admin,
   lottery: LotteryRow,
   draw: NormalizedDraw,
 ): Promise<"inserted" | "updated"> {
-  const now = new Date().toISOString();
-  const { data: existing, error: findError } = await admin
-    .from("lottery_draws")
-    .select("id, imported_at")
-    .eq("lottery_id", lottery.id)
-    .eq("contest_number", draw.contestNumber)
-    .maybeSingle();
-  if (findError) throw new SyncError("PERSISTENCE", findError.message);
-
-  const payload = {
-    lottery_id: lottery.id,
-    contest_number: draw.contestNumber,
-    draw_date: draw.drawDate,
-    draw_location: draw.drawLocation,
-    is_accumulated: draw.isAccumulated,
-    main_prize: draw.mainPrize,
-    estimated_next_prize: draw.estimatedNextPrize,
-    next_contest_number: draw.nextContestNumber,
-    next_draw_date: draw.nextDrawDate,
-    revenue: draw.revenue,
-    source: syncConfig.provider,
-    source_updated_at: now,
-    // imported_at original é preservado em atualizações.
-    imported_at: existing?.imported_at ?? now,
-    // verified_at só é gravado após as validações da aplicação (já executadas).
-    verified_at: now,
-  };
-
-  let drawId: string;
-  let outcome: "inserted" | "updated";
-
-  if (existing) {
-    const { error } = await admin.from("lottery_draws").update(payload).eq("id", existing.id);
-    if (error) throw new SyncError("PERSISTENCE", error.message);
-    drawId = existing.id;
-    outcome = "updated";
-  } else {
-    const { data, error } = await admin
-      .from("lottery_draws")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (error) throw new SyncError("PERSISTENCE", error.message);
-    drawId = data.id;
-    outcome = "inserted";
-  }
-
-  // Dezenas: substituídas apenas após termos um resultado válido em mãos.
-  const numberRows = draw.numbers.map((number, index) => ({
-    draw_id: drawId,
-    number,
-    position: index + 1,
-  }));
-  await admin.from("draw_numbers").delete().eq("draw_id", drawId);
-  const { error: numbersError } = await admin.from("draw_numbers").insert(numberRows);
-  if (numbersError) throw new SyncError("PERSISTENCE", numbersError.message);
-
-  if (draw.prizes.length > 0) {
-    const prizeRows = draw.prizes.map((prize) => ({
-      draw_id: drawId,
+  const { data, error } = await (
+    admin as unknown as {
+      rpc: (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: string | null; error: { message: string } | null }>;
+    }
+  ).rpc("persist_official_draw", {
+    _lottery_id: lottery.id,
+    _contest_number: draw.contestNumber,
+    _draw: {
+      draw_date: draw.drawDate,
+      draw_location: draw.drawLocation,
+      is_accumulated: draw.isAccumulated,
+      main_prize: draw.mainPrize,
+      estimated_next_prize: draw.estimatedNextPrize,
+      next_contest_number: draw.nextContestNumber,
+      next_draw_date: draw.nextDrawDate,
+      revenue: draw.revenue,
+      source: syncConfig.provider,
+    },
+    _numbers: draw.numbers.map((number, index) => ({ number, position: index + 1 })),
+    _prizes: draw.prizes.map((prize) => ({
       tier: prize.tier,
       hits: prize.hits,
       winners: prize.winners,
       prize_per_winner: prize.prizePerWinner,
-    }));
-    await admin.from("draw_prizes").delete().eq("draw_id", drawId);
-    const { error: prizesError } = await admin.from("draw_prizes").insert(prizeRows);
-    if (prizesError) throw new SyncError("PERSISTENCE", prizesError.message);
-  }
+    })),
+  });
 
-  return outcome;
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+  return data === "inserted" ? "inserted" : "updated";
 }
 
 async function recordError(
