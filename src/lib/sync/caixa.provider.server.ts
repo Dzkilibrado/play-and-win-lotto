@@ -189,19 +189,32 @@ function normalize(payload: Record<string, unknown>): NormalizedDraw {
   const rateio = Array.isArray(payload["listaRateioPremio"])
     ? (payload["listaRateioPremio"] as Record<string, unknown>[])
     : [];
-  const prizes: NormalizedPrize[] = rateio.flatMap((item) => {
+  const prizes: NormalizedPrize[] = rateio.map((item, index) => {
     const description = cleanText(item["descricaoFaixa"]) ?? "";
-    const hits = Number.parseInt(description, 10);
-    if (!Number.isFinite(hits)) return [];
-    return [
-      {
-        tier: description,
-        hits,
-        winners: toNumberOrNull(item["numeroDeGanhadores"]) ?? 0,
-        prizePerWinner: toNumberOrNull(item["valorPremio"]) ?? 0,
-      },
-    ];
+    const hits = parseHits(description, item["faixa"]);
+    if (hits === null) {
+      // Faixa devolvida pela fonte e não interpretável: nunca descartar em silêncio.
+      throw new SyncError(
+        "VALIDATION",
+        `Faixa de premiação não interpretável (posição ${index + 1}): "${description}".`,
+        JSON.stringify(item).slice(0, 300),
+      );
+    }
+    return {
+      tier: description || `faixa ${String(item["faixa"] ?? index + 1)}`,
+      hits,
+      winners: toNumberLoose(item["numeroDeGanhadores"]),
+      prizePerWinner: toNumberLoose(item["valorPremio"]),
+    };
   });
+
+  const seenHits = new Set<number>();
+  for (const prize of prizes) {
+    if (seenHits.has(prize.hits)) {
+      throw new SyncError("VALIDATION", `Faixa de premiação duplicada: ${prize.hits} acertos.`);
+    }
+    seenHits.add(prize.hits);
+  }
 
   const municipio = cleanText(payload["nomeMunicipioUFSorteio"]);
   const local = cleanText(payload["localSorteio"]);
