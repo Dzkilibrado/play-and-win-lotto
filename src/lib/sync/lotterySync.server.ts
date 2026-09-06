@@ -135,6 +135,23 @@ export async function syncSingleContest(
     return { ok: true, outcome, contest: draw.contestNumber };
   } catch (error) {
     await recordError(admin, jobId, lottery.id, contest, error);
+    const syncError =
+      error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
+    // Auditoria só para os eventos úteis a diagnóstico (não para falhas de rede comuns).
+    if (syncError.type === "VALIDATION" || syncError.type === "PERSISTENCE") {
+      await logAudit(
+        admin,
+        null,
+        syncError.type === "VALIDATION" ? "sync_validation_failed" : "contest_persist_failed",
+        jobId,
+        {
+          lottery: lottery.slug,
+          contest,
+          error_type: syncError.type,
+          message: syncError.message.slice(0, 300),
+        },
+      );
+    }
     return { ok: false, contest };
   }
 }
