@@ -1,18 +1,24 @@
 /**
  * Camada única de acesso a dados de loteria.
  *
- * Arquitetura pretendida:
- *   Fonte oficial -> serviço de sincronização -> validação -> PostgreSQL -> app
- *
- * O frontend consulta SEMPRE o nosso banco. Nenhuma chamada direta a serviço
- * externo é feita aqui. Enquanto a sincronização oficial não existir, as
- * consultas retornam vazio e a interface mostra estado "sem dados".
+ * Arquitetura: fonte oficial -> serviço de sincronização -> validação ->
+ * PostgreSQL -> app. O frontend consulta SEMPRE o nosso banco; nenhuma
+ * chamada a serviço externo acontece aqui.
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { Lottery, LotteryDraw } from "@/types/domain";
 
+export interface DrawPrizeRow {
+  id: string;
+  tier: string;
+  hits: number;
+  winners: number;
+  prize_per_winner: number;
+}
+
 export interface DrawWithNumbers extends LotteryDraw {
   draw_numbers: { number: number; position: number }[];
+  draw_prizes?: DrawPrizeRow[];
   lotteries: Pick<Lottery, "slug" | "name" | "color_key"> | null;
 }
 
@@ -26,6 +32,8 @@ export interface ContestFilters {
   page?: number;
   pageSize?: number;
 }
+
+const DRAW_SELECT = "*, draw_numbers(number, position), lotteries!inner(slug, name, color_key)";
 
 export const lotteryDataService = {
   async listLotteries() {
@@ -43,21 +51,29 @@ export const lotteryDataService = {
     return data ?? [];
   },
 
-  /** Próximo concurso conhecido por modalidade (vazio até a sincronização existir). */
-  async getUpcomingDraws() {
-    const { data, error } = await supabase
-      .from("lottery_draws")
-      .select("*, lotteries(slug, name, color_key)")
-      .order("contest_number", { ascending: false })
-      .limit(20);
-    if (error) throw error;
-    return (data ?? []) as unknown as DrawWithNumbers[];
+  /** Último concurso conhecido de cada modalidade (base do "próximo concurso"). */
+  async getLatestDraws() {
+    const lotteries = await this.listLotteries();
+    const draws = await Promise.all(
+      lotteries.map(async (lottery) => {
+        const { data, error } = await supabase
+          .from("lottery_draws")
+          .select(DRAW_SELECT)
+          .eq("lottery_id", lottery.id)
+          .order("contest_number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        return data as unknown as DrawWithNumbers | null;
+      }),
+    );
+    return draws.filter((draw): draw is DrawWithNumbers => Boolean(draw));
   },
 
   async listRecentResults(lotterySlug?: string | null, limit = 5) {
     let query = supabase
       .from("lottery_draws")
-      .select("*, draw_numbers(number, position), lotteries!inner(slug, name, color_key)")
+      .select(DRAW_SELECT)
       .order("contest_number", { ascending: false })
       .limit(limit);
     if (lotterySlug) query = query.eq("lotteries.slug", lotterySlug);
@@ -71,7 +87,7 @@ export const lotteryDataService = {
     const pageSize = filters.pageSize ?? 20;
     let query = supabase
       .from("lottery_draws")
-      .select("*, lotteries!inner(slug, name, color_key)", { count: "exact" })
+      .select(DRAW_SELECT, { count: "exact" })
       .range((page - 1) * pageSize, page * pageSize - 1);
 
     if (filters.lotterySlug) query = query.eq("lotteries.slug", filters.lotterySlug);
@@ -88,7 +104,19 @@ export const lotteryDataService = {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    return { rows: (data ?? []) as unknown as DrawWithNumbers[], total: count ?? 0 };
+    return { rows: (data ?? []) as unknown as DrawWithNumbers[], total: count ?? 0, page, pageSize };
+  },
+
+  async getContestById(id: string) {
+    const { data, error } = await supabase
+      .from("lottery_draws")
+      .select(
+        "*, draw_numbers(number, position), draw_prizes(*), lotteries!inner(slug, name, color_key)",
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return data as unknown as DrawWithNumbers | null;
   },
 
   async getContestByNumber(lotterySlug: string, contestNumber: number) {
@@ -104,7 +132,7 @@ export const lotteryDataService = {
     return data as unknown as DrawWithNumbers | null;
   },
 
-  /** Preço vigente para uma quantidade de dezenas. Sem tabela carregada => null. */
+  /** Preço vigente para uma quantidade de dezenas. */
   async getActivePrice(lotteryId: string, numbersSelected: number) {
     const { data, error } = await supabase
       .from("lottery_prices")
@@ -117,5 +145,17 @@ export const lotteryDataService = {
       .maybeSingle();
     if (error) throw error;
     return data;
+  },
+
+  async listPrices(lotterySlug?: string | null) {
+    let query = supabase
+      .from("lottery_prices")
+      .select("*, lotteries!inner(slug, name)")
+      .eq("is_active", true)
+      .order("numbers_selected", { ascending: true });
+    if (lotterySlug) query = query.eq("lotteries.slug", lotterySlug);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data ?? [];
   },
 };

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { CheckCircle2, Clock, Trophy, Users, Wallet } from "lucide-react";
@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, Trophy, Users, Wallet } from "lucide-react";
 import { StatCard } from "@/components/common/Cards";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ContestCard } from "@/components/lottery/ContestCard";
 import { LotteryCard, type UpcomingContestInfo } from "@/components/lottery/LotteryCard";
 import { Button } from "@/components/ui/button";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
@@ -28,9 +29,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const [resultsLottery, setResultsLottery] = useState<LotterySlug>(activeLotteries[0]!.slug);
 
-  const upcoming = useQuery({
-    queryKey: ["upcoming-draws"],
-    queryFn: () => lotteryDataService.getUpcomingDraws(),
+  const latest = useQuery({
+    queryKey: ["latest-draws"],
+    queryFn: () => lotteryDataService.getLatestDraws(),
   });
 
   const recent = useQuery({
@@ -49,14 +50,14 @@ function DashboardPage() {
         <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
           Próximos concursos
         </h2>
-        {upcoming.isLoading ? (
+        {latest.isLoading ? (
           <LoadingState rows={3} />
-        ) : upcoming.isError ? (
-          <ErrorState onRetry={() => upcoming.refetch()} />
+        ) : latest.isError ? (
+          <ErrorState onRetry={() => latest.refetch()} />
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {activeLotteries.map((lottery) => {
-              const draw = (upcoming.data ?? []).find(
+              const draw = (latest.data ?? []).find(
                 (item) => item.lotteries?.slug === lottery.slug,
               );
               const contest: UpcomingContestInfo = draw
@@ -64,7 +65,7 @@ function DashboardPage() {
                     contestNumber: draw.next_contest_number ?? null,
                     drawDate: draw.next_draw_date ?? null,
                     estimatedPrize: draw.estimated_next_prize ?? null,
-                    status: "ready",
+                    status: draw.next_contest_number ? "ready" : "unavailable",
                   }
                 : {
                     contestNumber: null,
@@ -129,10 +130,13 @@ function DashboardPage() {
 
       <section aria-labelledby="recent-results" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="recent-results" className="font-display text-base font-semibold text-text-primary">
-            Resultados recentes
+          <h2
+            id="recent-results"
+            className="font-display text-base font-semibold text-text-primary"
+          >
+            Resultados anteriores
           </h2>
-          <div className="flex flex-wrap gap-1" role="tablist" aria-label="Modalidade">
+          <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Modalidade">
             {activeLotteries.map((lottery) => (
               <button
                 key={lottery.slug}
@@ -162,14 +166,26 @@ function DashboardPage() {
           <EmptyState
             icon={Trophy}
             title="Nenhum resultado disponível"
-            description="A sincronização com a fonte oficial ainda não foi implementada, então nenhum número é exibido."
+            description="Nenhum concurso desta modalidade foi importado ainda. Nenhum número fictício é exibido."
             actions={
               <Button variant="outline" size="sm" onClick={() => recent.refetch()}>
                 Atualizar
               </Button>
             }
           />
-        ) : null}
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(recent.data ?? []).map((draw) => (
+              <ContestCard key={draw.id} draw={draw} compact />
+            ))}
+          </div>
+        )}
+
+        <Button asChild variant="outline" size="sm" className="h-11">
+          <Link to="/results" search={{ lottery: resultsLottery }}>
+            Ver todos os resultados
+          </Link>
+        </Button>
       </section>
     </div>
   );

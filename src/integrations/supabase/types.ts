@@ -491,6 +491,125 @@ export type Database = {
           },
         ]
       }
+      lottery_sync_errors: {
+        Row: {
+          contest_number: number | null
+          created_at: string
+          error_type: string
+          id: string
+          job_id: string | null
+          lottery_id: string
+          message: string
+          payload_summary: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          contest_number?: number | null
+          created_at?: string
+          error_type: string
+          id?: string
+          job_id?: string | null
+          lottery_id: string
+          message: string
+          payload_summary?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          contest_number?: number | null
+          created_at?: string
+          error_type?: string
+          id?: string
+          job_id?: string | null
+          lottery_id?: string
+          message?: string
+          payload_summary?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lottery_sync_errors_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_sync_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lottery_sync_errors_lottery_id_fkey"
+            columns: ["lottery_id"]
+            isOneToOne: false
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lottery_sync_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_contest: number | null
+          end_contest: number | null
+          failed: number
+          finished_at: string | null
+          id: string
+          inserted: number
+          last_error: string | null
+          lottery_id: string
+          processed: number
+          start_contest: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+          type: Database["public"]["Enums"]["sync_job_type"]
+          updated: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_contest?: number | null
+          end_contest?: number | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          last_error?: string | null
+          lottery_id: string
+          processed?: number
+          start_contest?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          type: Database["public"]["Enums"]["sync_job_type"]
+          updated?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_contest?: number | null
+          end_contest?: number | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          last_error?: string | null
+          lottery_id?: string
+          processed?: number
+          start_contest?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          type?: Database["public"]["Enums"]["sync_job_type"]
+          updated?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lottery_sync_jobs_lottery_id_fkey"
+            columns: ["lottery_id"]
+            isOneToOne: false
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -879,6 +998,13 @@ export type Database = {
         | "CHECKED"
         | "PRIZED"
         | "FINISHED"
+      sync_job_status:
+        | "pending"
+        | "running"
+        | "completed"
+        | "completed_with_errors"
+        | "failed"
+      sync_job_type: "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1027,6 +1153,14 @@ export const Constants = {
         "PRIZED",
         "FINISHED",
       ],
+      sync_job_status: [
+        "pending",
+        "running",
+        "completed",
+        "completed_with_errors",
+        "failed",
+      ],
+      sync_job_type: ["LATEST", "RECENT", "HISTORICAL", "REPROCESS"],
     },
   },
 } as const
