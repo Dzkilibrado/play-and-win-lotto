@@ -29,8 +29,9 @@ export class SyncError extends Error {
 export interface NormalizedPrize {
   tier: string;
   hits: number;
-  winners: number;
-  prizePerWinner: number;
+  /** null = fonte não informou (diferente de 0 informado oficialmente). */
+  winners: number | null;
+  prizePerWinner: number | null;
 }
 
 export interface NormalizedDraw {
