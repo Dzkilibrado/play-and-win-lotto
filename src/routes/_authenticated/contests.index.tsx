@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
+import { ContestCard } from "@/components/lottery/ContestCard";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
 
@@ -40,11 +41,17 @@ function ContestsPage() {
         contestNumber: search.contest ? Number(search.contest) : null,
         dateFrom: search.from ?? null,
         dateTo: search.to ?? null,
-        accumulated: search.status === "accumulated" ? "yes" : null,
+        accumulated:
+          search.status === "accumulated" ? "yes" : search.status === "winner" ? "no" : null,
         sort: (search.sort as "recent" | "oldest" | "prize" | undefined) ?? "recent",
         page: search.page ?? 1,
       }),
   });
+
+  const rows = contests.data?.rows ?? [];
+  const total = contests.data?.total ?? 0;
+  const page = search.page ?? 1;
+  const totalPages = Math.max(1, Math.ceil(total / (contests.data?.pageSize ?? 20)));
 
   const chips = (Object.entries(search) as [keyof ListSearch, string][])
     .filter(([key, value]) => key !== "page" && value)
@@ -61,7 +68,7 @@ function ContestsPage() {
       <PageHeader title="Concursos" description="Todos os concursos importados para o banco." />
 
       <FilterBar
-        resultCount={contests.data?.total ?? 0}
+        resultCount={total}
         onClearAll={() => navigate({ search: {} })}
         activeChips={chips.length ? chips : undefined}
         search={
@@ -142,6 +149,7 @@ function ContestsPage() {
               >
                 <option value="">Indiferente</option>
                 <option value="accumulated">Somente acumulados</option>
+                <option value="winner">Somente com ganhador</option>
               </select>
             </div>
           </div>
@@ -152,17 +160,48 @@ function ContestsPage() {
         <LoadingState rows={4} />
       ) : contests.isError ? (
         <ErrorState onRetry={() => contests.refetch()} />
-      ) : (
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="Nenhum concurso encontrado com estes filtros"
-          description="Os concursos aparecerão aqui após a sincronização com a fonte oficial."
+          description="Ajuste os filtros ou aguarde a próxima sincronização com a fonte oficial."
           actions={
             <Button variant="outline" size="sm" onClick={() => navigate({ search: {} })}>
               Limpar filtros
             </Button>
           }
         />
+      ) : (
+        <>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {rows.map((draw) => (
+              <ContestCard key={draw.id} draw={draw} />
+            ))}
+          </div>
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11"
+              disabled={page <= 1}
+              onClick={() => setFilter({ page: page - 1 })}
+            >
+              Anterior
+            </Button>
+            <span className="text-xs text-text-secondary">
+              Página {page} de {totalPages} · {total} concursos
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11"
+              disabled={page >= totalPages}
+              onClick={() => setFilter({ page: page + 1 })}
+            >
+              Próxima
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
