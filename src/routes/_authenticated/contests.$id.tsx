@@ -41,7 +41,7 @@ function ContestDetailPage() {
     <div className="space-y-4" data-lottery={config?.colorKey}>
       <PageHeader
         title={draw ? `${draw.lotteries?.name} · Concurso ${draw.contest_number}` : "Concurso"}
-        description={draw ? formatDate(draw.draw_date) : undefined}
+        description={draw ? formatDate(draw.draw_date) : ""}
         actions={
           <Button asChild variant="outline" size="sm" className="h-11">
             <Link to="/contests">Voltar</Link>
