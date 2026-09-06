@@ -30,7 +30,7 @@ function GeneratePage() {
 
   const slug = (search.lottery as LotterySlug | undefined) ?? activeLotteries[0]!.slug;
   const lottery = getLotteryConfig(slug) ?? activeLotteries[0]!;
-  const flag = flags.data?.generator;
+  const flag = flags.statusOf("generator");
 
   return (
     <div className="space-y-4" data-lottery={lottery.colorKey}>
@@ -38,7 +38,7 @@ function GeneratePage() {
         title="Gerar jogo"
         description="A modalidade define universo, quantidade de dezenas e faixas de premiação."
         actions={
-          flag ? <StatusBadge label={featureStatusLabel[flag]} tone="warning" /> : undefined
+          <StatusBadge label={featureStatusLabel[flag]} tone="warning" />
         }
       />
 

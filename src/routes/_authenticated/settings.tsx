@@ -60,7 +60,7 @@ function SettingsPage() {
       <section className="surface-card space-y-3 p-4">
         <h2 className="font-display text-sm font-semibold text-text-primary">Recursos</h2>
         <ul className="space-y-2">
-          {Object.entries(flags.data ?? {}).map(([key, status]) => (
+          {Object.entries(flags.flags).map(([key, status]) => (
             <li key={key} className="flex items-center justify-between gap-2 text-sm">
               <span className="text-text-primary">{key}</span>
               <StatusBadge label={featureStatusLabel[status]} tone={toneByStatus[status]} />
@@ -69,7 +69,7 @@ function SettingsPage() {
         </ul>
       </section>
 
-      <p className="text-xs text-text-secondary">{appConfig.responsibleGamingNotice}</p>
+      <p className="text-xs text-text-secondary">{appConfig.support.responsibleGamingNotice}</p>
     </div>
   );
 }

@@ -3,19 +3,19 @@
  * Isso preserva busca/filtros/ordenação ao entrar num registro e voltar.
  */
 export interface ListSearch {
-  q?: string;
-  lottery?: string;
-  contest?: string;
-  status?: string;
-  from?: string;
-  to?: string;
-  sort?: string;
-  page?: number;
-  scope?: string;
-  payment?: string;
-  prize?: string;
-  numbers?: string;
-  tab?: string;
+  q?: string | undefined;
+  lottery?: string | undefined;
+  contest?: string | undefined;
+  status?: string | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+  sort?: string | undefined;
+  page?: number | undefined;
+  scope?: string | undefined;
+  payment?: string | undefined;
+  prize?: string | undefined;
+  numbers?: string | undefined;
+  tab?: string | undefined;
 }
 
 function str(value: unknown): string | undefined {

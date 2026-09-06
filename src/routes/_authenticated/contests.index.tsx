@@ -61,7 +61,7 @@ function ContestsPage() {
       <PageHeader title="Concursos" description="Todos os concursos importados para o banco." />
 
       <FilterBar
-        resultCount={contests.data?.count ?? 0}
+        resultCount={contests.data?.total ?? 0}
         onClearAll={() => navigate({ search: {} })}
         activeChips={chips.length ? chips : undefined}
         search={
