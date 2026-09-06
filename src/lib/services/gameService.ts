@@ -157,6 +157,12 @@ export const gameService = {
     return data as unknown as GameRow | null;
   },
 
+  async updateStatus(id: string, status: GameStatus) {
+    // Conferência automática é etapa futura: aqui só o próprio usuário move a situação.
+    const { error } = await supabase.from("generated_games").update({ status }).eq("id", id);
+    if (error) throw error;
+  },
+
   async deleteGame(id: string) {
     // RLS garante que só o dono apaga; o status é conferido também no cliente.
     const { error } = await supabase
