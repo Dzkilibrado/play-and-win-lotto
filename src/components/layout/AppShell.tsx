@@ -34,7 +34,7 @@ function Brand({ className }: { className?: string }) {
   );
 }
 
-function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void) | undefined }) {
   const Icon = item.icon;
   return (
     <Link
@@ -49,7 +49,7 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void 
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   return (
     <nav className="space-y-5" aria-label="Navegação principal">
       {desktopNav.map((group) => (
@@ -66,7 +66,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AppHeader({ onSignOut }: { onSignOut?: () => void }) {
+export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined }) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
       <div className="flex h-14 items-center gap-2 px-4">
@@ -140,7 +140,7 @@ export function AppShell({
   onSignOut,
 }: {
   children: ReactNode;
-  onSignOut?: () => void;
+  onSignOut?: (() => void) | undefined;
 }) {
   return (
     <div className="min-h-screen bg-background">
