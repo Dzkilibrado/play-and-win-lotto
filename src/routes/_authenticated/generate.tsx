@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
 import { SmartWeights, describeWeightSelection } from "@/components/lottery/SmartWeights";
-import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
+import { NumberSelectionCard } from "@/components/lottery/NumberSelectionCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
@@ -143,29 +143,6 @@ function GeneratePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferences.loading, preferences.favoriteSlug]);
-
-  const toggleFixed = (value: number) => {
-    // Uma dezena excluída não pode virar fixa por toque: o usuário desfaz a exclusão antes.
-    if (excluded.includes(value)) return;
-    setGames(null);
-    setFixed((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value].sort((a, b) => a - b),
-    );
-  };
-
-  const toggleExcluded = (value: number) => {
-    // Dezenas fixas nem aparecem neste quadro; a guarda evita troca implícita.
-    if (fixed.includes(value)) return;
-    setGames(null);
-    setExcluded((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value].sort((a, b) => a - b),
-    );
-  };
-
 
   const universeSize = rules.universe.max - rules.universe.min + 1;
   const availableCount = universeSize - fixed.length - excluded.length;
