@@ -85,10 +85,11 @@ function NewPoolPage() {
       toast.error("O valor da cota deve ser maior que zero.");
       return;
     }
-    if (!Number.isInteger(Number(totalQuotas)) || Number(totalQuotas) < 1) {
-      toast.error("O total de cotas deve ser um número inteiro maior que zero.");
+    if (parsedTotal !== null && (!Number.isInteger(parsedTotal) || parsedTotal < 1)) {
+      toast.error("Deixe o total de cotas em branco ou informe um número inteiro maior que zero.");
       return;
     }
+
     create.mutate();
   };
 
