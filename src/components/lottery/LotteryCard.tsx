@@ -74,7 +74,7 @@ export function LotteryCard({
             </Link>
           </Button>
           <Button asChild size="sm" variant="ghost" className="h-10">
-            <Link to="/results" search={{ lottery: lottery.slug }}>
+            <Link to="/contests" search={{ lottery: lottery.slug }}>
               <Trophy className="size-4" aria-hidden />
               Resultado
             </Link>

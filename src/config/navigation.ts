@@ -38,8 +38,7 @@ export const primaryNav: NavItem[] = [
 /** Itens agrupados em "Mais" no mobile e listados na sidebar no desktop. */
 export const secondaryNav: NavItem[] = [
   { label: "Importar por foto", to: "/games/importar", icon: Camera },
-  { label: "Resultados", to: "/results", icon: Trophy },
-  { label: "Concursos", to: "/contests", icon: CalendarDays },
+  { label: "Concursos e Resultados", to: "/contests", icon: Trophy },
   { label: "Loterias", to: "/lotteries", icon: Ticket },
 
 
