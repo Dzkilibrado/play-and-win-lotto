@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Link as LinkIcon, Share2 } from "lucide-react";
+import { Copy, Link as LinkIcon, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
