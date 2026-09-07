@@ -185,6 +185,48 @@ export function generateGames(
   const outOfTime = () => (options.now ?? Date.now)() - startedAt > maxDurationMs;
 
   /**
+   * PODA BARATA (só quando há pesos): quando o filtro de pares/ímpares está
+   * ativo, montamos o candidato já com uma quantidade de pares viável em vez
+   * de sortear e descartar depois. A verificação completa dos filtros continua
+   * acontecendo — a poda apenas evita trabalho desperdiçado.
+   */
+  const parityState = request.filters?.parity;
+  const parityPlan = (() => {
+    if (!weighted || !parityState?.enabled) return null;
+    const { min, max } = parityState.config;
+    if (min == null && max == null) return null;
+    const isEven = (value: number) => value % 2 === 0;
+    const evensPool = pool.filter(isEven);
+    const oddsPool = pool.filter((value) => !isEven(value));
+    const fixedEven = fixed.filter(isEven).length;
+    const minEven = Math.max(min ?? 0, fixedEven, fixedEven + toChoose - oddsPool.length);
+    const maxEven = Math.min(
+      max ?? request.numbersCount,
+      fixedEven + Math.min(toChoose, evensPool.length),
+    );
+    if (minEven > maxEven) return null;
+    return { evensPool, oddsPool, fixedEven, minEven, maxEven };
+  })();
+
+  const sampleWeightedChosen = (): number[] => {
+    if (!parityPlan) {
+      return weightedSampleWithoutReplacement(pool, weightOf, toChoose, random);
+    }
+    const targetEven =
+      parityPlan.minEven + randomBelow(random, parityPlan.maxEven - parityPlan.minEven + 1);
+    const needEven = Math.max(0, targetEven - parityPlan.fixedEven);
+    const needOdd = toChoose - needEven;
+    if (needOdd < 0 || needOdd > parityPlan.oddsPool.length) {
+      return weightedSampleWithoutReplacement(pool, weightOf, toChoose, random);
+    }
+    return [
+      ...weightedSampleWithoutReplacement(parityPlan.evensPool, weightOf, needEven, random),
+      ...weightedSampleWithoutReplacement(parityPlan.oddsPool, weightOf, needOdd, random),
+    ];
+  };
+
+
+  /**
    * Peso do JOGO a partir dos pesos das dezenas: MÉDIA GEOMÉTRICA em log-space,
    * exp( (1/k) * Σ ln w_i ). Escolhida por ser estável (sem underflow/overflow
    * do produto direto) e independente da quantidade de dezenas, então não
