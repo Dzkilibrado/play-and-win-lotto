@@ -132,12 +132,12 @@ export function CheckResultPanel({
                       {formatNumber(entry.winning_combinations)}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-text-secondary">
-                      {
-                        prizeValueLabel(
-                          entry.prize_per_combination,
-                          entry.draw_prizes?.winners,
-                        ).value
-                      }
+                      {entry.prize_per_combination == null
+                        ? "Não informado"
+                        : prizeValueLabel(
+                            entry.prize_per_combination,
+                            entry.draw_prizes?.winners,
+                          ).value}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-text-primary">
                       {entry.total_for_tier == null ? "—" : formatCurrency(entry.total_for_tier)}
