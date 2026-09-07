@@ -86,11 +86,11 @@ export function LotteryNumberGrid({
           state === "picked" && "border-lottery bg-lottery text-lottery-foreground",
         );
 
-        if (readOnly || !onSelect) {
+        if (readOnly || !onSelect || lockedSet.has(value)) {
           return (
             <span
               key={value}
-              className={classes}
+              className={cn(classes, lockedSet.has(value) && "cursor-not-allowed opacity-70")}
               aria-label={`Número ${value} ${labels[state]}`}
             >
               {content}
@@ -111,6 +111,7 @@ export function LotteryNumberGrid({
           </button>
         );
       })}
+
     </div>
   );
 }
