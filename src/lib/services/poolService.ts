@@ -196,7 +196,7 @@ export const poolService = {
    * modalidade, situação) e o histórico ficam na função protegida do banco.
    */
   async update(id: string, input: UpdatePoolInput) {
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, string | number | null> = {};
     if (input.name !== undefined) patch["name"] = input.name;
     if (input.lotteryId !== undefined) patch["lottery_id"] = input.lotteryId;
     if (input.contestNumber !== undefined) patch["contest_number"] = input.contestNumber;
