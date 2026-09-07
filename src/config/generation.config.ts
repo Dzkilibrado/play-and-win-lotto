@@ -12,4 +12,13 @@ export const generationConfig = {
    * abaixo, enumeramos o espaço inteiro e embaralhamos.
    */
   exhaustiveEnumerationLimit: 50_000,
+  /**
+   * Limites de segurança contra configurações muito restritivas.
+   * Nunca existe laço aberto: a geração para por jogos encontrados,
+   * espaço esgotado, tentativas ou tempo.
+   */
+  maxCandidatesPerGame: 2_000,
+  maxCandidatesTotal: 250_000,
+  maxDurationMs: 4_000,
 } as const;
+

@@ -2,8 +2,9 @@
  * Request Validator: toda configuração é validada ANTES de qualquer loop.
  */
 import { generationConfig } from "@/config/generation.config";
+import { activeFilterIds, validateFilters, type FilterContext } from "./filters";
 import { combinations } from "./math";
-import { resolveRules } from "./rules";
+import { resolveRules, universeNumbers } from "./rules";
 import type { GenerationRequest, ValidationIssue, ValidationResult } from "./types";
 
 export function validateGenerationRequest(request: GenerationRequest): ValidationResult {
@@ -16,6 +17,7 @@ export function validateGenerationRequest(request: GenerationRequest): Validatio
       issues: [{ code: "INVALID_LOTTERY", message: "Modalidade inválida ou indisponível." }],
       possibilities: 0,
       rules: null,
+      activeFilters: 0,
     };
   }
 
@@ -105,5 +107,29 @@ export function validateGenerationRequest(request: GenerationRequest): Validatio
     });
   }
 
-  return { ok: issues.length === 0, issues, possibilities, rules };
+  const activeFilters = activeFilterIds(request.filters).length;
+
+  // Filtros só são validados quando a base da configuração já está consistente:
+  // detectamos incompatibilidades ANTES de qualquer tentativa de geração.
+  if (issues.length === 0 && activeFilters > 0) {
+    const filterContext: FilterContext = {
+      rules,
+      numbersCount,
+      fixed: [...uniqueFixed].sort((a, b) => a - b),
+      excluded: [...uniqueExcluded].sort((a, b) => a - b),
+      pool: universeNumbers(rules).filter(
+        (value) => !uniqueExcluded.has(value) && !uniqueFixed.has(value),
+      ),
+      previousDraw: request.previousDraw ?? null,
+    };
+    for (const filterIssue of validateFilters(request.filters, filterContext)) {
+      issues.push({
+        code: "FILTER",
+        message: filterIssue.message,
+        filterId: filterIssue.filterId,
+      });
+    }
+  }
+
+  return { ok: issues.length === 0, issues, possibilities, rules, activeFilters };
 }

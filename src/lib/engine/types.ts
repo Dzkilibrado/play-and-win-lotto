@@ -2,6 +2,7 @@
  * Tipos do motor de geração. Nenhuma dependência de React ou navegador.
  */
 import type { LotteryColorKey, LotterySlug } from "@/config/lotteries";
+import type { FilterStates, PreviousDrawReference } from "./filters/types";
 
 export interface LotteryRules {
   slug: LotterySlug;
@@ -19,6 +20,10 @@ export interface GenerationRequest {
   gamesCount: number;
   fixed: number[];
   excluded: number[];
+  /** Filtros opcionais da Fase 3B; ausente = comportamento do gerador básico. */
+  filters?: FilterStates | null;
+  /** Concurso de referência para o filtro de repetidas. */
+  previousDraw?: PreviousDrawReference | null;
 }
 
 export type ValidationCode =
@@ -31,11 +36,14 @@ export type ValidationCode =
   | "FIXED_EXCLUDED_OVERLAP"
   | "TOO_MANY_FIXED"
   | "NOT_ENOUGH_AVAILABLE"
-  | "NOT_ENOUGH_COMBINATIONS";
+  | "NOT_ENOUGH_COMBINATIONS"
+  | "FILTER";
 
 export interface ValidationIssue {
   code: ValidationCode;
   message: string;
+  /** Preenchido quando a incompatibilidade vem de um filtro específico. */
+  filterId?: string;
 }
 
 export interface ValidationResult {
@@ -44,6 +52,8 @@ export interface ValidationResult {
   /** C(A, N-F) — quantos jogos distintos existem com a configuração atual. */
   possibilities: number;
   rules: LotteryRules | null;
+  /** Quantidade de filtros ativos considerados na validação. */
+  activeFilters?: number;
 }
 
 export interface GameAnalysisResult {
@@ -54,6 +64,8 @@ export interface GameAnalysisResult {
   fibonacciCount: number;
   maxSequence: number;
   maxGap: number;
+  /** Maior quantidade de dezenas ligadas pelo mesmo intervalo (saltos iguais). */
+  maxEqualGapRun: number;
   rowDistribution: Record<string, number>;
   columnDistribution: Record<string, number>;
   repeatedFromLast: number | null;
@@ -68,4 +80,22 @@ export interface GeneratedGameDraft {
   /** Chave canônica independente da ordem: "01-07-18-43-51-60". */
   key: string;
   analysis: GameAnalysisResult;
+}
+
+export type GenerationStopReason =
+  | "complete"
+  | "space_exhausted"
+  | "attempt_limit"
+  | "time_limit";
+
+/** Diagnóstico interno da execução — não é exibido cru ao usuário. */
+export interface GenerationMetrics {
+  requested: number;
+  generated: number;
+  candidatesEvaluated: number;
+  candidatesRejected: number;
+  duplicatesDiscarded: number;
+  durationMs: number;
+  stopReason: GenerationStopReason;
+  activeFilters: number;
 }

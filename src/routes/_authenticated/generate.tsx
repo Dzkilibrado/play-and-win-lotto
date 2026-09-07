@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
+import { GenerationFilters } from "@/components/lottery/GenerationFilters";
 import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,9 +14,19 @@ import { generationConfig } from "@/config/generation.config";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { useSession } from "@/hooks/useAuth";
 import { generateGames } from "@/lib/engine/generator";
+import {
+  activeFilterIds,
+  buildConstraintsSnapshot,
+  defaultFilterStates,
+  validateFilters,
+  type FilterContext,
+  type FilterId,
+  type FilterStates,
+} from "@/lib/engine/filters";
+import { universeNumbers } from "@/lib/engine/rules";
 import { allowedNumbersCounts, resolveRules } from "@/lib/engine/rules";
 import { validateGenerationRequest } from "@/lib/engine/validator";
-import type { GeneratedGameDraft } from "@/lib/engine/types";
+import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { gameService } from "@/lib/services/gameService";
@@ -55,7 +66,9 @@ function GeneratePage() {
   const [excluded, setExcluded] = useState<number[]>([]);
   const [contestChoice, setContestChoice] = useState<ContestChoice>("next");
   const [customContest, setCustomContest] = useState("");
+  const [filters, setFilters] = useState<FilterStates>(() => defaultFilterStates());
   const [games, setGames] = useState<GeneratedGameDraft[] | null>(null);
+  const [metrics, setMetrics] = useState<GenerationMetrics | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPriceHelp, setShowPriceHelp] = useState(false);
@@ -86,7 +99,9 @@ function GeneratePage() {
     setNumbersCount(nextRules.selectable.base);
     setFixed([]);
     setExcluded([]);
+    setFilters(defaultFilterStates());
     setGames(null);
+    setMetrics(null);
     setSavedKeys([]);
     void navigate({ search: (prev) => ({ ...prev, lottery: next }) });
   };
@@ -114,12 +129,6 @@ function GeneratePage() {
   };
 
 
-  const request = useMemo(
-    () => ({ lotterySlug: slug, numbersCount, gamesCount, fixed, excluded }),
-    [slug, numbersCount, gamesCount, fixed, excluded],
-  );
-  const validation = useMemo(() => validateGenerationRequest(request), [request]);
-
   const universeSize = rules.universe.max - rules.universe.min + 1;
   const availableCount = universeSize - fixed.length - excluded.length;
 
@@ -134,6 +143,75 @@ function GeneratePage() {
         ? nextContest
         : Number(customContest) || null;
 
+  /**
+   * Referência do filtro "Repetidas do concurso anterior".
+   * Com um concurso escolhido, o anterior é o imediatamente anterior a ele —
+   * não simplesmente o último sorteio disponível.
+   */
+  const repeatedReference = filters.repeated.config.reference;
+  const referenceBefore =
+    repeatedReference === "latest-draw" ? null : (contestNumber ?? null);
+
+  const previousDrawQuery = useQuery({
+    queryKey: ["previous-draw", slug, referenceBefore],
+    queryFn: () => lotteryDataService.getPreviousDraw(slug, referenceBefore),
+  });
+
+  const previousDraw = useMemo(() => {
+    const row = previousDrawQuery.data;
+    if (!row) return null;
+    return {
+      contestNumber: row.contestNumber,
+      numbers: row.numbers,
+      origin: repeatedReference,
+    };
+  }, [previousDrawQuery.data, repeatedReference]);
+
+  const previousDrawLabel = previousDrawQuery.isLoading
+    ? "Buscando o concurso de referência…"
+    : previousDraw
+      ? `A comparação usa o concurso ${previousDraw.contestNumber}${
+          referenceBefore ? ` (anterior ao concurso ${referenceBefore})` : " (último já sorteado)"
+        }.`
+      : "Ainda não temos um concurso anterior registrado para esta comparação.";
+
+  const pool = useMemo(
+    () =>
+      universeNumbers(rules).filter(
+        (value) => !excluded.includes(value) && !fixed.includes(value),
+      ),
+    [rules, excluded, fixed],
+  );
+
+  const filterContext: FilterContext = useMemo(
+    () => ({ rules, numbersCount, fixed, pool, excluded, previousDraw }),
+    [rules, numbersCount, fixed, pool, excluded, previousDraw],
+  );
+
+  const request = useMemo(
+    () => ({
+      lotterySlug: slug,
+      numbersCount,
+      gamesCount,
+      fixed,
+      excluded,
+      filters,
+      previousDraw,
+    }),
+    [slug, numbersCount, gamesCount, fixed, excluded, filters, previousDraw],
+  );
+  const validation = useMemo(() => validateGenerationRequest(request), [request]);
+
+  const issuesByFilter = useMemo(() => {
+    const map: Partial<Record<FilterId, string[]>> = {};
+    for (const issue of validateFilters(filters, filterContext)) {
+      map[issue.filterId] = [...(map[issue.filterId] ?? []), issue.message];
+    }
+    return map;
+  }, [filters, filterContext]);
+
+  const activeFilterCount = activeFilterIds(filters).length;
+
   const handleGenerate = () => {
     const outcome = generateGames(request, {
       analyzer: {
@@ -146,6 +224,7 @@ function GeneratePage() {
       return;
     }
     setGames(outcome.games);
+    setMetrics(outcome.metrics);
     setSavedKeys([]);
   };
 
@@ -173,6 +252,7 @@ function GeneratePage() {
                   source: priceQuery.data.source,
                 }
               : null,
+          constraints: buildConstraintsSnapshot(filters),
         });
       }
       setSavedKeys((prev) => [...prev, ...drafts.map((draft) => draft.key)]);
@@ -206,10 +286,50 @@ function GeneratePage() {
               Salvar todos
             </Button>
             <span className="text-xs text-text-secondary">
-              {games.length} jogos · {formatCurrency(totalPrice)}
+              {games.length} {games.length === 1 ? "jogo" : "jogos"} ·{" "}
+              {formatCurrency(unitPrice != null ? unitPrice * games.length : null)}
               {contestNumber ? ` · concurso ${contestNumber}` : " · sem concurso"}
             </span>
           </div>
+
+          {metrics ? (
+            <div
+              className={cn(
+                "rounded-xl p-3 text-sm",
+                metrics.generated < metrics.requested ? "bg-warning-soft text-warning" : "bg-surface-secondary text-text-secondary",
+              )}
+            >
+              {metrics.generated < metrics.requested ? (
+                <div className="space-y-2">
+                  <p>
+                    Com os filtros escolhidos foi possível criar {metrics.generated} de{" "}
+                    {metrics.requested} jogos.
+                    {metrics.stopReason === "time_limit"
+                      ? " A busca foi encerrada para não travar o aparelho."
+                      : metrics.stopReason === "space_exhausted"
+                        ? " Não existem mais combinações diferentes que atendam aos filtros."
+                        : " Poucas combinações atendem a todos os filtros ao mesmo tempo."}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setGames(null)}>
+                      Ajustar filtros
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleGenerate}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p>
+                  {metrics.generated} {metrics.generated === 1 ? "jogo criado" : "jogos criados"}
+                  {metrics.activeFilters > 0
+                    ? ` com ${metrics.activeFilters} ${metrics.activeFilters === 1 ? "filtro aplicado" : "filtros aplicados"}`
+                    : " sem filtros"}
+                  .
+                </p>
+              )}
+            </div>
+          ) : null}
 
           {games.map((game) => (
             <GameCard
@@ -370,8 +490,20 @@ function GeneratePage() {
             </section>
           </div>
 
+          <GenerationFilters
+            states={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setGames(null);
+              setMetrics(null);
+            }}
+            context={filterContext}
+            issuesByFilter={issuesByFilter}
+            previousDrawLabel={previousDrawLabel}
+          />
+
           <section className="surface-card space-y-3 p-4">
-            <Label>6. Concurso (opcional)</Label>
+            <Label>7. Concurso (opcional)</Label>
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -450,14 +582,17 @@ function GeneratePage() {
 
             {!validation.ok ? (
               <ul className="space-y-1 rounded-lg bg-danger-soft p-3 text-xs text-danger">
-                {validation.issues.map((issue) => (
-                  <li key={issue.code}>{issue.message}</li>
+                {validation.issues.map((issue, index) => (
+                  <li key={`${issue.code}-${index}`}>{issue.message}</li>
                 ))}
               </ul>
             ) : (
               <p className="text-xs text-text-secondary">
                 {formatNumber(validation.possibilities)} jogos diferentes são possíveis com esta
-                configuração.
+                configuração
+                {activeFilterCount > 0
+                  ? ` — os filtros escolhidos reduzem esse total.`
+                  : "."}
               </p>
             )}
 

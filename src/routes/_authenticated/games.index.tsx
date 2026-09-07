@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
 import { resolveRules } from "@/lib/engine/rules";
+import { maxEqualGapRun, maxGap } from "@/lib/engine/metrics";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import { gameDisplayName, originLabel } from "@/lib/games/gameStatus";
 import { gameService, type GameRow } from "@/lib/services/gameService";
@@ -38,11 +39,8 @@ export function rowAnalysis(row: GameRow): GameAnalysisResult {
   const raw = row.game_analysis;
   const analysis = Array.isArray(raw) ? raw[0] : (raw ?? undefined);
 
-  const numbers = row.game_numbers.map((item) => item.number).sort((a, b) => a - b);
-  let maxGap = 0;
-  for (let index = 1; index < numbers.length; index += 1) {
-    maxGap = Math.max(maxGap, numbers[index]! - numbers[index - 1]!);
-  }
+  // Métricas derivadas usam o mesmo módulo compartilhado do Analyzer.
+  const numbers = row.game_numbers.map((item) => item.number);
   return {
     evenCount: analysis?.even_count ?? 0,
     oddCount: analysis?.odd_count ?? 0,
@@ -50,7 +48,8 @@ export function rowAnalysis(row: GameRow): GameAnalysisResult {
     primeCount: analysis?.prime_count ?? 0,
     fibonacciCount: analysis?.fibonacci_count ?? 0,
     maxSequence: analysis?.max_sequence ?? 0,
-    maxGap,
+    maxGap: maxGap(numbers),
+    maxEqualGapRun: maxEqualGapRun(numbers),
     rowDistribution: (analysis?.row_distribution as Record<string, number>) ?? {},
     columnDistribution: (analysis?.column_distribution as Record<string, number>) ?? {},
     repeatedFromLast: analysis?.repeated_from_last ?? null,

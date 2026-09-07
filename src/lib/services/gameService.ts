@@ -3,6 +3,12 @@
  * Usa SEMPRE o cliente autenticado (RLS do próprio usuário) — nunca service role.
  */
 import { supabase } from "@/integrations/supabase/client";
+import {
+  generationRulesVersion,
+  sanitizeFilterStates,
+  activeFilterIds,
+  type GenerationConstraints,
+} from "@/lib/engine/filters";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import type { GameOrigin } from "@/lib/games/gameStatus";
 import type { GameStatus } from "@/types/domain";
@@ -27,6 +33,8 @@ export interface SaveGameInput {
   status?: GameStatus;
   imagePath?: string | null;
   extraNotes?: string | null;
+  /** Snapshot estruturado dos filtros usados na geração deste jogo. */
+  constraints?: GenerationConstraints | null;
 }
 
 export interface GameListFilters {
@@ -59,6 +67,8 @@ export interface GameRow {
   source: string;
   created_at: string;
   game_numbers: { number: number; position: number }[];
+  generation_constraints: unknown;
+  generation_rules_version: number | null;
   game_analysis: GameAnalysisRow[] | GameAnalysisRow | null;
   lotteries: { slug: string; name: string; color_key: string } | null;
 }
@@ -92,8 +102,20 @@ function priceNote(price: PriceSnapshot | null, analysis: GameAnalysisResult) {
   return parts.join("; ");
 }
 
+/**
+ * Os filtros chegam como parâmetro do usuário: sanitizamos antes de persistir
+ * (valores fora de faixa viram nulos) e limitamos o tamanho do registro.
+ */
+function safeConstraints(constraints: GenerationConstraints | null | undefined) {
+  if (!constraints) return null;
+  const filters = sanitizeFilterStates(constraints.filters);
+  if (!activeFilterIds(filters).length) return null;
+  return { version: generationRulesVersion, filters };
+}
+
 export const gameService = {
   async saveGame(input: SaveGameInput) {
+    const constraints = safeConstraints(input.constraints);
     const { data: game, error } = await supabase
       .from("generated_games")
       .insert({
@@ -105,6 +127,8 @@ export const gameService = {
         status: (input.status ?? "PLANNED") as GameStatus,
         source: input.source ?? "GENERATED",
         image_path: input.imagePath ?? null,
+        generation_constraints: (constraints as never) ?? null,
+        generation_rules_version: constraints ? constraints.version : null,
         cost: input.price ? input.price.price : null,
         notes: [priceNote(input.price, input.analysis), input.extraNotes]
           .filter(Boolean)
