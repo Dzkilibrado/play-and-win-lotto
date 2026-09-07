@@ -21,6 +21,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
+import { Route as BTokenRouteImport } from './routes/b.$token'
 import { Route as AuthenticatedContestsIndexRouteImport } from './routes/_authenticated/contests.index'
 import { Route as AuthenticatedContestsIdRouteImport } from './routes/_authenticated/contests.$id'
 import { Route as AuthenticatedGamesIndexRouteImport } from './routes/_authenticated/games.index'
@@ -91,6 +92,11 @@ const AuthenticatedStatisticsRoute = AuthenticatedStatisticsRouteImport.update({
   path: '/statistics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const BTokenRoute = BTokenRouteImport.update({
+  id: '/b/$token',
+  path: '/b/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedContestsIndexRoute =
   AuthenticatedContestsIndexRouteImport.update({
     id: '/contests/',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/results': typeof AuthenticatedResultsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
+  '/b/$token': typeof BTokenRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
   '/games/importar': typeof AuthenticatedGamesImportarRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/results': typeof AuthenticatedResultsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
+  '/b/$token': typeof BTokenRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
   '/games/importar': typeof AuthenticatedGamesImportarRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
+  '/b/$token': typeof BTokenRoute
   '/_authenticated/contests/$id': typeof AuthenticatedContestsIdRoute
   '/_authenticated/games/$id': typeof AuthenticatedGamesIdRoute
   '/_authenticated/games/importar': typeof AuthenticatedGamesImportarRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/settings'
     | '/statistics'
+    | '/b/$token'
     | '/contests/$id'
     | '/games/$id'
     | '/games/importar'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/settings'
     | '/statistics'
+    | '/b/$token'
     | '/contests/$id'
     | '/games/$id'
     | '/games/importar'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/_authenticated/results'
     | '/_authenticated/settings'
     | '/_authenticated/statistics'
+    | '/b/$token'
     | '/_authenticated/contests/$id'
     | '/_authenticated/games/$id'
     | '/_authenticated/games/importar'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  BTokenRoute: typeof BTokenRoute
   ApiPublicSyncRunRoute: typeof ApiPublicSyncRunRoute
 }
 
@@ -369,6 +382,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/statistics'
       preLoaderRoute: typeof AuthenticatedStatisticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/b/$token': {
+      id: '/b/$token'
+      path: '/b/$token'
+      fullPath: '/b/$token'
+      preLoaderRoute: typeof BTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/contests/': {
       id: '/_authenticated/contests/'
@@ -483,6 +503,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  BTokenRoute: BTokenRoute,
   ApiPublicSyncRunRoute: ApiPublicSyncRunRoute,
 }
 export const routeTree = rootRouteImport
