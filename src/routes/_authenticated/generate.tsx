@@ -35,6 +35,11 @@ import {
   validateWeightSelection,
 } from "@/lib/engine/weights";
 import { statisticsService } from "@/lib/services/statisticsService";
+import {
+  buildStatisticsQuery,
+  resolveReferenceContest,
+} from "@/lib/services/statisticsReference";
+
 import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
@@ -148,12 +153,8 @@ function GeneratePage() {
   const totalPrice = unitPrice != null ? unitPrice * gamesCount : null;
   const combinationCount = priceQuery.data?.combination_count ?? null;
 
-  const contestNumber =
-    contestChoice === "none"
-      ? null
-      : contestChoice === "next"
-        ? nextContest
-        : Number(customContest) || null;
+  const contestNumber = resolveReferenceContest(contestChoice, nextContest, customContest);
+
 
   /**
    * Referência do filtro "Repetidas do concurso anterior".
@@ -212,11 +213,14 @@ function GeneratePage() {
     enabled: weightsActive && weightSelectionIssues.length === 0,
     queryKey: ["number-statistics", slug, weightSelection.window, contestNumber],
     queryFn: () =>
-      statisticsService.getNumberStatistics({
-        lotterySlug: slug,
-        window: weightSelection.window,
-        maxContest: contestNumber,
-      }),
+      statisticsService.getNumberStatistics(
+        buildStatisticsQuery({
+          lotterySlug: slug,
+          window: weightSelection.window,
+          contestNumber,
+        }),
+      ),
+
   });
   const statisticsSnapshot = statisticsQuery.data ?? null;
 

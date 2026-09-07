@@ -149,6 +149,14 @@ export const weightsConfig = {
   strategyRulesVersion: 1,
   /** Validade do cache de estatísticas no cliente (ms). */
   statisticsCacheTtlMs: 10 * 60 * 1000,
+  /**
+   * Referência histórica fechada (maxContest informado): o resultado só muda
+   * se a fonte oficial corrigir concursos antigos — e nesse caso a
+   * sincronização invalida o cache explicitamente. Validade maior e sem
+   * consulta extra ao último concurso.
+   */
+  historicalStatisticsCacheTtlMs: 6 * 60 * 60 * 1000,
+
   /** Quantas dezenas aparecem na prévia "maior peso na geração". */
   previewSize: 6,
 } as const;

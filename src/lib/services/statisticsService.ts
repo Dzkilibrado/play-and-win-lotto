@@ -82,11 +82,28 @@ export const statisticsService = {
    * tempo de validade expira.
    */
   async getNumberStatistics(query: StatisticsQuery): Promise<StatisticsSnapshot> {
-    const latestContest = await this.getLatestContestNumber(query.lotterySlug);
     const key = cacheKey(query);
     const cached = cache.get(key);
+
+    /**
+     * Referência histórica fechada: os concursos anteriores a `maxContest` não
+     * mudam com a entrada de um concurso novo, então nem consultamos o último
+     * concurso. Correções da fonte oficial continuam cobertas porque a
+     * sincronização chama `invalidate()`.
+     */
+    if (
+      query.maxContest != null &&
+      cached &&
+      Date.now() - cached.storedAt < weightsConfig.historicalStatisticsCacheTtlMs
+    ) {
+      return cached.snapshot;
+    }
+
+    const latestContest =
+      query.maxContest != null ? null : await this.getLatestContestNumber(query.lotterySlug);
     const fresh =
       cached &&
+      query.maxContest == null &&
       cached.latestContest === latestContest &&
       Date.now() - cached.storedAt < weightsConfig.statisticsCacheTtlMs;
     if (cached && fresh) return cached.snapshot;
@@ -100,6 +117,7 @@ export const statisticsService = {
 
     const snapshot = parseSnapshot(data, query);
     cache.set(key, { snapshot, storedAt: Date.now(), latestContest });
+
     return snapshot;
   },
 
