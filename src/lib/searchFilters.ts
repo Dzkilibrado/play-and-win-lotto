@@ -16,6 +16,10 @@ export interface ListSearch {
   prize?: string | undefined;
   numbers?: string | undefined;
   tab?: string | undefined;
+  /** Grupo amigável de situações (bolões). */
+  group?: string | undefined;
+  /** "with" | "without" — bolões com ou sem jogos vinculados. */
+  games?: string | undefined;
 }
 
 function str(value: unknown): string | undefined {
@@ -37,6 +41,8 @@ export function validateListSearch(search: Record<string, unknown>): ListSearch 
     "prize",
     "numbers",
     "tab",
+    "group",
+    "games",
   ] as const;
   for (const key of keys) {
     const value = str(search[key]);

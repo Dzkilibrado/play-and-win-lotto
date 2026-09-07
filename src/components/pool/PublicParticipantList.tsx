@@ -1,9 +1,12 @@
 /**
  * Lista pública de participantes confirmados.
- * Uma linha por pessoa: nome em destaque, cotas secundárias e o selo "Pago".
+ *
+ * Apresentação tabular responsiva: no desktop, três colunas
+ * (Participante | Cotas | Pagamento); no celular, uma linha compacta
+ * "Nome · 1 COTA · PAGO", sem tabela larga e sem rolagem horizontal.
  * Só recebe quem já pagou integralmente — a filtragem acontece no banco.
  */
-import { Check, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import {
   filterParticipants,
   publicPreviewSize,
-  quotaText,
+  quotaTextUpper,
   type PublicParticipant,
 } from "@/lib/pools/publicPool";
 
@@ -62,31 +65,40 @@ export function PublicParticipantList({
           Nenhum participante encontrado com esse nome.
         </p>
       ) : (
-        <ul className="divide-y divide-border">
-          {visible.map((participant, index) => (
-            <li
-              // A identidade da linha é a posição na lista devolvida pelo banco,
-              // nunca o texto do nome: homônimos continuam sendo pessoas distintas.
-              key={index}
-              // Conjunto compacto: nome · cotas · Pago, alinhados ao início da linha.
-              className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2"
-            >
-              <span className="min-w-0 max-w-full truncate text-sm font-medium text-text-primary">
-                {participant.name}
-              </span>
-              <span aria-hidden className="text-xs text-border">
-                ·
-              </span>
-              <span className="shrink-0 text-xs tabular-nums text-text-secondary">
-                {quotaText(participant.quotas)}
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
-                <Check className="size-3 shrink-0" aria-hidden />
-                Pago
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="min-w-0">
+          {/* Cabeçalho só no desktop: no celular as linhas já se explicam. */}
+          <div className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-x-4 border-b border-border pb-1.5 text-xs font-medium uppercase tracking-wide text-text-secondary sm:grid">
+            <span>Participante</span>
+            <span className="text-right">Cotas</span>
+            <span className="text-right">Pagamento</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {visible.map((participant, index) => (
+              <li
+                // A identidade da linha é a posição na lista devolvida pelo banco,
+                // nunca o texto do nome: homônimos continuam sendo pessoas distintas.
+                key={index}
+                className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4"
+              >
+                <span className="min-w-0 max-w-full truncate text-sm font-medium text-text-primary">
+                  {participant.name}
+                </span>
+                <span aria-hidden className="text-xs text-border sm:hidden">
+                  ·
+                </span>
+                <span className="shrink-0 text-xs font-bold uppercase tabular-nums text-text-secondary sm:text-right">
+                  {quotaTextUpper(participant.quotas)}
+                </span>
+                <span aria-hidden className="text-xs text-border sm:hidden">
+                  ·
+                </span>
+                <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-success sm:text-right">
+                  Pago
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {hidden > 0 ? (

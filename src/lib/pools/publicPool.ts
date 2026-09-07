@@ -98,3 +98,8 @@ export function filterParticipants(
 export function quotaText(quotas: number): string {
   return quotas === 1 ? "1 cota" : `${quotas} cotas`;
 }
+
+/** Forma usada no link público: "1 COTA" / "3 COTAS". */
+export function quotaTextUpper(quotas: number): string {
+  return quotas === 1 ? "1 COTA" : `${quotas} COTAS`;
+}
