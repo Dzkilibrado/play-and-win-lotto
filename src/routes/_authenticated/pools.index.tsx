@@ -243,7 +243,7 @@ function PoolsPage() {
                   }
                   className={
                     activeGroup
-                      ? "tappable inline-flex min-h-9 items-center rounded-full bg-lottery px-3 text-xs font-semibold text-lottery-contrast"
+                      ? "tappable inline-flex min-h-9 items-center rounded-full bg-lottery px-3 text-xs font-semibold text-lottery-foreground"
                       : "tappable inline-flex min-h-9 items-center rounded-full bg-surface-secondary px-3 text-xs font-medium text-text-primary hover:bg-border"
                   }
                 >
@@ -408,7 +408,7 @@ function PoolsPage() {
               <PoolCard
                 key={pool.id}
                 pool={pool}
-                className={single ? "border-lottery lg:col-span-2" : undefined}
+                {...(single ? { className: "border-lottery lg:col-span-2" } : {})}
               />
             ))}
           </div>
