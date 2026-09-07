@@ -4,7 +4,7 @@ import { CalendarDays, ChevronRight, Ticket, Users } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { getLotteryConfig } from "@/config/lotteries";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { quotaProgress, remainingQuotas } from "@/lib/pools/poolMath";
+import { noQuotaLimitLabel, quotaLabel, quotaProgress, remainingQuotas } from "@/lib/pools/poolMath";
 import { cn } from "@/lib/utils";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
 import type { PoolRow } from "@/lib/services/poolService";
