@@ -44,7 +44,9 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   const active = participants.filter((p) => p.status === "ACTIVE");
   const quotasTaken = active.reduce((sum, p) => sum + p.quotas, 0);
   const livres = remainingQuotas(pool.total_quotas, quotasTaken);
+  const semLimite = livres === null;
   const openForChanges = editableStatuses.includes(pool.status) && canManage;
+
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
