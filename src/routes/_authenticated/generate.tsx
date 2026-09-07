@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ import { appConfig } from "@/config/app.config";
 import { generationConfig } from "@/config/generation.config";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { useSession } from "@/hooks/useAuth";
+import { useHomePreferences } from "@/hooks/useHomePreferences";
 import { useGameGeneration } from "@/lib/engine/useGameGeneration";
 import {
   activeFilterIds,
@@ -122,6 +123,26 @@ function GeneratePage() {
     setSavedKeys([]);
     void navigate({ search: (prev) => ({ ...prev, lottery: next }) });
   };
+
+  /**
+   * Sem modalidade na URL, a tela abre na favorita do usuário.
+   * Acontece uma única vez: trocar de modalidade continua livre.
+   */
+  const preferences = useHomePreferences();
+  const favoriteApplied = useRef(false);
+  useEffect(() => {
+    if (favoriteApplied.current) return;
+    if (search.lottery) {
+      favoriteApplied.current = true;
+      return;
+    }
+    if (preferences.loading) return;
+    favoriteApplied.current = true;
+    if (preferences.favoriteSlug && preferences.favoriteSlug !== slug) {
+      changeLottery(preferences.favoriteSlug);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferences.loading, preferences.favoriteSlug]);
 
   const toggleFixed = (value: number) => {
     // Uma dezena excluída não pode virar fixa por toque: o usuário desfaz a exclusão antes.

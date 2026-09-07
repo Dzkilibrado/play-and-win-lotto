@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   Sparkles,
+  Ticket,
   Trophy,
   User,
   Users,
@@ -39,6 +40,8 @@ export const secondaryNav: NavItem[] = [
   { label: "Importar por foto", to: "/games/importar", icon: Camera },
   { label: "Resultados", to: "/results", icon: Trophy },
   { label: "Concursos", to: "/contests", icon: CalendarDays },
+  { label: "Loterias", to: "/lotteries", icon: Ticket },
+
 
   { label: "Estatísticas", to: "/statistics", icon: BarChart3, feature: "statistics" },
   { label: "Notificações", to: "/notifications", icon: Bell, feature: "notifications" },
@@ -54,8 +57,8 @@ export const moreNavItem: NavItem = { label: "Mais", to: "/more", icon: LayoutGr
 
 export const desktopNav: { title: string; items: NavItem[] }[] = [
   { title: "Principal", items: primaryNav },
-  { title: "Consultas", items: secondaryNav.slice(0, 4) },
-  { title: "Conta", items: secondaryNav.slice(4) },
+  { title: "Consultas", items: secondaryNav.slice(0, 5) },
+  { title: "Conta", items: secondaryNav.slice(5) },
 
   { title: "Sistema", items: adminNav },
 ];
