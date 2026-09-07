@@ -163,12 +163,24 @@ export function summarizeFinance(participants: FinanceParticipant[]): FinanceSum
   return summary;
 }
 
-/** Cotas ainda livres, nunca negativas. */
-export function remainingQuotas(totalQuotas: number, quotasTaken: number) {
+/**
+ * Cotas ainda livres. `null` significa "sem limite definido": não existe
+ * disponibilidade a calcular, então devolvemos `null` em vez de zero.
+ */
+export function remainingQuotas(totalQuotas: number | null | undefined, quotasTaken: number) {
+  if (totalQuotas == null || totalQuotas <= 0) return null;
   return Math.max(totalQuotas - quotasTaken, 0);
 }
 
-export function quotaProgress(totalQuotas: number, quotasTaken: number) {
-  if (totalQuotas <= 0) return 0;
+export function quotaProgress(totalQuotas: number | null | undefined, quotasTaken: number) {
+  if (totalQuotas == null || totalQuotas <= 0) return 0;
   return Math.min(Math.round((quotasTaken / totalQuotas) * 100), 100);
 }
+
+/** Texto do indicador de cotas, com ou sem limite definido. */
+export function quotaLabel(totalQuotas: number | null | undefined, quotasTaken: number) {
+  return totalQuotas == null ? `${quotasTaken}` : `${quotasTaken}/${totalQuotas}`;
+}
+
+export const noQuotaLimitLabel = "Sem limite definido";
+
