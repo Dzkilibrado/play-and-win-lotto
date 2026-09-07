@@ -107,7 +107,11 @@ export function FinancePanel({
                 <div className="min-w-0">
                   <p className="truncate text-text-primary">{nameOf(payment.participant_id)}</p>
                   <p className="text-xs text-text-secondary">
-                    {formatDate(payment.paid_at)} {payment.method ? `· ${payment.method}` : ""}
+                    {formatDate(payment.paid_at)}
+                    {payment.method
+                      ? ` · ${describePaymentMethod(payment.method as PaymentMethod, payment.method_description)}`
+                      : ""}
+
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
