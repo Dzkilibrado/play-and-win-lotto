@@ -18,10 +18,12 @@ import {
   cryptoRandomSource,
   randomBelow,
   randomBelowBig,
+  randomUnit,
   shuffleInPlace,
   weightedSampleWithoutReplacement,
   type RandomSource,
 } from "./random";
+
 import { resolveRules, universeNumbers } from "./rules";
 import { validateGenerationRequest } from "./validator";
 import type {
