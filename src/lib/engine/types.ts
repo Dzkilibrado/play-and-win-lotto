@@ -114,4 +114,14 @@ export interface GenerationMetrics {
   durationMs: number;
   stopReason: GenerationStopReason;
   activeFilters: number;
+  /** Diagnóstico da ponderação, quando houve estratégia ativa. */
+  weights?: {
+    strategyId: string;
+    intensity: string;
+    window: number | null;
+    contestsAnalyzed: number;
+    lastContestConsidered: number | null;
+    weightMin: number;
+    weightMax: number;
+  } | null;
 }
