@@ -83,6 +83,12 @@ export function generateGames(
     analyzer?: AnalyzerContext;
     /** Sobrescreve os limites de segurança (usado em testes). */
     limits?: Partial<{ maxCandidatesTotal: number; maxDurationMs: number }>;
+    /**
+     * Força o caminho ponderado anterior à Fase 3C.1 (sem poda e sem
+     * enumeração ponderada). Existe apenas para benchmarks comparativos.
+     */
+    legacyWeightedSampling?: boolean;
+
     now?: () => number;
   } = {},
 ): GenerationOutcome {
