@@ -307,7 +307,7 @@ export function GenerationFilters({
     <section className={cn("surface-card space-y-3 p-4", className)}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <Label>6. Filtros de geração (opcional)</Label>
+          <Label>7. Filtros de geração (opcional)</Label>
           <p className="mt-1 text-xs text-text-secondary">
             {active.length === 0
               ? "Nenhum filtro ativo"
