@@ -22,6 +22,19 @@ export function CheckResultPanel({
     (a, b) => b.hits_required - a.hits_required,
   );
   const detailed = breakdown.length > 1 || (breakdown[0]?.winning_combinations ?? 1) > 1;
+  // Explicação de faixa com valor oficial zero (nunca confundido com "sem valor").
+  const zeroNotes = [
+    ...new Set(
+      breakdown
+        .map((entry) => {
+          const label = prizeValueLabel(entry.prize_per_combination, entry.draw_prizes?.winners);
+          return entry.prize_per_combination === 0 && label.note
+            ? `${entry.tier}: ${label.note}`
+            : null;
+        })
+        .filter((note): note is string => Boolean(note)),
+    ),
+  ];
 
   return (
     <section className="surface-card space-y-4 p-4">
