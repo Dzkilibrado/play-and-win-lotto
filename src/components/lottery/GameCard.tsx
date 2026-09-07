@@ -20,6 +20,7 @@ export interface GameCardProps {
   status?: GameStatus | null;
   cost?: number | null;
   createdAt?: string | null;
+  origin?: string | null;
   to?: string;
   params?: Record<string, string>;
   actions?: ReactNode;
@@ -45,6 +46,7 @@ export function GameCard({
   status,
   cost,
   createdAt,
+  origin,
   to,
   params,
   actions,
@@ -67,6 +69,7 @@ export function GameCard({
               `${numbers.length} dezenas`,
               contestNumber ? `Concurso ${contestNumber}` : "Sem concurso",
               cost != null ? formatCurrency(cost) : null,
+              origin,
               createdAt ? new Date(createdAt).toLocaleDateString("pt-BR") : null,
             ]
               .filter(Boolean)

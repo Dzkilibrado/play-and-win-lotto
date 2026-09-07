@@ -15,6 +15,7 @@ import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
 import { resolveRules } from "@/lib/engine/rules";
 import type { GameAnalysisResult } from "@/lib/engine/types";
+import { gameDisplayName, originLabel } from "@/lib/games/gameStatus";
 import { gameService, type GameRow } from "@/lib/services/gameService";
 import { gameStatusLabel, type GameStatus } from "@/types/domain";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
@@ -110,9 +111,14 @@ function GamesPage() {
         title="Meus Jogos"
         description="Jogos salvos no app. Um jogo salvo não comprova aposta oficial."
         actions={
-          <Button asChild size="sm" className="h-11">
-            <Link to="/generate">Gerar jogo</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild size="sm" variant="outline" className="h-11">
+              <Link to="/games/importar">Importar por foto</Link>
+            </Button>
+            <Button asChild size="sm" className="h-11">
+              <Link to="/generate">Criar jogo</Link>
+            </Button>
+          </div>
         }
       />
 
@@ -243,7 +249,10 @@ function GamesPage() {
                 Limpar filtros
               </Button>
               <Button asChild size="sm">
-                <Link to="/generate">Ir para Gerar</Link>
+                <Link to="/generate">Criar jogo</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/games/importar">Importar por foto</Link>
               </Button>
             </>
           }
@@ -256,7 +265,7 @@ function GamesPage() {
           return (
             <GameCard
               key={row.id}
-              title={`Jogo ${row.id.slice(0, 8)}`}
+              title={gameDisplayName(row.sequence_number)}
               numbers={row.game_numbers.map((item) => item.number).sort((a, b) => a - b)}
               analysis={rowAnalysis(row)}
               lotteryName={rules?.name ?? row.lotteries?.name ?? ""}
@@ -265,6 +274,7 @@ function GamesPage() {
               status={row.status as GameStatus}
               cost={row.cost}
               createdAt={row.created_at}
+              origin={originLabel(row.source)}
               to="/games/$id"
               params={{ id: row.id }}
             />
