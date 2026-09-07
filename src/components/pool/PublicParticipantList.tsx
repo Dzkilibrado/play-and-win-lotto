@@ -66,16 +66,20 @@ export function PublicParticipantList({
           {visible.map((participant) => (
             <li
               key={`${participant.name}-${participant.quotas}`}
-              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 py-2"
+              // Conjunto compacto: nome · cotas · Pago, alinhados ao início da linha.
+              className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2"
             >
-              <span className="min-w-0 break-words text-sm font-medium text-text-primary">
+              <span className="min-w-0 max-w-full truncate text-sm font-medium text-text-primary">
                 {participant.name}
+              </span>
+              <span aria-hidden className="text-xs text-border">
+                ·
               </span>
               <span className="shrink-0 text-xs tabular-nums text-text-secondary">
                 {quotaText(participant.quotas)}
               </span>
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
-                <Check className="size-3" aria-hidden />
+                <Check className="size-3 shrink-0" aria-hidden />
                 Pago
               </span>
             </li>
