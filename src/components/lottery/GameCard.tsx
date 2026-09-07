@@ -10,6 +10,15 @@ import type { GameAnalysisResult } from "@/lib/engine/types";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
 import { cn } from "@/lib/utils";
 
+export interface GameCardCheck {
+  hits: number;
+  matchedNumbers: number[];
+  isPrized: boolean;
+  totalPrize: number | null;
+  amountPending: boolean;
+  prizeLabel: string | null;
+}
+
 export interface GameCardProps {
   title: string;
   numbers: number[];
@@ -21,12 +30,15 @@ export interface GameCardProps {
   cost?: number | null;
   createdAt?: string | null;
   origin?: string | null;
+  /** Resultado da conferência já gravado pelo servidor (quando existir). */
+  check?: GameCardCheck | null;
   to?: string;
   params?: Record<string, string>;
   actions?: ReactNode;
   defaultExpanded?: boolean;
   className?: string;
 }
+
 
 function distributionText(distribution: Record<string, number>) {
   return Object.entries(distribution)
