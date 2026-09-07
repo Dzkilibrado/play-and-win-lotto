@@ -20,5 +20,16 @@ export const generationConfig = {
   maxCandidatesPerGame: 2_000,
   maxCandidatesTotal: 250_000,
   maxDurationMs: 4_000,
+  /**
+   * Fase 3C.1 — enumeração PONDERADA.
+   * Com pesos ativos e espaço combinatório até este tamanho, enumeramos os
+   * candidatos válidos e sorteamos entre eles proporcionalmente ao peso do
+   * jogo, em vez de depender de tentativa-e-erro. Acima disso voltamos à
+   * amostragem ponderada com limites de tentativas e tempo.
+   */
+  weightedEnumerationLimit: 400_000,
+  /** Orçamento de tempo reservado à fase de enumeração ponderada. */
+  weightedEnumerationDurationMs: 2_500,
 } as const;
+
 
