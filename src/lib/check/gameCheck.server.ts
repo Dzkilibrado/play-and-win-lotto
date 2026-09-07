@@ -439,6 +439,8 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
         status: "failed",
         last_error: message.slice(0, 500),
         finished_at: new Date().toISOString(),
+        last_activity_at: new Date().toISOString(),
+        locked_at: null,
       } as never)
       .eq("id", jobId)
       .select("*")
