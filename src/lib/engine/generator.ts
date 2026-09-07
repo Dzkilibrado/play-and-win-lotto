@@ -19,6 +19,7 @@ import {
   randomBelow,
   randomBelowBig,
   shuffleInPlace,
+  weightedSampleWithoutReplacement,
   type RandomSource,
 } from "./random";
 import { resolveRules, universeNumbers } from "./rules";
@@ -122,6 +123,26 @@ export function generateGames(
   const accepts = buildCandidatePredicate(request.filters, filterContext);
   const activeFilters = validation.activeFilters ?? 0;
 
+  /**
+   * Ponderação estatística (opcional). Os pesos influenciam APENAS a montagem
+   * do candidato: fixas continuam obrigatórias, excluídas continuam fora do
+   * pool e todos os filtros continuam sendo aplicados depois.
+   */
+  const weightVector = request.weights ?? null;
+  const weightByNumber = new Map<number, number>();
+  if (weightVector) {
+    for (let index = 0; index < weightVector.numbers.length; index += 1) {
+      const value = weightVector.values[index];
+      if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+        weightByNumber.set(weightVector.numbers[index]!, value);
+      }
+    }
+  }
+  // Uma dezena elegível sem peso informado nunca vira impossível: recebe 1.
+  const weightOf = (value: number) => weightByNumber.get(value) ?? 1;
+  const poolWeights = pool.map(weightOf);
+  const weighted = Boolean(weightVector) && poolWeights.some((value) => value !== poolWeights[0]);
+
   const maxDurationMs = options.limits?.maxDurationMs ?? generationConfig.maxDurationMs;
   const maxCandidates = Math.min(
     options.limits?.maxCandidatesTotal ?? generationConfig.maxCandidatesTotal,
@@ -163,7 +184,10 @@ export function generateGames(
 
   const outOfTime = () => (options.now ?? Date.now)() - startedAt > maxDurationMs;
 
+  // Com pesos ativos não enumeramos o espaço: a enumeração embaralhada é
+  // uniforme por construção e ignoraria a preferência escolhida.
   const useEnumeration =
+    !weighted &&
     total <= BigInt(generationConfig.exhaustiveEnumerationLimit) &&
     (activeFilters > 0 || BigInt(request.gamesCount) * 2n >= total);
 
@@ -201,11 +225,13 @@ export function generateGames(
         break;
       }
       const chosen =
-        toChoose > 0
-          ? total <= BigInt(Number.MAX_SAFE_INTEGER)
-            ? sampleCombination(pool, toChoose, random)
-            : unrankCombination(pool, toChoose, randomBelowBig(random, total))
-          : [];
+        toChoose <= 0
+          ? []
+          : weighted
+            ? weightedSampleWithoutReplacement(pool, weightOf, toChoose, random)
+            : total <= BigInt(Number.MAX_SAFE_INTEGER)
+              ? sampleCombination(pool, toChoose, random)
+              : unrankCombination(pool, toChoose, randomBelowBig(random, total));
       consider(buildNumbers(chosen));
     }
   }
@@ -219,6 +245,17 @@ export function generateGames(
     durationMs: (options.now ?? Date.now)() - startedAt,
     stopReason,
     activeFilters,
+    weights: weightVector
+      ? {
+          strategyId: weightVector.strategyId,
+          intensity: weightVector.intensity,
+          window: weightVector.window,
+          contestsAnalyzed: weightVector.contestsAnalyzed,
+          lastContestConsidered: weightVector.lastContestConsidered,
+          weightMin: poolWeights.length ? Math.min(...poolWeights) : 1,
+          weightMax: poolWeights.length ? Math.max(...poolWeights) : 1,
+        }
+      : null,
   };
 
   return { validation, games, metrics, partial: games.length < request.gamesCount };

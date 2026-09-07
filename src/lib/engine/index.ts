@@ -7,3 +7,4 @@ export * from "./metrics";
 export * from "./analyzer";
 export * from "./filters";
 export { generateGames, type GenerationOutcome } from "./generator";
+export * from "./weights";

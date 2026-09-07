@@ -69,3 +69,54 @@ export function shuffleInPlace<T>(items: T[], source: RandomSource): T[] {
   }
   return items;
 }
+
+/** Float uniforme em [0, 1) a partir da fonte injetada. */
+export function randomUnit(source: RandomSource): number {
+  return source.nextUint32() / 0x1_0000_0000;
+}
+
+/**
+ * Amostragem ponderada SEM reposição.
+ *
+ * Algoritmo: roleta acumulada com remoção (swap-and-pop). A cada seleção o item
+ * escolhido sai da distribuição e o total é recalculado, então nenhuma dezena
+ * pode repetir dentro do mesmo jogo — não existe "corrigir duplicata depois".
+ * Custo O(k * n), suficiente para universos de até 80 dezenas.
+ *
+ * Todos os pesos precisam ser positivos; qualquer valor inválido cai no piso.
+ */
+export function weightedSampleWithoutReplacement(
+  pool: number[],
+  weightOf: (value: number) => number,
+  k: number,
+  source: RandomSource,
+  minWeight = 1e-6,
+): number[] {
+  const items = [...pool];
+  const weights = items.map((value) => {
+    const weight = weightOf(value);
+    return Number.isFinite(weight) && weight > 0 ? weight : minWeight;
+  });
+  let remaining = items.length;
+  let total = weights.reduce((sum, value) => sum + value, 0);
+  const picked: number[] = [];
+  const count = Math.min(k, remaining);
+
+  for (let index = 0; index < count; index += 1) {
+    let target = randomUnit(source) * total;
+    let chosen = remaining - 1;
+    for (let position = 0; position < remaining; position += 1) {
+      target -= weights[position]!;
+      if (target <= 0) {
+        chosen = position;
+        break;
+      }
+    }
+    picked.push(items[chosen]!);
+    total -= weights[chosen]!;
+    remaining -= 1;
+    items[chosen] = items[remaining]!;
+    weights[chosen] = weights[remaining]!;
+  }
+  return picked;
+}

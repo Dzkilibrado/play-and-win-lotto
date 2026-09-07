@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
+import { SmartWeights, describeWeightSelection } from "@/components/lottery/SmartWeights";
 import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,13 @@ import {
 import { universeNumbers } from "@/lib/engine/rules";
 import { allowedNumbersCounts, resolveRules } from "@/lib/engine/rules";
 import { validateGenerationRequest } from "@/lib/engine/validator";
+import {
+  buildStrategySnapshot,
+  computeWeights,
+  defaultWeightSelection,
+  validateWeightSelection,
+} from "@/lib/engine/weights";
+import { statisticsService } from "@/lib/services/statisticsService";
 import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
@@ -73,6 +81,7 @@ function GeneratePage() {
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPriceHelp, setShowPriceHelp] = useState(false);
+  const [weightSelection, setWeightSelection] = useState(() => defaultWeightSelection());
   const { generating, generate, cancel } = useGameGeneration();
 
   const lotteriesQuery = useQuery({
@@ -102,6 +111,7 @@ function GeneratePage() {
     setFixed([]);
     setExcluded([]);
     setFilters(defaultFilterStates());
+    setWeightSelection(defaultWeightSelection());
     setGames(null);
     setMetrics(null);
     setSavedKeys([]);
@@ -190,6 +200,45 @@ function GeneratePage() {
     [rules, numbersCount, fixed, pool, excluded, previousDraw],
   );
 
+  /**
+   * Estatísticas por dezena (agregadas no banco).
+   *
+   * A referência temporal nunca inclui o concurso do jogo nem posteriores:
+   * quando há concurso escolhido, só entram concursos anteriores a ele.
+   */
+  const weightsActive = weightSelection.strategyId !== "none";
+  const weightSelectionIssues = validateWeightSelection(weightSelection);
+  const statisticsQuery = useQuery({
+    enabled: weightsActive && weightSelectionIssues.length === 0,
+    queryKey: ["number-statistics", slug, weightSelection.window, contestNumber],
+    queryFn: () =>
+      statisticsService.getNumberStatistics({
+        lotterySlug: slug,
+        window: weightSelection.window,
+        maxContest: contestNumber,
+      }),
+  });
+  const statisticsSnapshot = statisticsQuery.data ?? null;
+
+  const weights = useMemo(() => {
+    if (!weightsActive || !statisticsSnapshot || weightSelectionIssues.length > 0) return null;
+    return computeWeights(weightSelection, statisticsSnapshot, pool);
+  }, [weightsActive, statisticsSnapshot, weightSelection, weightSelectionIssues.length, pool]);
+
+  /** Vetor compacto enviado ao motor: apenas dezena e peso. */
+  const weightVector = useMemo(() => {
+    if (!weights || !statisticsSnapshot) return null;
+    return {
+      strategyId: weightSelection.strategyId,
+      intensity: weightSelection.intensity,
+      window: weightSelection.window,
+      contestsAnalyzed: statisticsSnapshot.contestsAnalyzed,
+      lastContestConsidered: statisticsSnapshot.lastContestConsidered,
+      numbers: weights.map((item) => item.number),
+      values: weights.map((item) => item.finalWeight),
+    };
+  }, [weights, statisticsSnapshot, weightSelection]);
+
   const request = useMemo(
     () => ({
       lotterySlug: slug,
@@ -199,8 +248,9 @@ function GeneratePage() {
       excluded,
       filters,
       previousDraw,
+      weights: weightVector,
     }),
-    [slug, numbersCount, gamesCount, fixed, excluded, filters, previousDraw],
+    [slug, numbersCount, gamesCount, fixed, excluded, filters, previousDraw, weightVector],
   );
   const validation = useMemo(() => validateGenerationRequest(request), [request]);
 
@@ -259,6 +309,10 @@ function GeneratePage() {
                 }
               : null,
           constraints: buildConstraintsSnapshot(filters),
+          strategy:
+            weights && statisticsSnapshot
+              ? buildStrategySnapshot(weightSelection, statisticsSnapshot, weights)
+              : null,
         });
       }
       setSavedKeys((prev) => [...prev, ...drafts.map((draft) => draft.key)]);
@@ -338,7 +392,7 @@ function GeneratePage() {
                   {metrics.activeFilters > 0
                     ? ` com ${metrics.activeFilters} ${metrics.activeFilters === 1 ? "filtro aplicado" : "filtros aplicados"}`
                     : " sem filtros"}
-                  .
+                  {metrics.weights ? ` · ${describeWeightSelection(weightSelection)}` : ""}.
                 </p>
               )}
             </div>
@@ -555,6 +609,20 @@ function GeneratePage() {
               </div>
             ) : null}
           </section>
+
+          <SmartWeights
+            selection={weightSelection}
+            onChange={(next) => {
+              setWeightSelection(next);
+              setGames(null);
+              setMetrics(null);
+            }}
+            weights={weights}
+            snapshot={statisticsSnapshot}
+            loading={statisticsQuery.isLoading}
+            error={statisticsQuery.isError}
+            colorKey={rules.colorKey}
+          />
 
           <section className="surface-card sticky bottom-20 z-10 space-y-3 p-4 sm:bottom-4">
             <div className="flex flex-wrap items-end justify-between gap-3">

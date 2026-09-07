@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
 import { resolveRules, universeNumbers } from "@/lib/engine/rules";
+import { sanitizeStrategySnapshot } from "@/lib/engine/weights";
+import { weightIntensityLabels, weightsDisclaimer, windowLabel } from "@/config/weights.config";
 import { describeFilters, generationRulesVersion, sanitizeFilterStates } from "@/lib/engine/filters";
 import {
   automaticStatuses,
@@ -230,6 +232,8 @@ function GameDetailPage() {
 
           <AppliedFiltersSection game={game} />
 
+          <GenerationStrategySection constraints={game.generation_constraints} />
+
           {game.image_path ? (
             <GameDocumentSection imagePath={game.image_path} source={game.source} />
           ) : null}
@@ -373,6 +377,51 @@ function AppliedFiltersSection({
       <p className="text-xs text-text-secondary">
         Filtros organizam a escolha das dezenas e não aumentam a chance de premiação.
       </p>
+    </section>
+  );
+}
+
+/**
+ * Estratégia de geração (Pesos Inteligentes), separada dos filtros.
+ * Mostra a configuração registrada no momento em que o jogo foi criado.
+ */
+function GenerationStrategySection({ constraints }: { constraints: unknown }) {
+  const raw = constraints as { strategy?: unknown } | null;
+  const strategy = sanitizeStrategySnapshot(raw && typeof raw === "object" ? raw.strategy : null);
+  if (!strategy) return null;
+
+  const reference = strategy.statisticalReference;
+  const rows: [string, string][] = [
+    ["Estratégia", strategy.strategyLabel],
+    ["Influência", weightIntensityLabels[strategy.intensity]],
+    ["Período analisado", windowLabel(strategy.window)],
+    ["Concursos considerados", String(reference.contestsAnalyzed)],
+    [
+      "Último concurso considerado",
+      reference.lastContestConsidered ? String(reference.lastContestConsidered) : "—",
+    ],
+    [
+      "Composição",
+      `frequência recente ${Math.round(strategy.coefficients.recent * 100)}% · histórica ${Math.round(
+        strategy.coefficients.historical * 100,
+      )}% · atraso ${Math.round(strategy.coefficients.delay * 100)}%`,
+    ],
+  ];
+
+  return (
+    <section className="surface-card space-y-2 p-4">
+      <h2 className="font-display text-sm font-semibold text-text-primary">
+        Estratégia de geração
+      </h2>
+      <dl className="space-y-1 text-xs">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <dt className="text-text-secondary">{label}</dt>
+            <dd className="text-right text-text-primary">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-xs text-text-secondary">{weightsDisclaimer}</p>
     </section>
   );
 }

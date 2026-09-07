@@ -24,6 +24,22 @@ export interface GenerationRequest {
   filters?: FilterStates | null;
   /** Concurso de referência para o filtro de repetidas. */
   previousDraw?: PreviousDrawReference | null;
+  /** Ponderação estatística opcional (Fase 3C); ausente = seleção uniforme. */
+  weights?: GenerationWeights | null;
+}
+
+/**
+ * Vetor compacto de pesos enviado ao motor/worker.
+ * Nunca trafega histórico: apenas uma dezena e seu peso por posição.
+ */
+export interface GenerationWeights {
+  strategyId: string;
+  intensity: string;
+  window: number | null;
+  contestsAnalyzed: number;
+  lastContestConsidered: number | null;
+  numbers: number[];
+  values: number[];
 }
 
 export type ValidationCode =
@@ -98,4 +114,14 @@ export interface GenerationMetrics {
   durationMs: number;
   stopReason: GenerationStopReason;
   activeFilters: number;
+  /** Diagnóstico da ponderação, quando houve estratégia ativa. */
+  weights?: {
+    strategyId: string;
+    intensity: string;
+    window: number | null;
+    contestsAnalyzed: number;
+    lastContestConsidered: number | null;
+    weightMin: number;
+    weightMax: number;
+  } | null;
 }
