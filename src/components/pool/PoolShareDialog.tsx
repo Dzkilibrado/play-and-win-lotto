@@ -102,7 +102,7 @@ export function PoolShareDialog({
 
         {url ? (
           <div className="space-y-3">
-            <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-secondary p-3 text-xs text-text-secondary">
+            <pre className="max-h-48 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-lg bg-surface-secondary p-3 text-xs text-text-secondary">
               {message}
             </pre>
             <div className="grid gap-2">
