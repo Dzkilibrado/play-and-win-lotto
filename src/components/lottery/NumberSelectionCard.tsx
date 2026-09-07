@@ -61,7 +61,7 @@ export function NumberSelectionCard({
   hidden?: number[];
   excludedMarks?: number[];
   limit?: number | null;
-  notice?: React.ReactNode;
+  notice?: React.ReactNode | ((openDrawer: () => void) => React.ReactNode);
   emptyLabel?: string;
   className?: string;
 }) {
@@ -120,7 +120,7 @@ export function NumberSelectionCard({
         </div>
       </div>
 
-      {notice}
+      {typeof notice === "function" ? notice(() => setOpen(true)) : notice}
 
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent>
