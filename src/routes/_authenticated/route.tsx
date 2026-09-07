@@ -7,6 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    /*
+     * A sessão já guardada no aparelho é lida localmente e a tela abre na
+     * hora. Só quando não existe sessão local é que consultamos o servidor —
+     * antes, toda troca de tela esperava uma ida e volta à rede.
+     */
+    const { data: local } = await supabase.auth.getSession();
+    if (local.session?.user) return { user: local.session.user };
+
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/login" });
     return { user: data.user };
