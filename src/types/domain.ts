@@ -43,9 +43,11 @@ export const poolStatusLabel: Record<PoolStatus, string> = {
   OPEN: "Aberto",
   CLOSED: "Fechado",
   AWAITING_DRAW: "Aguardando sorteio",
+  AWAITING_CHECK: "Aguardando conferência",
   CHECKED: "Conferido",
   PRIZED: "Premiado",
   FINISHED: "Encerrado",
+  CANCELLED: "Cancelado",
 };
 
 export const paymentStatusLabel: Record<PaymentStatus, string> = {
@@ -53,7 +55,9 @@ export const paymentStatusLabel: Record<PaymentStatus, string> = {
   PARTIAL: "Parcial",
   PAID: "Pago",
   OVERDUE: "Vencido",
+  CANCELLED: "Cancelado",
 };
+
 
 export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
