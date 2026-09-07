@@ -335,7 +335,8 @@ export const poolService = {
     participantId: string;
     amount: number;
     paidAt: string;
-    method: string | null;
+    method: PaymentMethod | null;
+    methodDescription?: string | null;
     notes: string | null;
     allowOverpay?: boolean;
   }) {
@@ -344,11 +345,13 @@ export const poolService = {
       _amount: input.amount,
       _paid_at: input.paidAt,
       ...(input.method ? { _method: input.method } : {}),
+      ...(input.methodDescription ? { _method_description: input.methodDescription } : {}),
       ...(input.notes ? { _notes: input.notes } : {}),
       _allow_overpay: input.allowOverpay ?? false,
     });
     if (error) throw error;
   },
+
 
   async cancelPayment(paymentId: string, reason: string) {
     const { error } = await supabase.rpc("pool_cancel_payment", {
