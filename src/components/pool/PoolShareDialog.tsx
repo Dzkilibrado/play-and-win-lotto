@@ -105,10 +105,10 @@ export function PoolShareDialog({
             <pre className="max-h-48 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-lg bg-surface-secondary p-3 text-xs text-text-secondary">
               {message}
             </pre>
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               {canUseNativeShare() ? (
                 <Button className="h-11 justify-start" onClick={() => void share()}>
-                  <Share2 className="size-4" aria-hidden />
+                  <Share2 className="size-4 shrink-0" aria-hidden />
                   Compartilhar…
                 </Button>
               ) : null}
@@ -120,7 +120,7 @@ export function PoolShareDialog({
                   if (!ok) toast.error("Não foi possível abrir o WhatsApp. Copie a mensagem abaixo.");
                 }}
               >
-                <MessageCircle className="size-4" aria-hidden />
+                <MessageCircle className="size-4 shrink-0" aria-hidden />
                 Compartilhar no WhatsApp
               </Button>
               <Button
@@ -128,7 +128,7 @@ export function PoolShareDialog({
                 className="h-11 justify-start"
                 onClick={() => void copy(url, "Link copiado")}
               >
-                <Copy className="size-4" aria-hidden />
+                <Copy className="size-4 shrink-0" aria-hidden />
                 Copiar link
               </Button>
               <Button
@@ -136,7 +136,7 @@ export function PoolShareDialog({
                 className="h-11 justify-start"
                 onClick={() => void copy(message, "Mensagem copiada")}
               >
-                <Copy className="size-4" aria-hidden />
+                <Copy className="size-4 shrink-0" aria-hidden />
                 Copiar mensagem e link
               </Button>
             </div>
