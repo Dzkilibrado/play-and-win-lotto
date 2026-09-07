@@ -98,15 +98,21 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
 
   const submit = () => {
     const parsedQuotas = Number(quotas);
-    if (!name.trim()) return toast.error("Informe o nome do participante.");
+    if (!name.trim()) {
+      toast.error("Informe o nome do participante.");
+      return;
+    }
     if (!Number.isInteger(parsedQuotas) || parsedQuotas < 1) {
-      return toast.error("A quantidade de cotas deve ser um número inteiro maior que zero.");
+      toast.error("A quantidade de cotas deve ser um número inteiro maior que zero.");
+      return;
     }
     if (parsedQuotas > livres) {
-      return toast.error(`Restam apenas ${livres} cotas neste bolão.`);
+      toast.error(`Restam apenas ${livres} cotas neste bolão.`);
+      return;
     }
     if (Number(adjustment) !== 0 && !adjustmentReason.trim()) {
-      return toast.error("Informe o motivo do ajuste de valor.");
+      toast.error("Informe o motivo do ajuste de valor.");
+      return;
     }
     addMutation.mutate();
   };
