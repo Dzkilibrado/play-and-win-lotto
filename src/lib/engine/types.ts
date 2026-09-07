@@ -52,6 +52,8 @@ export interface ValidationResult {
   /** C(A, N-F) — quantos jogos distintos existem com a configuração atual. */
   possibilities: number;
   rules: LotteryRules | null;
+  /** Quantidade de filtros ativos considerados na validação. */
+  activeFilters?: number;
 }
 
 export interface GameAnalysisResult {
