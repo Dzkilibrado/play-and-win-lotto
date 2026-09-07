@@ -268,16 +268,17 @@ export const poolService = {
     const { error } = await supabase.rpc("pool_add_participant", {
       _pool_id: input.poolId,
       _name: input.name,
-      _phone: input.phone,
       _quotas: input.quotas,
       _adjustment: input.adjustment,
-      _adjustment_reason: input.adjustmentReason,
-      _notes: input.notes,
       _payment_mode: input.paymentMode,
-      _payment_amount: input.paymentAmount ?? null,
-      _method: input.method ?? null,
-      _method_description: input.methodDescription ?? null,
+      ...(input.phone ? { _phone: input.phone } : {}),
+      ...(input.adjustmentReason ? { _adjustment_reason: input.adjustmentReason } : {}),
+      ...(input.notes ? { _notes: input.notes } : {}),
+      ...(input.paymentAmount != null ? { _payment_amount: input.paymentAmount } : {}),
+      ...(input.method ? { _method: input.method } : {}),
+      ...(input.methodDescription ? { _method_description: input.methodDescription } : {}),
     });
+
     if (error) throw error;
   },
 
