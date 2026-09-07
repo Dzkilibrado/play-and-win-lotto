@@ -60,6 +60,7 @@ export interface GameRow {
   created_at: string;
   game_numbers: { number: number; position: number }[];
   game_analysis: GameAnalysisRow[] | GameAnalysisRow | null;
+  lotteries: { slug: string; name: string; color_key: string } | null;
 }
 
 export interface GameAnalysisRow {
@@ -72,10 +73,8 @@ export interface GameAnalysisRow {
   repeated_from_last: number | null;
   row_distribution: unknown;
   column_distribution: unknown;
-
-
-  lotteries: { slug: string; name: string; color_key: string } | null;
 }
+
 
 /** Rastreabilidade do preço aplicado, sem duplicar a tabela de preços. */
 function priceNote(price: PriceSnapshot | null, analysis: GameAnalysisResult) {
