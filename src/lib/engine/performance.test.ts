@@ -89,9 +89,30 @@ function benchmark(
 }
 
 describe("desempenho com pesos", () => {
+  /** Cenário reproduzido pela auditoria: Lotofácil apertada. */
+  const hardLotofacil = () => {
+    const filters = defaultFilterStates();
+    filters.parity = { enabled: true, config: { min: 8, max: 8 } };
+    filters.sum = { enabled: true, config: { min: 185, max: 205 } };
+    filters.prime = { enabled: true, config: { min: 5, max: 6 } };
+    filters.consecutive = { enabled: true, config: { max: 3 } };
+    filters.gapRun = { enabled: true, config: { max: 2 } };
+    return { filters, slug: "lotofacil", count: 15, universe: 25 };
+  };
+
+  it("Lotofácil apertada — antes (caminho da Fase 3C)", () => {
+    benchmark("lotofacil-apertada-ANTES", hardLotofacil, 10, true);
+  }, 180_000);
+
+  it("Lotofácil apertada — depois (Fase 3C.1)", () => {
+    const { summary } = benchmark("lotofacil-apertada-DEPOIS", hardLotofacil);
+    expect(summary.timeLimits).toBeLessThanOrEqual(1);
+  }, 180_000);
+
   it("Lotofácil 15 dezenas, 100 jogos, pesos e filtros restritivos", () => {
     const { summary } = benchmark("lotofacil-restritivo", () => {
       const filters = defaultFilterStates();
+
       filters.parity = { enabled: true, config: { min: 7, max: 8 } };
       filters.sum = { enabled: true, config: { min: 180, max: 210 } };
       filters.prime = { enabled: true, config: { min: 4, max: 6 } };
