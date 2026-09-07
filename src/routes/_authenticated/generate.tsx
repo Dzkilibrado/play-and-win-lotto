@@ -642,6 +642,16 @@ function GeneratePage() {
               </div>
             </div>
 
+            <p className="text-xs text-text-secondary [overflow-wrap:anywhere]">
+              {gamesCount} {gamesCount === 1 ? "jogo" : "jogos"} · {numbersCount} dezenas ·{" "}
+              {fixed.length} {fixed.length === 1 ? "fixa" : "fixas"} · {excluded.length}{" "}
+              {excluded.length === 1 ? "excluída" : "excluídas"} · {activeFilterCount}{" "}
+              {activeFilterCount === 1 ? "filtro" : "filtros"} ·{" "}
+              {describeWeightSelection(weightSelection)}
+            </p>
+
+
+
             <button
               type="button"
               onClick={() => setShowPriceHelp((value) => !value)}
