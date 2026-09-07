@@ -266,9 +266,8 @@ export function GenerationFilters({
               />
             </div>
             <Hint>
-              Nesta modalidade existem {fibRange.max - fibRange.fixedMatching + fibRange.fixedMatching >= 0 ? "" : ""}
-              dezenas de Fibonacci até {context.rules.universe.max}: possível de {fibRange.min} a{" "}
-              {fibRange.max} no jogo.
+              A sequência considerada vai até {context.rules.universe.max}. Com esta configuração é
+              possível de {fibRange.min} a {fibRange.max} dezenas de Fibonacci no jogo.
             </Hint>
           </>
         );
