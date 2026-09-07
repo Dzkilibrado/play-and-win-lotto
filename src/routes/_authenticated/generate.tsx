@@ -285,6 +285,29 @@ function GeneratePage() {
 
   const activeFilterCount = activeFilterIds(filters).length;
 
+  /**
+   * Cada problema aparece uma única vez, junto da opção que o originou.
+   * O resumo só recebe os problemas que não têm quadro próprio.
+   */
+  const pendingTargets = useMemo(() => {
+    const targets: { id: string; label: string }[] = [];
+    if (validation.issues.some((issue) => issue.code === "TOO_MANY_FIXED")) {
+      targets.push({ id: "fixos-card", label: "Números fixos" });
+    }
+    if (validation.issues.some((issue) => issue.code === "FILTER")) {
+      targets.push({ id: "filtros-card", label: "Filtros" });
+    }
+    return targets;
+  }, [validation.issues]);
+
+  const summaryIssues = validation.issues.filter(
+    (issue) => issue.code !== "TOO_MANY_FIXED" && issue.code !== "FILTER",
+  );
+
+  const focusCard = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleGenerate = async () => {
     if (generating) return;
     try {
@@ -529,8 +552,8 @@ function GeneratePage() {
           </section>
 
           <div className="grid gap-4 lg:grid-cols-2">
+            <div id="fixos-card" className="scroll-mt-24">
             <NumberSelectionCard
-              className="scroll-mt-24"
               label="4. Fixar números (opcional)"
               drawerTitle="Fixar números"
               description="Escolha dezenas que deverão estar em todos os jogos."
@@ -558,6 +581,7 @@ function GeneratePage() {
                 ) : null
               }
             />
+            </div>
 
             <NumberSelectionCard
               label="5. Excluir números (opcional)"
@@ -580,6 +604,7 @@ function GeneratePage() {
           </div>
 
 
+          <div id="filtros-card" className="scroll-mt-24">
           <GenerationFilters
             states={filters}
             onChange={(next) => {
@@ -591,6 +616,7 @@ function GeneratePage() {
             issuesByFilter={issuesByFilter}
             previousDrawLabel={previousDrawLabel}
           />
+          </div>
 
           <section className="surface-card space-y-3 p-4">
             <Label>7. Concurso (opcional)</Label>
@@ -695,11 +721,30 @@ function GeneratePage() {
             ) : null}
 
             {!validation.ok ? (
-              <ul className="space-y-1 rounded-lg bg-danger-soft p-3 text-xs text-danger">
-                {validation.issues.map((issue, index) => (
-                  <li key={`${issue.code}-${index}`}>{issue.message}</li>
-                ))}
-              </ul>
+              <div className="space-y-2 rounded-lg bg-danger-soft p-3 text-xs text-danger">
+                {summaryIssues.length ? (
+                  <ul className="space-y-1">
+                    {summaryIssues.map((issue, index) => (
+                      <li key={`${issue.code}-${index}`}>{issue.message}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {pendingTargets.length ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">Configuração precisa de ajuste:</span>
+                    {pendingTargets.map((target) => (
+                      <button
+                        key={target.id}
+                        type="button"
+                        onClick={() => focusCard(target.id)}
+                        className="rounded-full bg-surface px-3 py-1 font-medium text-danger underline-offset-4 hover:underline"
+                      >
+                        {target.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <p className="text-xs text-text-secondary">
                 {formatNumber(validation.possibilities)} jogos diferentes são possíveis com esta
@@ -737,6 +782,20 @@ function GeneratePage() {
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={pendingLottery !== null}
+        onOpenChange={(next) => (next ? undefined : setPendingLottery(null))}
+        title="Trocar modalidade?"
+        description="Você possui opções de geração configuradas. Ao trocar de modalidade, números fixos, números excluídos, filtros e pesos serão limpos."
+        cancelLabel="Continuar nesta modalidade"
+        confirmLabel="Trocar e limpar"
+        onConfirm={() => {
+          const next = pendingLottery;
+          setPendingLottery(null);
+          if (next) changeLottery(next);
+        }}
+      />
     </div>
   );
 }
