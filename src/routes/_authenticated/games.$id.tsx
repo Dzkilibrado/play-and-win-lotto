@@ -19,7 +19,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
-import { resolveRules } from "@/lib/engine/rules";
+import { resolveRules, universeNumbers } from "@/lib/engine/rules";
+import { describeFilters, sanitizeFilterStates } from "@/lib/engine/filters";
 import {
   automaticStatuses,
   gameDisplayName,
@@ -227,6 +228,8 @@ function GameDetailPage() {
             </section>
           ) : null}
 
+          <AppliedFiltersSection game={game} />
+
           {game.image_path ? (
             <GameDocumentSection imagePath={game.image_path} source={game.source} />
           ) : null}
@@ -318,3 +321,48 @@ function GameDocumentSection({ imagePath, source }: { imagePath: string; source:
   );
 }
 
+/**
+ * Filtros usados quando o jogo foi criado. O registro é um retrato do momento:
+ * mudanças posteriores nas regras não alteram o que já foi salvo.
+ */
+function AppliedFiltersSection({
+  game,
+}: {
+  game: {
+    generation_constraints: unknown;
+    game_numbers: { number: number }[];
+    lotteries?: { slug?: string | null } | null;
+  };
+}) {
+  const rules = resolveRules(game.lotteries?.slug ?? null);
+  const raw = game.generation_constraints as { filters?: unknown } | null;
+  if (!rules || !raw || typeof raw !== "object" || !raw.filters) return null;
+
+  const numbers = game.game_numbers.map((item) => item.number);
+  const states = sanitizeFilterStates(raw.filters);
+  const chips = describeFilters(states, {
+    rules,
+    numbersCount: numbers.length,
+    fixed: [],
+    pool: universeNumbers(rules),
+    excluded: [],
+    previousDraw: null,
+  });
+  if (!chips.length) return null;
+
+  return (
+    <section className="surface-card space-y-2 p-4">
+      <h2 className="font-display text-sm font-semibold text-text-primary">
+        Filtros usados na criação
+      </h2>
+      <ul className="space-y-1 text-xs text-text-secondary">
+        {chips.map((chip) => (
+          <li key={chip.id}>{chip.summary}</li>
+        ))}
+      </ul>
+      <p className="text-xs text-text-secondary">
+        Filtros organizam a escolha das dezenas e não aumentam a chance de premiação.
+      </p>
+    </section>
+  );
+}
