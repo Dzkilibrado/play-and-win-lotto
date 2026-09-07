@@ -324,7 +324,8 @@ function GeneratePage() {
             <section className="surface-card space-y-3 p-4">
               <Label>4. Dezenas fixas (opcional)</Label>
               <p className="text-xs text-text-secondary">
-                Estas dezenas aparecem em todos os jogos criados.
+                Estas dezenas aparecem em todos os jogos criados. Dezenas já excluídas ficam
+                bloqueadas aqui: retire da exclusão para poder fixar.
               </p>
               <p className="text-xs text-text-secondary">
                 Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
@@ -334,6 +335,7 @@ function GeneratePage() {
                 rules={rules}
                 fixed={fixed}
                 excluded={excluded}
+                locked={excluded}
                 onSelect={toggleFixed}
               />
               {fixed.length > 0 ? (
@@ -346,7 +348,8 @@ function GeneratePage() {
             <section className="surface-card space-y-3 p-4">
               <Label>5. Dezenas excluídas (opcional)</Label>
               <p className="text-xs text-text-secondary">
-                Estas dezenas nunca aparecem nos jogos criados.
+                Estas dezenas nunca aparecem nos jogos criados. Dezenas fixadas não aparecem
+                nesta lista.
               </p>
               <p className="text-xs text-text-secondary">
                 Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
@@ -354,10 +357,11 @@ function GeneratePage() {
               </p>
               <LotteryNumberGrid
                 rules={rules}
-                fixed={fixed}
                 excluded={excluded}
+                hidden={fixed}
                 onSelect={toggleExcluded}
               />
+
               {excluded.length > 0 ? (
                 <Button variant="ghost" size="sm" onClick={() => setExcluded([])}>
                   Limpar dezenas excluídas
