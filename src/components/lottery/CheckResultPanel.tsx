@@ -85,6 +85,11 @@ export function CheckResultPanel({
               quando o valor for publicado.
             </p>
           ) : null}
+          {zeroNotes.map((note) => (
+            <p key={note} className="text-xs text-text-secondary">
+              {note}
+            </p>
+          ))}
         </div>
       ) : (
         <p className="text-sm text-text-secondary">
