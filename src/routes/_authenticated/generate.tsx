@@ -322,7 +322,7 @@ function GeneratePage() {
                 <p>
                   {metrics.generated} {metrics.generated === 1 ? "jogo criado" : "jogos criados"}
                   {metrics.activeFilters > 0
-                    ? ` com ${metrics.activeFilters} ${metrics.activeFilters === 1 ? "filtro" : "filtros"} aplicados`
+                    ? ` com ${metrics.activeFilters} ${metrics.activeFilters === 1 ? "filtro aplicado" : "filtros aplicados"}`
                     : " sem filtros"}
                   .
                 </p>
