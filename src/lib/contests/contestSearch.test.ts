@@ -22,7 +22,7 @@ describe("filtros de concursos", () => {
   it("serializa e formata as dezenas em ordem crescente", () => {
     expect(serializeNumbers([23, 5])).toBe("5,23");
     expect(serializeNumbers([])).toBeUndefined();
-    expect(formatNumbersLabel([5, 23])).toBe("05, 23");
+    expect(formatNumbersLabel([5, 23])).toBe("05 · 23");
   });
 
   it("usa valores padrão seguros para ordenação, situação e página", () => {
