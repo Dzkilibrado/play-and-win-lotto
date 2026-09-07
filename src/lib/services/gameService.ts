@@ -223,9 +223,16 @@ export const gameService = {
     return data as unknown as GameRow | null;
   },
 
+  /**
+   * Situações manuais passam por uma função controlada no banco:
+   * ela confere a propriedade do jogo e recusa qualquer situação de
+   * resultado (Conferido/Premiado/Não premiado), que é exclusiva do servidor.
+   */
   async updateStatus(id: string, status: GameStatus) {
-    // Conferência automática é etapa futura: aqui só o próprio usuário move a situação.
-    const { error } = await supabase.from("generated_games").update({ status }).eq("id", id);
+    const { error } = await supabase.rpc("set_manual_game_status", {
+      _game_id: id,
+      _status: status,
+    } as never);
     if (error) throw error;
   },
 
