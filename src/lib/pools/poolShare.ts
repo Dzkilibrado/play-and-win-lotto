@@ -5,6 +5,7 @@
  */
 import { formatDate } from "@/lib/format";
 import { remainingQuotas } from "@/lib/pools/poolMath";
+import { isPubliclyVisibleGame } from "@/lib/pools/publicPool";
 import type { PoolRow } from "@/lib/services/poolService";
 
 export interface PoolShareStats {
@@ -12,6 +13,7 @@ export interface PoolShareStats {
   paidQuotas: number;
   totalQuotas: number | null;
   availableQuotas: number | null;
+  games: number;
 }
 
 /** Resumo agregado usado na mensagem, calculado a partir dos participantes. */
@@ -24,6 +26,9 @@ export function poolShareStats(pool: PoolRow): PoolShareStats {
     paidQuotas: paid.reduce((sum, p) => sum + p.quotas, 0),
     totalQuotas: pool.total_quotas,
     availableQuotas: remainingQuotas(pool.total_quotas, quotasTaken),
+    games: (pool.pool_games ?? []).filter(
+      (link) => link.generated_games && isPubliclyVisibleGame(link.generated_games.status),
+    ).length,
   };
 }
 
@@ -60,6 +65,8 @@ export function poolShareMessage(pool: PoolRow, url: string | null): string {
     lines.push(`🎫 Cotas pagas: ${stats.paidQuotas}/${stats.totalQuotas}`);
     lines.push(`🎟 Cotas disponíveis: ${stats.availableQuotas ?? 0}`);
   }
+
+  lines.push(`🎲 Jogos: ${stats.games}`);
 
   if (url) {
     lines.push("", "Acompanhe o bolão:", url);

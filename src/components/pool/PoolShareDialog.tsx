@@ -4,7 +4,8 @@
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, LinkIcon, MessageCircle, Share2 } from "lucide-react";
+import { Copy, MessageCircle, Share2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,19 @@ export function PoolShareDialog({
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Ação explícita do organizador já é intenção suficiente: o link é criado
+  // automaticamente ao abrir o compartilhamento, sem confirmação extra.
+  const requested = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      requested.current = false;
+      return;
+    }
+    if (url || !canManage || requested.current || enableLink.isPending) return;
+    requested.current = true;
+    enableLink.mutate();
+  }, [open, url, canManage, enableLink]);
+
   const share = async () => {
     const result = await nativeShare({ title: poolShareTitle(pool), text: message, url });
     if (result === "shared") {
@@ -80,7 +94,9 @@ export function PoolShareDialog({
           <DialogDescription>
             {url
               ? "Quem receber o link vê apenas o acompanhamento geral do bolão."
-              : "Para compartilhar o acompanhamento do bolão, primeiro ative o link público."}
+              : canManage
+                ? "Preparando o link público deste bolão…"
+                : "Somente o organizador pode ativar o link público deste bolão."}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,25 +144,15 @@ export function PoolShareDialog({
         ) : (
           <p className="rounded-lg bg-surface-secondary p-3 text-sm text-text-secondary">
             {canManage
-              ? "O link público mostra apenas nome do bolão, modalidade, concurso, situação e o resumo de cotas. Valores individuais e telefones não aparecem."
+              ? "O link público mostra o acompanhamento do bolão: situação, cotas pagas, quem já confirmou e os jogos apostados. Telefones e valores individuais não aparecem."
               : "Somente o organizador pode ativar o link público deste bolão."}
           </p>
         )}
 
         <DialogFooter>
           <Button variant="outline" className="h-11" onClick={() => onOpenChange(false)}>
-            {url ? "Fechar" : "Cancelar"}
+            Fechar
           </Button>
-          {!url && canManage ? (
-            <Button
-              className="h-11"
-              disabled={enableLink.isPending}
-              onClick={() => enableLink.mutate()}
-            >
-              <LinkIcon className="size-4" aria-hidden />
-              {enableLink.isPending ? "Ativando…" : "Ativar link público"}
-            </Button>
-          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

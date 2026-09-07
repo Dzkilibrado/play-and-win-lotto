@@ -24,6 +24,7 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
   const [shareOpen, setShareOpen] = useState(false);
   const [reasonTarget, setReasonTarget] = useState<PoolStatus | null>(null);
   const [revokeOpen, setRevokeOpen] = useState(false);
+  const [regenerateOpen, setRegenerateOpen] = useState(false);
 
   const publicUrl = poolPublicUrl(pool);
 
@@ -44,12 +45,29 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Criar link é ação direta: não pedimos confirmação. Revogar e gerar um link
+  // novo invalidam um endereço já compartilhado, por isso continuam confirmando.
   const publicMutation = useMutation({
     mutationFn: (enabled: boolean) => poolService.setPublic(pool.id, enabled),
     onSuccess: (_data, enabled) => {
       toast.success(enabled ? "Link público criado" : "Link público revogado");
       setRevokeOpen(false);
       invalidate();
+      if (enabled) setShareOpen(true);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const regenerateMutation = useMutation({
+    mutationFn: async () => {
+      await poolService.setPublic(pool.id, false);
+      return poolService.setPublic(pool.id, true);
+    },
+    onSuccess: () => {
+      toast.success("Novo link público criado");
+      setRegenerateOpen(false);
+      invalidate();
+      setShareOpen(true);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -92,10 +110,16 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
             )}
             <DropdownMenuLabel>Link público</DropdownMenuLabel>
             {pool.is_public ? (
-              <DropdownMenuItem onSelect={() => setRevokeOpen(true)}>
-                <LinkIcon className="size-4" aria-hidden />
-                Revogar link público
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onSelect={() => setRegenerateOpen(true)}>
+                  <LinkIcon className="size-4" aria-hidden />
+                  Gerar novo link
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setRevokeOpen(true)}>
+                  <LinkIcon className="size-4" aria-hidden />
+                  Revogar link público
+                </DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem onSelect={() => publicMutation.mutate(true)}>
                 <LinkIcon className="size-4" aria-hidden />
@@ -151,6 +175,18 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
         destructive
         loading={publicMutation.isPending}
         onConfirm={() => publicMutation.mutate(false)}
+      />
+
+      <ConfirmDialog
+        open={regenerateOpen}
+        onOpenChange={setRegenerateOpen}
+        title="Gerar um novo link público?"
+        description="O link atual deixa de funcionar imediatamente. Quem já recebeu o endereço antigo precisará do novo link para continuar acompanhando o bolão."
+        confirmLabel="Gerar novo link"
+        cancelLabel="Manter link atual"
+        destructive
+        loading={regenerateMutation.isPending}
+        onConfirm={() => regenerateMutation.mutate()}
       />
     </div>
   );
