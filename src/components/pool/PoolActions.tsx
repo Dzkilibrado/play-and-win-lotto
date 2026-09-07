@@ -1,43 +1,31 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Link as LinkIcon, MessageCircle, Share2 } from "lucide-react";
+import { Copy, Link as LinkIcon, Share2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { ReasonDialog } from "@/components/common/ReasonDialog";
+import { PoolShareDialog } from "@/components/pool/PoolShareDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { poolNotices, poolStatusAction, poolStatusRequiresReason, poolStatusTransitions } from "@/config/pools.config";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { copyText, poolPublicUrl } from "@/lib/pools/poolShare";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { poolStatusLabel, type PoolStatus } from "@/types/domain";
 
-function shareText(pool: PoolRow, url: string | null) {
-  const contest = pool.contest_number ?? pool.contest_number_planned;
-  const drawDate = pool.draw_date ?? pool.draw_date_planned;
-  const lines = [
-    `Bolão: ${pool.name}`,
-    `Modalidade: ${pool.lotteries?.name ?? "—"}`,
-    contest ? `Concurso: ${contest}` : "Concurso: a definir",
-    drawDate ? `Sorteio: ${formatDate(drawDate)}` : null,
-    `Valor da cota: ${formatCurrency(pool.quota_value)}`,
-    `Cotas: ${pool.total_quotas}`,
-    url ? `Acompanhe: ${url}` : null,
-  ].filter(Boolean);
-  return lines.join("\n");
-}
-
 export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
   const queryClient = useQueryClient();
+  const [shareOpen, setShareOpen] = useState(false);
+  const [reasonTarget, setReasonTarget] = useState<PoolStatus | null>(null);
+  const [revokeOpen, setRevokeOpen] = useState(false);
 
-  const publicUrl =
-    pool.is_public && pool.public_token && typeof window !== "undefined"
-      ? `${window.location.origin}/b/${pool.public_token}`
-      : null;
+  const publicUrl = poolPublicUrl(pool);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
@@ -50,6 +38,7 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
       poolService.setStatus(pool.id, status, reason),
     onSuccess: () => {
       toast.success("Situação atualizada");
+      setReasonTarget(null);
       invalidate();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -59,72 +48,20 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
     mutationFn: (enabled: boolean) => poolService.setPublic(pool.id, enabled),
     onSuccess: (_data, enabled) => {
       toast.success(enabled ? "Link público criado" : "Link público revogado");
+      setRevokeOpen(false);
       invalidate();
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const share = async () => {
-    const text = shareText(pool, publicUrl);
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: pool.name, text });
-        return;
-      } catch {
-        // usuário cancelou o compartilhamento
-        return;
-      }
-    }
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
-  };
-
   const targets = poolStatusTransitions[pool.status];
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-11">
-            <Share2 className="size-4" aria-hidden />
-            Compartilhar
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => void share()}>
-            <Share2 className="size-4" aria-hidden />
-            Compartilhar…
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() =>
-              window.open(
-                `https://wa.me/?text=${encodeURIComponent(shareText(pool, publicUrl))}`,
-                "_blank",
-                "noopener",
-              )
-            }
-          >
-            <MessageCircle className="size-4" aria-hidden />
-            Enviar pelo WhatsApp
-          </DropdownMenuItem>
-          {publicUrl ? (
-            <DropdownMenuItem
-              onSelect={() => {
-                void navigator.clipboard.writeText(publicUrl);
-                toast.success("Link copiado");
-              }}
-            >
-              <Copy className="size-4" aria-hidden />
-              Copiar link público
-            </DropdownMenuItem>
-          ) : canManage ? (
-            <DropdownMenuItem onSelect={() => publicMutation.mutate(true)}>
-              <LinkIcon className="size-4" aria-hidden />
-              Criar link público
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
+      <Button variant="outline" size="sm" className="h-11" onClick={() => setShareOpen(true)}>
+        <Share2 className="size-4" aria-hidden />
+        Compartilhar
+      </Button>
 
       {canManage ? (
         <DropdownMenu>
@@ -143,11 +80,7 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
                   key={status}
                   onSelect={() => {
                     if (poolStatusRequiresReason.includes(status)) {
-                      const reason = window.prompt(
-                        `${poolNotices.cancelPool}\n\nMotivo do cancelamento:`,
-                      );
-                      if (!reason?.trim()) return;
-                      statusMutation.mutate({ status, reason: reason.trim() });
+                      setReasonTarget(status);
                       return;
                     }
                     statusMutation.mutate({ status });
@@ -157,17 +90,24 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
                 </DropdownMenuItem>
               ))
             )}
-            <DropdownMenuSeparator />
             <DropdownMenuLabel>Link público</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => publicMutation.mutate(!pool.is_public)}>
-              <LinkIcon className="size-4" aria-hidden />
-              {pool.is_public ? "Revogar link público" : "Criar link público"}
-            </DropdownMenuItem>
+            {pool.is_public ? (
+              <DropdownMenuItem onSelect={() => setRevokeOpen(true)}>
+                <LinkIcon className="size-4" aria-hidden />
+                Revogar link público
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onSelect={() => publicMutation.mutate(true)}>
+                <LinkIcon className="size-4" aria-hidden />
+                Criar link público
+              </DropdownMenuItem>
+            )}
             {publicUrl ? (
               <DropdownMenuItem
                 onSelect={() => {
-                  void navigator.clipboard.writeText(publicUrl);
-                  toast.success("Link copiado");
+                  void copyText(publicUrl).then((ok) =>
+                    ok ? toast.success("Link copiado") : toast.error("Não foi possível copiar o link."),
+                  );
                 }}
               >
                 <Copy className="size-4" aria-hidden />
@@ -177,6 +117,41 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
+
+      <PoolShareDialog
+        pool={pool}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        canManage={canManage}
+      />
+
+      <ReasonDialog
+        open={reasonTarget !== null}
+        onOpenChange={(next) => (!next ? setReasonTarget(null) : undefined)}
+        title="Cancelar bolão?"
+        description={poolNotices.cancelPool}
+        fieldLabel="Motivo do cancelamento"
+        placeholder="Ex.: o grupo desistiu de apostar neste concurso."
+        confirmLabel="Cancelar bolão"
+        cancelLabel="Voltar"
+        destructive
+        loading={statusMutation.isPending}
+        onConfirm={(reason) =>
+          reasonTarget ? statusMutation.mutate({ status: reasonTarget, reason }) : undefined
+        }
+      />
+
+      <ConfirmDialog
+        open={revokeOpen}
+        onOpenChange={setRevokeOpen}
+        title="Revogar link público?"
+        description="Quem já tem o link deixa de conseguir acompanhar o bolão. Você pode criar um link novo depois, mas ele será diferente."
+        confirmLabel="Revogar link"
+        cancelLabel="Manter link"
+        destructive
+        loading={publicMutation.isPending}
+        onConfirm={() => publicMutation.mutate(false)}
+      />
     </div>
   );
 }
