@@ -9,6 +9,10 @@ import {
   activeFilterIds,
   type GenerationConstraints,
 } from "@/lib/engine/filters";
+import {
+  sanitizeStrategySnapshot,
+  type StrategySnapshot,
+} from "@/lib/engine/weights";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import type { GameOrigin } from "@/lib/games/gameStatus";
 import type { GameStatus } from "@/types/domain";
