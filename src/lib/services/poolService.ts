@@ -245,6 +245,11 @@ export const poolService = {
     return (data ?? []) as unknown as PoolParticipantRow[];
   },
 
+  /**
+   * Cadastro do participante e, quando informado, o pagamento inicial na
+   * mesma transação do banco (`pool_add_participant`): ou grava os dois,
+   * ou não grava nada.
+   */
   async addParticipant(input: {
     poolId: string;
     name: string;
@@ -253,27 +258,46 @@ export const poolService = {
     adjustment: number;
     adjustmentReason: string | null;
     notes: string | null;
+    paymentMode: "PENDING" | "FULL" | "PARTIAL";
+    paymentAmount?: number | null;
+    method?: PaymentMethod | null;
+    methodDescription?: string | null;
   }) {
-    const { error } = await supabase.from("pool_participants").insert({
-      pool_id: input.poolId,
-      name: input.name,
-      phone: input.phone,
-      quotas: input.quotas,
-      amount_adjustment: input.adjustment,
-      adjustment_reason: input.adjustmentReason,
-      notes: input.notes,
-      amount_due: 0,
+    const { error } = await supabase.rpc("pool_add_participant", {
+      _pool_id: input.poolId,
+      _name: input.name,
+      _phone: input.phone,
+      _quotas: input.quotas,
+      _adjustment: input.adjustment,
+      _adjustment_reason: input.adjustmentReason,
+      _notes: input.notes,
+      _payment_mode: input.paymentMode,
+      _payment_amount: input.paymentAmount ?? null,
+      _method: input.method ?? null,
+      _method_description: input.methodDescription ?? null,
     });
     if (error) throw error;
   },
 
+  /** Edição do participante — sempre pela função do banco (só organizador). */
   async updateParticipant(
     id: string,
-    patch: { name?: string; phone?: string | null; quotas?: number; amount_adjustment?: number; adjustment_reason?: string | null; notes?: string | null },
+    patch: {
+      name?: string;
+      phone?: string | null;
+      quotas?: number;
+      adjustment?: number;
+      adjustment_reason?: string | null;
+      notes?: string | null;
+    },
   ) {
-    const { error } = await supabase.from("pool_participants").update(patch).eq("id", id);
+    const { error } = await supabase.rpc("pool_update_participant", {
+      _participant_id: id,
+      _patch: patch as never,
+    });
     if (error) throw error;
   },
+
 
   async cancelParticipant(id: string, reason: string) {
     const { error } = await supabase.rpc("pool_cancel_participant", {
