@@ -15,7 +15,7 @@ import type {
 
 
 const POOL_SELECT =
-  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
+  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, user_id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
 
 export interface PoolLotteryRef {
   slug: string;
@@ -67,7 +67,14 @@ export interface PoolRow {
   lotteries: PoolLotteryRef | null;
   pool_participants: Pick<
     PoolParticipantRow,
-    "id" | "quotas" | "amount_due" | "total_paid" | "payment_status" | "status" | "eligible_for_prize_share"
+    | "id"
+    | "user_id"
+    | "quotas"
+    | "amount_due"
+    | "total_paid"
+    | "payment_status"
+    | "status"
+    | "eligible_for_prize_share"
   >[];
   pool_games: { id: string; generated_games: { status: GameStatus } | null }[];
 }
