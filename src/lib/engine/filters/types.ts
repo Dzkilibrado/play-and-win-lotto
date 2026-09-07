@@ -30,7 +30,7 @@ export const filterIds: FilterId[] = [
 ];
 
 /** Versão do conjunto de regras — permite reinterpretar jogos antigos. */
-export const generationRulesVersion = 1;
+export const generationRulesVersion = 2;
 
 export interface RangeConfig {
   min: number | null;
