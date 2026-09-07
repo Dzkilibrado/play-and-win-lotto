@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
 import { resolveRules } from "@/lib/engine/rules";
-import { maxEqualGapRun, maxGap } from "@/lib/engine/metrics";
+import { maxEqualGapStreak, maxGap } from "@/lib/engine/metrics";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import { gameDisplayName, originLabel } from "@/lib/games/gameStatus";
 import { gameService, type GameRow } from "@/lib/services/gameService";
@@ -49,7 +49,7 @@ export function rowAnalysis(row: GameRow): GameAnalysisResult {
     fibonacciCount: analysis?.fibonacci_count ?? 0,
     maxSequence: analysis?.max_sequence ?? 0,
     maxGap: maxGap(numbers),
-    maxEqualGapRun: maxEqualGapRun(numbers),
+    maxEqualGapStreak: maxEqualGapStreak(numbers),
     rowDistribution: (analysis?.row_distribution as Record<string, number>) ?? {},
     columnDistribution: (analysis?.column_distribution as Record<string, number>) ?? {},
     repeatedFromLast: analysis?.repeated_from_last ?? null,

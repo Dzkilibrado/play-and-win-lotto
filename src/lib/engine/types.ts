@@ -65,7 +65,7 @@ export interface GameAnalysisResult {
   maxSequence: number;
   maxGap: number;
   /** Maior quantidade de dezenas ligadas pelo mesmo intervalo (saltos iguais). */
-  maxEqualGapRun: number;
+  maxEqualGapStreak: number;
   rowDistribution: Record<string, number>;
   columnDistribution: Record<string, number>;
   repeatedFromLast: number | null;

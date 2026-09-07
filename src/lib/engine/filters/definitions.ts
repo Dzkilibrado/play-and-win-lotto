@@ -7,7 +7,7 @@ import {
   evenCount,
   gridDistribution,
   maxConsecutiveRun,
-  maxEqualGapRun,
+  maxEqualGapStreak,
   primeCount,
   repeatedCount,
   sumTotal,
@@ -389,19 +389,19 @@ const gapRunFilter: GameFilterDefinition<"gapRun"> = {
       );
       return issues;
     }
-    if (context.fixed.length && maxEqualGapRun(context.fixed) > max) {
+    if (context.fixed.length && maxEqualGapStreak(context.fixed) > max) {
       issues.push(
         issue(
           this.id,
           "FIXED_CONFLICT",
-          `Os números fixados já formam ${maxEqualGapRun(context.fixed)} dezenas com o mesmo intervalo, acima do máximo de ${max}.`,
+          `Os números fixados já formam ${maxEqualGapStreak(context.fixed)} dezenas com o mesmo intervalo, acima do máximo de ${max}.`,
         ),
       );
     }
     return issues;
   },
   evaluateCandidate: (numbers, config) =>
-    config.max == null || maxEqualGapRun(numbers) <= config.max,
+    config.max == null || maxEqualGapStreak(numbers) <= config.max,
   explain: (config) => `Máx. ${config.max} dezenas com o mesmo intervalo`,
 };
 
