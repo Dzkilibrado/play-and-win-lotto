@@ -132,3 +132,46 @@ export const statisticsService = {
     }
   },
 };
+
+export interface CombinationDraw {
+  id: string;
+  contestNumber: number;
+  drawDate: string | null;
+}
+
+export interface CombinationStats {
+  contestsAnalyzed: number;
+  occurrences: number;
+  draws: CombinationDraw[];
+}
+
+/**
+ * Em quantos concursos as dezenas escolhidas saíram JUNTAS.
+ * A ordem não importa: é uma combinação, não uma sequência.
+ * O cálculo roda no banco (`lottery_combination_stats`); o cliente recebe
+ * apenas a contagem e os concursos mais recentes.
+ */
+export async function getCombinationStats(
+  lotterySlug: string,
+  numbers: number[],
+  window: number | null,
+): Promise<CombinationStats> {
+  const { data, error } = await supabase.rpc("lottery_combination_stats" as never, {
+    _lottery_slug: lotterySlug,
+    _numbers: numbers,
+    _window: window,
+  } as never);
+  if (error) throw error;
+  const raw = (data ?? {}) as Record<string, unknown>;
+  const draws = Array.isArray(raw["draws"]) ? (raw["draws"] as Record<string, unknown>[]) : [];
+  const int = (value: unknown) => (typeof value === "number" ? Math.trunc(value) : 0);
+  return {
+    contestsAnalyzed: int(raw["contestsAnalyzed"]),
+    occurrences: int(raw["occurrences"]),
+    draws: draws.map((row) => ({
+      id: String(row["id"]),
+      contestNumber: int(row["contestNumber"]),
+      drawDate: (row["drawDate"] as string | null) ?? null,
+    })),
+  };
+}

@@ -1536,6 +1536,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      lottery_combination_stats: {
+        Args: { _lottery_slug: string; _numbers: number[]; _window?: number }
+        Returns: Json
+      }
       lottery_number_statistics: {
         Args: { _lottery_slug: string; _max_contest?: number; _window?: number }
         Returns: Json
@@ -1650,6 +1654,20 @@ export type Database = {
       recalc_participant_payment: {
         Args: { _participant_id: string }
         Returns: undefined
+      }
+      search_draws: {
+        Args: {
+          _contest?: number
+          _date_from?: string
+          _date_to?: string
+          _lottery_slug?: string
+          _numbers?: number[]
+          _page?: number
+          _page_size?: number
+          _situation?: string
+          _sort?: string
+        }
+        Returns: Json
       }
       set_manual_game_status: {
         Args: {

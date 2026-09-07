@@ -17,6 +17,7 @@ import { StatCard } from "@/components/common/Cards";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ContestCard } from "@/components/lottery/ContestCard";
+import { toContestSummary } from "@/lib/contests/contestSearch";
 import { Button } from "@/components/ui/button";
 import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { appConfig } from "@/config/app.config";
@@ -313,13 +314,13 @@ function DashboardPage() {
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {(recent.data ?? []).map((draw) => (
-                  <ContestCard key={draw.id} draw={draw} compact />
+                  <ContestCard key={draw.id} contest={toContestSummary(draw)} compact />
                 ))}
               </div>
             )}
 
             <Button asChild variant="outline" size="sm" className="h-11">
-              <Link to="/results" search={{ lottery: resultsLottery }}>
+              <Link to="/contests" search={{ lottery: resultsLottery }}>
                 Ver todos os resultados
               </Link>
             </Button>
