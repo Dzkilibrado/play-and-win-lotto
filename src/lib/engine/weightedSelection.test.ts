@@ -168,18 +168,25 @@ describe("dados degenerados", () => {
     expect(outcome.games.every((game) => game.numbers.length === 6)).toBe(true);
   });
 
-  it("resultado parcial continua válido quando o espaço é menor que o pedido", () => {
+  it("resultado parcial continua válido quando os filtros esgotam o espaço", () => {
+    const filters = defaultFilterStates();
+    filters.parity = { enabled: true, config: { min: 3, max: 3 } };
     const outcome = generateGames(
       smallSpaceRequest({
-        numbersCount: 6,
-        gamesCount: 50,
+        gamesCount: 7,
+        filters,
         excluded: universe(60).filter((value) => value > 7),
         weights: weights(universe(7), (n) => n),
       }),
       { random: seededRandomSource(15) },
     );
-    expect(outcome.partial).toBe(true);
-    expect(outcome.games).toHaveLength(7);
     expect(outcome.metrics.stopReason).toBe("space_exhausted");
+    expect(outcome.games.length).toBeGreaterThan(0);
+    expect(outcome.games.length).toBeLessThan(7);
+    expect(outcome.partial).toBe(true);
+    for (const game of outcome.games) {
+      expect(game.numbers.filter((value) => value % 2 === 0)).toHaveLength(3);
+    }
   });
+
 });
