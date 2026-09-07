@@ -132,7 +132,35 @@ export const lotteryDataService = {
     return data as unknown as DrawWithNumbers | null;
   },
 
+  /**
+   * Situação de um concurso para vincular a um jogo:
+   * já sorteado, ainda pendente ou desconhecido pelo nosso banco.
+   */
+  async resolveContest(lotterySlug: string, contestNumber: number) {
+    const draw = await this.getContestByNumber(lotterySlug, contestNumber);
+    if (draw) {
+      return {
+        situation: (draw.draw_numbers?.length ?? 0) > 0 ? ("drawn" as const) : ("pending" as const),
+        drawId: draw.id,
+        drawDate: draw.draw_date,
+      };
+    }
+    const { data, error } = await supabase
+      .from("lottery_draws")
+      .select("next_contest_number, next_draw_date, lotteries!inner(slug)")
+      .eq("lotteries.slug", lotterySlug)
+      .order("contest_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (data && data.next_contest_number === contestNumber) {
+      return { situation: "pending" as const, drawId: null, drawDate: data.next_draw_date };
+    }
+    return { situation: "unknown" as const, drawId: null, drawDate: null };
+  },
+
   /** Preço vigente para uma quantidade de dezenas. */
+
   async getActivePrice(lotteryId: string, numbersSelected: number) {
     const { data, error } = await supabase
       .from("lottery_prices")
