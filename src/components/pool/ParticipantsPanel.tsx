@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
-import { remainingQuotas } from "@/lib/pools/poolMath";
+import { noQuotaLimitLabel, quotaLabel, remainingQuotas } from "@/lib/pools/poolMath";
 import { paymentStatusLabel, paymentStatusTone } from "@/types/domain";
 
 interface Props {
@@ -44,7 +44,9 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   const active = participants.filter((p) => p.status === "ACTIVE");
   const quotasTaken = active.reduce((sum, p) => sum + p.quotas, 0);
   const livres = remainingQuotas(pool.total_quotas, quotasTaken);
+  const semLimite = livres === null;
   const openForChanges = editableStatuses.includes(pool.status) && canManage;
+
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
@@ -106,10 +108,11 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       toast.error("A quantidade de cotas deve ser um número inteiro maior que zero.");
       return;
     }
-    if (parsedQuotas > livres) {
+    if (livres !== null && parsedQuotas > livres) {
       toast.error(`Restam apenas ${livres} cotas neste bolão.`);
       return;
     }
+
     if (Number(adjustment) !== 0 && !adjustmentReason.trim()) {
       toast.error("Informe o motivo do ajuste de valor.");
       return;
@@ -122,14 +125,22 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-text-secondary">
           {active.length} {active.length === 1 ? "participante ativo" : "participantes ativos"} ·{" "}
-          {quotasTaken}/{pool.total_quotas} cotas · {livres} livres
+          {semLimite
+            ? `${quotasTaken} ${quotasTaken === 1 ? "cota atribuída" : "cotas atribuídas"} · ${noQuotaLimitLabel}`
+            : `${quotaLabel(pool.total_quotas, quotasTaken)} cotas · ${livres} livres`}
         </p>
         {openForChanges ? (
-          <Button size="sm" className="h-11" onClick={() => setOpen(true)} disabled={livres <= 0}>
+          <Button
+            size="sm"
+            className="h-11"
+            onClick={() => setOpen(true)}
+            disabled={livres !== null && livres <= 0}
+          >
             <UserPlus className="size-4" aria-hidden />
             Adicionar participante
           </Button>
         ) : null}
+
       </div>
 
       {participants.length === 0 ? (

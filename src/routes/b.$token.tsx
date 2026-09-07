@@ -8,7 +8,7 @@ import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { quotaProgress } from "@/lib/pools/poolMath";
+import { noQuotaLimitLabel, quotaLabel, quotaProgress } from "@/lib/pools/poolMath";
 import { poolStatusLabel, poolStatusTone, type PoolStatus } from "@/types/domain";
 
 export const Route = createFileRoute("/b/$token")({
@@ -39,7 +39,7 @@ interface PublicSummary {
   drawDate: string | null;
   drawDatePlanned: boolean;
   status: PoolStatus;
-  totalQuotas: number;
+  totalQuotas: number | null;
   takenQuotas: number;
   participants: number;
   games: number;
@@ -79,6 +79,7 @@ function PublicPoolPage() {
 
   const config = getLotteryConfig(pool.lotterySlug);
   const progress = quotaProgress(pool.totalQuotas, pool.takenQuotas);
+  const semLimite = pool.totalQuotas === null;
 
   return (
     <main className="mx-auto max-w-lg space-y-4 p-4" data-lottery={config?.colorKey}>
@@ -95,22 +96,26 @@ function PublicPoolPage() {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-text-secondary">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
             <span>
-              {pool.takenQuotas}/{pool.totalQuotas} cotas preenchidas
+              {semLimite
+                ? `${pool.takenQuotas} ${pool.takenQuotas === 1 ? "cota atribuída" : "cotas atribuídas"} · ${noQuotaLimitLabel}`
+                : `${quotaLabel(pool.totalQuotas, pool.takenQuotas)} cotas preenchidas`}
             </span>
             <span>{formatCurrency(pool.quotaValue)} por cota</span>
           </div>
-          <div
-            className="h-2 overflow-hidden rounded-full bg-surface-secondary"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Cotas preenchidas"
-          >
-            <div className="h-full rounded-full bg-lottery" style={{ width: `${progress}%` }} />
-          </div>
+          {semLimite ? null : (
+            <div
+              className="h-2 overflow-hidden rounded-full bg-surface-secondary"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Cotas preenchidas"
+            >
+              <div className="h-full rounded-full bg-lottery" style={{ width: `${progress}%` }} />
+            </div>
+          )}
         </div>
 
         <dl className="grid grid-cols-2 gap-3 text-sm">

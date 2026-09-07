@@ -40,11 +40,13 @@ function NewPoolPage() {
   const [contest, setContest] = useState("");
   const [drawDate, setDrawDate] = useState("");
   const [quotaValue, setQuotaValue] = useState("");
-  const [totalQuotas, setTotalQuotas] = useState("10");
+  const [totalQuotas, setTotalQuotas] = useState("");
   const [deadline, setDeadline] = useState("");
   const [notes, setNotes] = useState("");
 
-  const total = Number(quotaValue) * Number(totalQuotas);
+  const parsedTotal = totalQuotas.trim() === "" ? null : Number(totalQuotas);
+  const total = parsedTotal === null ? 0 : Number(quotaValue) * parsedTotal;
+
 
   const create = useMutation({
     mutationFn: () =>
@@ -55,7 +57,7 @@ function NewPoolPage() {
         contestNumber: contest ? Number(contest) : null,
         drawDate: drawDate || null,
         quotaValue: Number(quotaValue),
-        totalQuotas: Number(totalQuotas),
+        totalQuotas: parsedTotal,
         paymentDeadline: deadline || null,
         notes: notes.trim() || null,
       }),
@@ -83,10 +85,11 @@ function NewPoolPage() {
       toast.error("O valor da cota deve ser maior que zero.");
       return;
     }
-    if (!Number.isInteger(Number(totalQuotas)) || Number(totalQuotas) < 1) {
-      toast.error("O total de cotas deve ser um número inteiro maior que zero.");
+    if (parsedTotal !== null && (!Number.isInteger(parsedTotal) || parsedTotal < 1)) {
+      toast.error("Deixe o total de cotas em branco ou informe um número inteiro maior que zero.");
       return;
     }
+
     create.mutate();
   };
 
@@ -167,15 +170,23 @@ function NewPoolPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pool-total-quotas">Total de cotas</Label>
+            <Label htmlFor="pool-total-quotas">
+              Total de cotas <span className="text-text-secondary">(opcional)</span>
+            </Label>
             <Input
               id="pool-total-quotas"
               className="h-11"
               inputMode="numeric"
+              placeholder="Sem limite"
               value={totalQuotas}
               onChange={(event) => setTotalQuotas(event.target.value)}
+              aria-describedby="pool-total-quotas-help"
             />
+            <p id="pool-total-quotas-help" className="text-xs text-text-secondary">
+              Deixe em branco se o bolão não tiver uma quantidade máxima de cotas.
+            </p>
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="pool-deadline">Prazo de pagamento</Label>
             <Input

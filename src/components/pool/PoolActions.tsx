@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Link as LinkIcon, Share2 } from "lucide-react";
+import { Copy, Link as LinkIcon, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -82,10 +82,49 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" className="h-11" onClick={() => void share()}>
-        <Share2 className="size-4" aria-hidden />
-        Compartilhar
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-11">
+            <Share2 className="size-4" aria-hidden />
+            Compartilhar
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => void share()}>
+            <Share2 className="size-4" aria-hidden />
+            Compartilhar…
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() =>
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent(shareText(pool, publicUrl))}`,
+                "_blank",
+                "noopener",
+              )
+            }
+          >
+            <MessageCircle className="size-4" aria-hidden />
+            Enviar pelo WhatsApp
+          </DropdownMenuItem>
+          {publicUrl ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                void navigator.clipboard.writeText(publicUrl);
+                toast.success("Link copiado");
+              }}
+            >
+              <Copy className="size-4" aria-hidden />
+              Copiar link público
+            </DropdownMenuItem>
+          ) : canManage ? (
+            <DropdownMenuItem onSelect={() => publicMutation.mutate(true)}>
+              <LinkIcon className="size-4" aria-hidden />
+              Criar link público
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
 
       {canManage ? (
         <DropdownMenu>

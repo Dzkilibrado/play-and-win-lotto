@@ -1298,7 +1298,7 @@ export type Database = {
           quota_value: number
           reopened_at: string | null
           status: Database["public"]["Enums"]["pool_status"]
-          total_quotas: number
+          total_quotas: number | null
           updated_at: string
         }
         Insert: {
@@ -1322,7 +1322,7 @@ export type Database = {
           quota_value?: number
           reopened_at?: string | null
           status?: Database["public"]["Enums"]["pool_status"]
-          total_quotas?: number
+          total_quotas?: number | null
           updated_at?: string
         }
         Update: {
@@ -1346,7 +1346,7 @@ export type Database = {
           quota_value?: number
           reopened_at?: string | null
           status?: Database["public"]["Enums"]["pool_status"]
-          total_quotas?: number
+          total_quotas?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -1566,6 +1566,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["pool_status"]
         }
         Returns: Database["public"]["Enums"]["pool_status"]
+      }
+      pool_update_details: {
+        Args: { _patch: Json; _pool_id: string }
+        Returns: undefined
       }
       recalc_participant_payment: {
         Args: { _participant_id: string }

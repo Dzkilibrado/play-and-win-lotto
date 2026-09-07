@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { MetricCard } from "@/components/common/Cards";
@@ -15,19 +16,26 @@ import { ParticipantsPanel } from "@/components/pool/ParticipantsPanel";
 import { PaymentDialog } from "@/components/pool/PaymentDialog";
 import { PoolActions } from "@/components/pool/PoolActions";
 import { PoolCountdown } from "@/components/pool/PoolCountdown";
+import { PoolEditDialog } from "@/components/pool/PoolEditDialog";
+import { PoolSectionNav } from "@/components/pool/PoolSectionNav";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { poolNotices } from "@/config/pools.config";
 import { useSession } from "@/hooks/useAuth";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { quotaProgress, remainingQuotas, summarizeFinance } from "@/lib/pools/poolMath";
+import {
+  noQuotaLimitLabel,
+  quotaLabel,
+  quotaProgress,
+  remainingQuotas,
+  summarizeFinance,
+} from "@/lib/pools/poolMath";
 import { poolService, type PoolParticipantRow } from "@/lib/services/poolService";
 import { validateListSearch } from "@/lib/searchFilters";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
 
-const tabs = [
+const sections = [
   { value: "overview", label: "Visão Geral" },
   { value: "participants", label: "Participantes" },
   { value: "games", label: "Jogos" },
@@ -56,6 +64,7 @@ function PoolDetailPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = useSession();
   const [payTarget, setPayTarget] = useState<PoolParticipantRow | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const pool = useQuery({ queryKey: ["pool", id], queryFn: () => poolService.get(id) });
   const participants = useQuery({
@@ -97,13 +106,30 @@ function PoolDetailPage() {
     })),
   );
 
+  const livres = remainingQuotas(data.total_quotas, finance.quotasTaken);
+  const semLimite = livres === null;
+  const section = search.tab ?? "overview";
+  const setSection = (value: string) =>
+    navigate({ search: (prev) => ({ ...prev, tab: value }) });
+
   return (
-    <div className="space-y-4" data-lottery={config?.colorKey}>
+    <div className="w-full min-w-0 space-y-4 overflow-x-hidden" data-lottery={config?.colorKey}>
       <PageHeader
         title={data.name}
         description={`${data.lotteries?.name ?? "—"} · ${contest ? `Concurso ${contest}` : "Concurso a definir"}`}
         actions={
           <>
+            {canManage ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil className="size-4" aria-hidden />
+                Editar bolão
+              </Button>
+            ) : null}
             <PoolActions pool={data} canManage={canManage} />
             <Button asChild variant="outline" size="sm" className="h-11">
               <Link to="/pools">Voltar</Link>
@@ -129,56 +155,60 @@ function PoolDetailPage() {
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <MetricCard
-            label="Cotas"
-            value={`${finance.quotasTaken}/${data.total_quotas}`}
+            label={semLimite ? "Cotas atribuídas" : "Cotas"}
+            value={quotaLabel(data.total_quotas, finance.quotasTaken)}
           />
-          <MetricCard label="Cotas livres" value={remainingQuotas(data.total_quotas, finance.quotasTaken)} />
+          <MetricCard
+            label={semLimite ? "Limite de cotas" : "Cotas livres"}
+            value={semLimite ? noQuotaLimitLabel : livres}
+          />
           <MetricCard label="Recebido" value={formatCurrency(finance.totalPaid)} />
           <MetricCard label="Em aberto" value={formatCurrency(finance.totalOutstanding)} />
         </div>
 
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
-          role="progressbar"
-          aria-valuenow={quotaProgress(data.total_quotas, finance.quotasTaken)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Cotas preenchidas"
-        >
+        {semLimite ? null : (
           <div
-            className="h-full rounded-full bg-lottery"
-            style={{ width: `${quotaProgress(data.total_quotas, finance.quotasTaken)}%` }}
-          />
-        </div>
+            className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
+            role="progressbar"
+            aria-valuenow={quotaProgress(data.total_quotas, finance.quotasTaken)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Cotas preenchidas"
+          >
+            <div
+              className="h-full rounded-full bg-lottery"
+              style={{ width: `${quotaProgress(data.total_quotas, finance.quotasTaken)}%` }}
+            />
+          </div>
+        )}
 
         {data.is_public ? (
           <p className="text-xs text-text-secondary">{poolNotices.publicLink}</p>
         ) : null}
       </div>
 
-      <Tabs
-        value={search.tab ?? "overview"}
-        onValueChange={(value) => navigate({ search: (prev) => ({ ...prev, tab: value }) })}
-      >
-        <div className="-mx-4 overflow-x-auto px-4">
-          <TabsList className="w-max">
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+      <PoolSectionNav sections={sections} value={section} onChange={setSection} />
 
-        <TabsContent value="overview" className="mt-4 space-y-3">
+      <div className="min-w-0">
+        {section === "overview" ? (
           <div className="surface-card space-y-2 p-4 text-sm">
             <p className="text-text-secondary">
               Valor da cota: <strong className="text-text-primary">{formatCurrency(data.quota_value)}</strong>
             </p>
             <p className="text-text-secondary">
-              Arrecadação prevista:{" "}
+              Limite de cotas:{" "}
               <strong className="text-text-primary">
-                {formatCurrency(data.quota_value * data.total_quotas)}
+                {semLimite ? noQuotaLimitLabel : data.total_quotas}
+              </strong>
+            </p>
+            <p className="text-text-secondary">
+              {semLimite ? "Arrecadação confirmada até agora: " : "Arrecadação prevista: "}
+              <strong className="text-text-primary">
+                {formatCurrency(
+                  semLimite
+                    ? data.quota_value * finance.quotasTaken
+                    : data.quota_value * (data.total_quotas ?? 0),
+                )}
               </strong>
             </p>
             <p className="text-text-secondary">
@@ -187,10 +217,10 @@ function PoolDetailPage() {
             </p>
             {data.notes ? <p className="text-text-secondary">{data.notes}</p> : null}
           </div>
-        </TabsContent>
+        ) : null}
 
-        <TabsContent value="participants" className="mt-4">
-          {participants.isLoading ? (
+        {section === "participants" ? (
+          participants.isLoading ? (
             <LoadingState rows={3} />
           ) : (
             <ParticipantsPanel
@@ -199,31 +229,25 @@ function PoolDetailPage() {
               canManage={canManage}
               onPay={setPayTarget}
             />
-          )}
-        </TabsContent>
+          )
+        ) : null}
 
-        <TabsContent value="games" className="mt-4">
-          <GamesPanel pool={data} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="finance" className="mt-4">
+        {section === "games" ? <GamesPanel pool={data} canManage={canManage} /> : null}
+        {section === "finance" ? (
           <FinancePanel pool={data} participants={rows} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="result" className="mt-4">
+        ) : null}
+        {section === "result" ? (
           <DistributionPanel pool={data} participants={rows} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="documents" className="mt-4">
-          <DocumentsPanel poolId={data.id} />
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-4">
-          <HistoryPanel poolId={data.id} />
-        </TabsContent>
-      </Tabs>
+        ) : null}
+        {section === "documents" ? <DocumentsPanel poolId={data.id} /> : null}
+        {section === "history" ? <HistoryPanel poolId={data.id} /> : null}
+      </div>
 
       <PaymentDialog poolId={data.id} participant={payTarget} onClose={() => setPayTarget(null)} />
+      {canManage ? (
+        <PoolEditDialog pool={data} open={editing} onOpenChange={setEditing} />
+      ) : null}
     </div>
   );
 }
+

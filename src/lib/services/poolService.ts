@@ -52,7 +52,7 @@ export interface PoolRow {
   draw_date_planned: string | null;
   name: string;
   quota_value: number;
-  total_quotas: number;
+  total_quotas: number | null;
   payment_deadline: string | null;
   status: PoolStatus;
   notes: string | null;
@@ -87,10 +87,24 @@ export interface CreatePoolInput {
   contestNumber: number | null;
   drawDate: string | null;
   quotaValue: number;
-  totalQuotas: number;
+  /** `null` = bolão sem limite de cotas definido. */
+  totalQuotas: number | null;
   paymentDeadline: string | null;
   notes: string | null;
 }
+
+/** Campos que o organizador pode corrigir depois da criação. */
+export interface UpdatePoolInput {
+  name?: string;
+  lotteryId?: string;
+  contestNumber?: number | null;
+  drawDate?: string | null;
+  quotaValue?: number;
+  totalQuotas?: number | null;
+  paymentDeadline?: string | null;
+  notes?: string | null;
+}
+
 
 export interface DistributionRow {
   id: string;
@@ -177,10 +191,28 @@ export const poolService = {
     return data.id;
   },
 
-  async update(id: string, patch: Partial<Pick<PoolRow, "name" | "notes" | "payment_deadline" | "total_quotas" | "quota_value">>) {
-    const { error } = await supabase.from("pools").update(patch).eq("id", id);
+  /**
+   * Edição do bolão. Toda a validação (permissão, limite de cotas, concurso,
+   * modalidade, situação) e o histórico ficam na função protegida do banco.
+   */
+  async update(id: string, input: UpdatePoolInput) {
+    const patch: Record<string, string | number | null> = {};
+    if (input.name !== undefined) patch["name"] = input.name;
+    if (input.lotteryId !== undefined) patch["lottery_id"] = input.lotteryId;
+    if (input.contestNumber !== undefined) patch["contest_number"] = input.contestNumber;
+    if (input.drawDate !== undefined) patch["draw_date"] = input.drawDate;
+    if (input.quotaValue !== undefined) patch["quota_value"] = input.quotaValue;
+    if (input.totalQuotas !== undefined) patch["total_quotas"] = input.totalQuotas;
+    if (input.paymentDeadline !== undefined) patch["payment_deadline"] = input.paymentDeadline;
+    if (input.notes !== undefined) patch["notes"] = input.notes;
+
+    const { error } = await supabase.rpc("pool_update_details", {
+      _pool_id: id,
+      _patch: patch,
+    });
     if (error) throw error;
   },
+
 
   async setStatus(poolId: string, status: PoolStatus, reason?: string) {
     const { error } = await supabase.rpc("pool_set_status", {
