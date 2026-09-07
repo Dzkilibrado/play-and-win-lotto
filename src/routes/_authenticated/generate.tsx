@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
@@ -110,6 +111,8 @@ function GeneratePage() {
   const lastNumbers = lastDraw?.draw_numbers?.map((item) => item.number) ?? null;
   const nextContest = lastDraw?.next_contest_number ?? (lastDraw ? lastDraw.contest_number + 1 : null);
 
+  const [pendingLottery, setPendingLottery] = useState<LotterySlug | null>(null);
+
   const changeLottery = (next: LotterySlug) => {
     const nextRules = resolveRules(next)!;
     setSlug(next);
@@ -122,6 +125,22 @@ function GeneratePage() {
     setMetrics(null);
     setSavedKeys([]);
     void navigate({ search: (prev) => ({ ...prev, lottery: next }) });
+  };
+
+  /** Opções que seriam perdidas ao trocar de modalidade. */
+  const hasOptionalConfig =
+    fixed.length > 0 ||
+    excluded.length > 0 ||
+    Object.values(filters).some((state) => state?.enabled) ||
+    weightSelection.strategyId !== "none";
+
+  const requestLotteryChange = (next: LotterySlug) => {
+    if (next === slug) return;
+    if (!hasOptionalConfig) {
+      changeLottery(next);
+      return;
+    }
+    setPendingLottery(next);
   };
 
   /**
@@ -265,6 +284,29 @@ function GeneratePage() {
   }, [filters, filterContext]);
 
   const activeFilterCount = activeFilterIds(filters).length;
+
+  /**
+   * Cada problema aparece uma única vez, junto da opção que o originou.
+   * O resumo só recebe os problemas que não têm quadro próprio.
+   */
+  const pendingTargets = useMemo(() => {
+    const targets: { id: string; label: string }[] = [];
+    if (validation.issues.some((issue) => issue.code === "TOO_MANY_FIXED")) {
+      targets.push({ id: "fixos-card", label: "Números fixos" });
+    }
+    if (validation.issues.some((issue) => issue.code === "FILTER")) {
+      targets.push({ id: "filtros-card", label: "Filtros" });
+    }
+    return targets;
+  }, [validation.issues]);
+
+  const summaryIssues = validation.issues.filter(
+    (issue) => issue.code !== "TOO_MANY_FIXED" && issue.code !== "FILTER",
+  );
+
+  const focusCard = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handleGenerate = async () => {
     if (generating) return;
@@ -436,7 +478,7 @@ function GeneratePage() {
                     role="tab"
                     aria-selected={item.slug === slug}
                     data-lottery={item.colorKey}
-                    onClick={() => changeLottery(item.slug)}
+                    onClick={() => requestLotteryChange(item.slug)}
                     className={cn(
                       "touch-target rounded-full px-4 text-sm font-medium transition-colors",
                       item.slug === slug
@@ -510,6 +552,7 @@ function GeneratePage() {
           </section>
 
           <div className="grid gap-4 lg:grid-cols-2">
+            <div id="fixos-card" className="scroll-mt-24">
             <NumberSelectionCard
               label="4. Fixar números (opcional)"
               drawerTitle="Fixar números"
@@ -524,15 +567,21 @@ function GeneratePage() {
               locked={excluded}
               excludedMarks={excluded}
               limit={numbersCount}
-              notice={
+              notice={(openDrawer) =>
                 fixed.length > numbersCount ? (
-                  <p className="rounded-lg bg-warning-soft p-3 text-xs text-warning">
-                    Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
-                    {numbersCount} dezenas. Ajuste os fixos ou a quantidade de dezenas.
-                  </p>
+                  <div className="space-y-2 rounded-lg bg-warning-soft p-3">
+                    <p className="text-xs text-warning">
+                      Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
+                      {numbersCount} dezenas.
+                    </p>
+                    <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
+                      Editar números fixos
+                    </Button>
+                  </div>
                 ) : null
               }
             />
+            </div>
 
             <NumberSelectionCard
               label="5. Excluir números (opcional)"
@@ -555,6 +604,7 @@ function GeneratePage() {
           </div>
 
 
+          <div id="filtros-card" className="scroll-mt-24">
           <GenerationFilters
             states={filters}
             onChange={(next) => {
@@ -566,6 +616,7 @@ function GeneratePage() {
             issuesByFilter={issuesByFilter}
             previousDrawLabel={previousDrawLabel}
           />
+          </div>
 
           <section className="surface-card space-y-3 p-4">
             <Label>7. Concurso (opcional)</Label>
@@ -670,11 +721,30 @@ function GeneratePage() {
             ) : null}
 
             {!validation.ok ? (
-              <ul className="space-y-1 rounded-lg bg-danger-soft p-3 text-xs text-danger">
-                {validation.issues.map((issue, index) => (
-                  <li key={`${issue.code}-${index}`}>{issue.message}</li>
-                ))}
-              </ul>
+              <div className="space-y-2 rounded-lg bg-danger-soft p-3 text-xs text-danger">
+                {summaryIssues.length ? (
+                  <ul className="space-y-1">
+                    {summaryIssues.map((issue, index) => (
+                      <li key={`${issue.code}-${index}`}>{issue.message}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {pendingTargets.length ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">Configuração precisa de ajuste:</span>
+                    {pendingTargets.map((target) => (
+                      <button
+                        key={target.id}
+                        type="button"
+                        onClick={() => focusCard(target.id)}
+                        className="rounded-full bg-surface px-3 py-1 font-medium text-danger underline-offset-4 hover:underline"
+                      >
+                        {target.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <p className="text-xs text-text-secondary">
                 {formatNumber(validation.possibilities)} jogos diferentes são possíveis com esta
@@ -712,6 +782,20 @@ function GeneratePage() {
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={pendingLottery !== null}
+        onOpenChange={(next) => (next ? undefined : setPendingLottery(null))}
+        title="Trocar modalidade?"
+        description="Você possui opções de geração configuradas. Ao trocar de modalidade, números fixos, números excluídos, filtros e pesos serão limpos."
+        cancelLabel="Continuar nesta modalidade"
+        confirmLabel="Trocar e limpar"
+        onConfirm={() => {
+          const next = pendingLottery;
+          setPendingLottery(null);
+          if (next) changeLottery(next);
+        }}
+      />
     </div>
   );
 }
