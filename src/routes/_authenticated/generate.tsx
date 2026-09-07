@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
 import { SmartWeights, describeWeightSelection } from "@/components/lottery/SmartWeights";
-import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
+import { NumberSelectionCard } from "@/components/lottery/NumberSelectionCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
@@ -143,29 +143,6 @@ function GeneratePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferences.loading, preferences.favoriteSlug]);
-
-  const toggleFixed = (value: number) => {
-    // Uma dezena excluída não pode virar fixa por toque: o usuário desfaz a exclusão antes.
-    if (excluded.includes(value)) return;
-    setGames(null);
-    setFixed((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value].sort((a, b) => a - b),
-    );
-  };
-
-  const toggleExcluded = (value: number) => {
-    // Dezenas fixas nem aparecem neste quadro; a guarda evita troca implícita.
-    if (fixed.includes(value)) return;
-    setGames(null);
-    setExcluded((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value].sort((a, b) => a - b),
-    );
-  };
-
 
   const universeSize = rules.universe.max - rules.universe.min + 1;
   const availableCount = universeSize - fixed.length - excluded.length;
@@ -533,54 +510,50 @@ function GeneratePage() {
           </section>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <section className="surface-card space-y-3 p-4">
-              <Label>4. Dezenas fixas (opcional)</Label>
-              <p className="text-xs text-text-secondary">
-                Estas dezenas aparecem em todos os jogos criados. Dezenas já excluídas ficam
-                bloqueadas aqui: retire da exclusão para poder fixar.
-              </p>
-              <p className="text-xs text-text-secondary">
-                Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
-                {availableCount}
-              </p>
-              <LotteryNumberGrid
-                rules={rules}
-                fixed={fixed}
-                excluded={excluded}
-                locked={excluded}
-                onSelect={toggleFixed}
-              />
-              {fixed.length > 0 ? (
-                <Button variant="ghost" size="sm" onClick={() => setFixed([])}>
-                  Limpar dezenas fixas
-                </Button>
-              ) : null}
-            </section>
+            <NumberSelectionCard
+              label="4. Fixar números (opcional)"
+              drawerTitle="Fixar números"
+              description="Escolha dezenas que deverão estar em todos os jogos."
+              drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
+              value={fixed}
+              onChange={(next) => {
+                setFixed(next);
+                setGames(null);
+              }}
+              rules={rules}
+              locked={excluded}
+              excludedMarks={excluded}
+              limit={numbersCount}
+              notice={
+                fixed.length > numbersCount ? (
+                  <p className="rounded-lg bg-warning-soft p-3 text-xs text-warning">
+                    Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
+                    {numbersCount} dezenas. Ajuste os fixos ou a quantidade de dezenas.
+                  </p>
+                ) : null
+              }
+            />
 
-            <section className="surface-card space-y-3 p-4">
-              <Label>5. Dezenas excluídas (opcional)</Label>
-              <p className="text-xs text-text-secondary">
-                Estas dezenas nunca aparecem nos jogos criados. Dezenas fixadas não aparecem
-                nesta lista.
-              </p>
-              <p className="text-xs text-text-secondary">
-                Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
-                {availableCount}
-              </p>
-              <LotteryNumberGrid
-                rules={rules}
-                excluded={excluded}
-                hidden={fixed}
-                onSelect={toggleExcluded}
-              />
-
-              {excluded.length > 0 ? (
-                <Button variant="ghost" size="sm" onClick={() => setExcluded([])}>
-                  Limpar dezenas excluídas
-                </Button>
-              ) : null}
-            </section>
+            <NumberSelectionCard
+              label="5. Excluir números (opcional)"
+              drawerTitle="Excluir números"
+              description="Escolha dezenas que não poderão aparecer nos jogos."
+              drawerDescription="Selecione as dezenas que não devem aparecer nos jogos. Dezenas fixas não aparecem aqui."
+              value={excluded}
+              onChange={(next) => {
+                setExcluded(next);
+                setGames(null);
+              }}
+              rules={rules}
+              hidden={fixed}
+              notice={
+                <p className="text-xs text-text-secondary">
+                  Disponíveis para sorteio: {availableCount} de {universeSize} dezenas.
+                </p>
+              }
+            />
           </div>
+
 
           <GenerationFilters
             states={filters}
@@ -670,6 +643,16 @@ function GeneratePage() {
                 </p>
               </div>
             </div>
+
+            <p className="text-xs text-text-secondary [overflow-wrap:anywhere]">
+              {gamesCount} {gamesCount === 1 ? "jogo" : "jogos"} · {numbersCount} dezenas ·{" "}
+              {fixed.length} {fixed.length === 1 ? "fixa" : "fixas"} · {excluded.length}{" "}
+              {excluded.length === 1 ? "excluída" : "excluídas"} · {activeFilterCount}{" "}
+              {activeFilterCount === 1 ? "filtro" : "filtros"} ·{" "}
+              {describeWeightSelection(weightSelection)}
+            </p>
+
+
 
             <button
               type="button"
