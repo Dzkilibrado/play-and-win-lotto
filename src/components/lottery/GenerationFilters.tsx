@@ -82,6 +82,8 @@ export function GenerationFilters({
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<FilterId | null>(null);
   const active = activeFilterIds(states);
+  const enabledIds = filterIds.filter((id) => states[id].enabled);
+  const incomplete = enabledIds.filter((id) => !active.includes(id));
   const chips = describeFilters(states, context);
 
   const update = <K extends FilterId>(id: K, patch: Partial<FilterStates[K]["config"]>) => {
@@ -308,6 +310,9 @@ export function GenerationFilters({
             {active.length === 0
               ? "Nenhum filtro ativo"
               : `Filtros ativos: ${active.length}`}
+            {incomplete.length
+              ? ` · ${incomplete.length} ${incomplete.length === 1 ? "ligado sem valor definido" : "ligados sem valores definidos"}`
+              : ""}
           </p>
         </div>
         <Button variant="outline" size="sm" className="h-11" onClick={() => setOpen(true)}>
@@ -390,6 +395,11 @@ export function GenerationFilters({
                         aria-label={`Ativar filtro ${definition.label}`}
                       />
                     </div>
+                    {state.enabled && !active.includes(id) && !isOpen ? (
+                      <p className="px-3 pb-3 text-xs text-warning">
+                        Ligado, mas ainda sem valores definidos — toque para configurar.
+                      </p>
+                    ) : null}
                     {isOpen ? (
                       <div className="space-y-2 border-t border-border p-3">
                         {renderConfig(id)}
