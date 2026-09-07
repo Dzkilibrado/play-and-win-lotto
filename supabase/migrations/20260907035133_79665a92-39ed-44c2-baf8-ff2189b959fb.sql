@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.guard_generated_games_fields() FROM PUBLIC, anon, authenticated;
