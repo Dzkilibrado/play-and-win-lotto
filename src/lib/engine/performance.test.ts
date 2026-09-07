@@ -9,11 +9,12 @@
 import { describe, expect, it } from "vitest";
 
 import { defaultFilterStates } from "./filters";
+import type { FilterStates } from "./filters/types";
 import { generateGames } from "./generator";
 import { seededRandomSource } from "./random";
-import type { FilterStates, GenerationWeights } from "./types";
+import type { GenerationWeights } from "./types";
 
-function weightsFor(slug: string, universe: number): GenerationWeights {
+function weightsFor(universe: number): GenerationWeights {
   const numbers = Array.from({ length: universe }, (_, index) => index + 1);
   return {
     strategyId: "hybrid",
@@ -24,12 +25,9 @@ function weightsFor(slug: string, universe: number): GenerationWeights {
     numbers,
     // Perfil de pesos com razão ~6:1, como o teto aprovado da Fase 3C.
     values: numbers.map((value) => 0.5 + ((value * 7) % 13) * (2.5 / 13)),
-  } satisfies GenerationWeights & { strategyId: string } as GenerationWeights & {
-    lotterySlug?: string;
-  } extends never
-    ? never
-    : GenerationWeights;
+  };
 }
+
 
 interface Run {
   generated: number;
