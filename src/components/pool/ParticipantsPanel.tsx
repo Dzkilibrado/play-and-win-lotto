@@ -108,10 +108,11 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       toast.error("A quantidade de cotas deve ser um número inteiro maior que zero.");
       return;
     }
-    if (parsedQuotas > livres) {
+    if (livres !== null && parsedQuotas > livres) {
       toast.error(`Restam apenas ${livres} cotas neste bolão.`);
       return;
     }
+
     if (Number(adjustment) !== 0 && !adjustmentReason.trim()) {
       toast.error("Informe o motivo do ajuste de valor.");
       return;
