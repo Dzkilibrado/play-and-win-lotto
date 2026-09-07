@@ -70,7 +70,7 @@ export function LotteryCard({
           <Button asChild size="sm" variant="secondary" className="h-10">
             <Link to="/generate" search={{ lottery: lottery.slug }}>
               <Sparkles className="size-4" aria-hidden />
-              Gerar jogo
+              Criar jogo
             </Link>
           </Button>
           <Button asChild size="sm" variant="ghost" className="h-10">

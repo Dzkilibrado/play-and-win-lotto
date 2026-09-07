@@ -27,7 +27,7 @@ export interface NavItem {
 /** Navegação inferior no smartphone. */
 export const primaryNav: NavItem[] = [
   { label: "Início", to: "/dashboard", icon: Home },
-  { label: "Gerar", to: "/generate", icon: Sparkles, feature: "generator" },
+  { label: "Criar", to: "/generate", icon: Sparkles, feature: "generator" },
   { label: "Meus Jogos", to: "/games", icon: ListChecks },
   { label: "Bolões", to: "/pools", icon: Users, feature: "pools" },
 ];
