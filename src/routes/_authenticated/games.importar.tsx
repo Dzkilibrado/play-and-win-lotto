@@ -65,6 +65,7 @@ function ImportGamePage() {
   const [kind, setKind] = useState<PhotoDocumentKind>("UNKNOWN");
   const [slug, setSlug] = useState<LotterySlug | "">("");
   const [contestText, setContestText] = useState("");
+  const [dateText, setDateText] = useState("");
   const [numbers, setNumbers] = useState<number[]>([]);
   const [readingNotes, setReadingNotes] = useState<string | null>(null);
   const [uncertain, setUncertain] = useState<string[]>([]);
@@ -82,6 +83,18 @@ function ImportGamePage() {
   const situation: ContestSituation = hasContest
     ? (contestQuery.data?.situation ?? "unknown")
     : "unknown";
+
+  const nextContestQuery = useQuery({
+    queryKey: ["import-next-contest", slug],
+    enabled: Boolean(slug),
+    queryFn: () => lotteryDataService.getNextContest(slug as string),
+  });
+
+  const byDateQuery = useQuery({
+    queryKey: ["import-contest-by-date", slug, dateText],
+    enabled: Boolean(slug) && /^\d{4}-\d{2}-\d{2}$/.test(dateText),
+    queryFn: () => lotteryDataService.findContestsByDate(slug as string, dateText),
+  });
 
   const lotteriesQuery = useQuery({
     queryKey: ["lotteries"],
@@ -107,14 +120,19 @@ function ImportGamePage() {
         `A ${rules.name} aceita de ${rules.selectable.min} a ${rules.selectable.max} dezenas. Você marcou ${numbers.length}.`,
       );
     }
-    if (kind === "RECEIPT" && !hasContest) {
-      list.push("Informe o número do concurso do comprovante.");
+    // Canhoto e comprovante exigem o concurso confirmado por você antes de salvar.
+    if (!hasContest) {
+      list.push("Informe e confirme o concurso deste jogo.");
+    }
+    if (hasContest && kind === "TICKET" && situation === "drawn") {
+      list.push("Este concurso já foi sorteado. Escolha um concurso futuro para o canhoto.");
     }
     return list;
-  }, [config, rules, numbers, kind, hasContest]);
+  }, [config, rules, numbers, kind, hasContest, situation]);
 
   const suggestedStatus: GameStatus =
     kind === "RECEIPT" ? statusForReceipt(situation) : ("PLANNED" as GameStatus);
+
 
   const onPick = async (picked: File | null) => {
     setFileError(null);
