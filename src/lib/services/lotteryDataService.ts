@@ -167,6 +167,28 @@ export const lotteryDataService = {
 
 
   /**
+   * Concurso oficial imediatamente anterior a um concurso de referência.
+   * Usado pelo filtro "Repetidas do concurso anterior": nunca é o "último
+   * sorteio disponível" quando o jogo é para um concurso futuro específico.
+   * `before = null` significa "último concurso já sorteado".
+   */
+  async getPreviousDraw(lotterySlug: string, before: number | null) {
+    let query = supabase
+      .from("lottery_draws")
+      .select("contest_number, draw_numbers(number), lotteries!inner(slug)")
+      .eq("lotteries.slug", lotterySlug)
+      .order("contest_number", { ascending: false })
+      .limit(1);
+    if (before != null) query = query.lt("contest_number", before);
+
+    const { data, error } = await query.maybeSingle();
+    if (error) throw error;
+    const numbers = (data?.draw_numbers ?? []).map((item) => item.number);
+    if (!data || numbers.length === 0) return null;
+    return { contestNumber: data.contest_number, numbers };
+  },
+
+  /**
    * Situação de um concurso para vincular a um jogo:
    * já sorteado, ainda pendente ou desconhecido pelo nosso banco.
    */
