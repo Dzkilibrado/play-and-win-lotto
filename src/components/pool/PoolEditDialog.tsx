@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,6 +56,7 @@ export function PoolEditDialog({
   );
   const [deadline, setDeadline] = useState(pool.payment_deadline ?? "");
   const [notes, setNotes] = useState(pool.notes ?? "");
+  const [confirmStep, setConfirmStep] = useState<"remove-limit" | "quota-value" | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -76,6 +78,8 @@ export function PoolEditDialog({
 
   const parsedTotal = totalQuotas.trim() === "" ? null : Number(totalQuotas);
   const parsedQuota = Number(quotaValue);
+  const needsQuotaValueConfirm =
+    structural && parsedQuota !== Number(pool.quota_value) && active.length > 0;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -95,12 +99,16 @@ export function PoolEditDialog({
       }),
     onSuccess: () => {
       toast.success("Bolão atualizado");
+      setConfirmStep(null);
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools"] });
       onOpenChange(false);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      setConfirmStep(null);
+      toast.error(error.message);
+    },
   });
 
   const submit = () => {
@@ -124,19 +132,22 @@ export function PoolEditDialog({
         return;
       }
       if (parsedTotal === null && pool.total_quotas !== null) {
-        const ok = window.confirm(
-          "Ao remover o limite, o bolão passa a aceitar cotas sem um máximo e os indicadores de cotas disponíveis deixam de existir. Confirmar?",
-        );
-        if (!ok) return;
+        setConfirmStep("remove-limit");
+        return;
       }
-      if (parsedQuota !== Number(pool.quota_value) && active.length > 0) {
-        const ok = window.confirm(
-          hasPayments
-            ? `O valor devido de cada participante será recalculado com ${formatCurrency(parsedQuota)} por cota. Os pagamentos já registrados são preservados e a situação de pagamento pode mudar. Confirmar?`
-            : `O valor devido de cada participante será recalculado com ${formatCurrency(parsedQuota)} por cota. Confirmar?`,
-        );
-        if (!ok) return;
+      if (needsQuotaValueConfirm) {
+        setConfirmStep("quota-value");
+        return;
       }
+    }
+    mutation.mutate();
+  };
+
+  const afterRemoveLimit = () => {
+    setConfirmStep(null);
+    if (needsQuotaValueConfirm) {
+      setConfirmStep("quota-value");
+      return;
     }
     mutation.mutate();
   };
@@ -279,6 +290,33 @@ export function PoolEditDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        open={confirmStep === "remove-limit"}
+        onOpenChange={(next) => (!next ? setConfirmStep(null) : undefined)}
+        title="Remover limite de cotas?"
+        description="O bolão passa a aceitar cotas sem um máximo e os indicadores de cotas disponíveis deixam de aparecer."
+        confirmLabel="Remover limite"
+        cancelLabel="Manter limite"
+        destructive
+        loading={mutation.isPending}
+        onConfirm={afterRemoveLimit}
+      />
+
+      <ConfirmDialog
+        open={confirmStep === "quota-value"}
+        onOpenChange={(next) => (!next ? setConfirmStep(null) : undefined)}
+        title="Alterar o valor da cota?"
+        description={
+          hasPayments
+            ? `O valor devido de cada participante será recalculado com ${formatCurrency(parsedQuota)} por cota. Os pagamentos já registrados são preservados e a situação de pagamento pode mudar.`
+            : `O valor devido de cada participante será recalculado com ${formatCurrency(parsedQuota)} por cota.`
+        }
+        confirmLabel="Alterar valor"
+        cancelLabel="Voltar"
+        loading={mutation.isPending}
+        onConfirm={() => mutation.mutate()}
+      />
     </Dialog>
   );
 }

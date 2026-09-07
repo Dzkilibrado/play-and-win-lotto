@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { noQuotaLimitLabel, quotaLabel, quotaProgress } from "@/lib/pools/poolMath";
+import { formatDate } from "@/lib/format";
+import { noQuotaLimitLabel, quotaProgress } from "@/lib/pools/poolMath";
 import { poolStatusLabel, poolStatusTone, type PoolStatus } from "@/types/domain";
 
 export const Route = createFileRoute("/b/$token")({
@@ -40,10 +40,12 @@ interface PublicSummary {
   drawDatePlanned: boolean;
   status: PoolStatus;
   totalQuotas: number | null;
-  takenQuotas: number;
-  participants: number;
+  assignedQuotas: number;
+  paidQuotas: number;
+  confirmedParticipants: number;
+  availableQuotas: number | null;
   games: number;
-  quotaValue: number;
+  participants: { name: string; quotas: number }[];
 }
 
 function PublicPoolPage() {
@@ -78,8 +80,11 @@ function PublicPoolPage() {
   }
 
   const config = getLotteryConfig(pool.lotterySlug);
-  const progress = quotaProgress(pool.totalQuotas, pool.takenQuotas);
+  const progress = quotaProgress(pool.totalQuotas, pool.assignedQuotas);
   const semLimite = pool.totalQuotas === null;
+  const confirmados = [...(pool.participants ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name, "pt-BR"),
+  );
 
   return (
     <main className="mx-auto max-w-lg space-y-4 p-4" data-lottery={config?.colorKey}>
@@ -99,10 +104,14 @@ function PublicPoolPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
             <span>
               {semLimite
-                ? `${pool.takenQuotas} ${pool.takenQuotas === 1 ? "cota atribuída" : "cotas atribuídas"} · ${noQuotaLimitLabel}`
-                : `${quotaLabel(pool.totalQuotas, pool.takenQuotas)} cotas preenchidas`}
+                ? `Cotas pagas: ${pool.paidQuotas}`
+                : `Cotas pagas: ${pool.paidQuotas} de ${pool.totalQuotas}`}
             </span>
-            <span>{formatCurrency(pool.quotaValue)} por cota</span>
+            <span>
+              {semLimite
+                ? `Limite de cotas: ${noQuotaLimitLabel}`
+                : `Cotas disponíveis: ${pool.availableQuotas ?? 0}`}
+            </span>
           </div>
           {semLimite ? null : (
             <div
@@ -120,8 +129,8 @@ function PublicPoolPage() {
 
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-text-secondary">Participantes</dt>
-            <dd className="font-medium text-text-primary">{pool.participants}</dd>
+            <dt className="text-text-secondary">Participantes confirmados</dt>
+            <dd className="font-medium text-text-primary">{pool.confirmedParticipants}</dd>
           </div>
           <div>
             <dt className="text-text-secondary">Jogos</dt>
@@ -137,9 +146,27 @@ function PublicPoolPage() {
           </div>
         </dl>
 
+        {confirmados.length > 0 ? (
+          <div>
+            <h2 className="font-display text-sm font-semibold text-text-primary">
+              Participantes confirmados
+            </h2>
+            <ul className="mt-1 flex flex-wrap gap-1.5">
+              {confirmados.map((participant) => (
+                <li
+                  key={participant.name}
+                  className="rounded-full bg-surface-secondary px-3 py-1 text-xs text-text-secondary"
+                >
+                  {participant.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <p className="text-xs text-text-secondary">
-          Esta página mostra apenas a situação geral do bolão. Nomes, telefones e valores individuais
-          dos participantes não são exibidos.
+          Esta página mostra apenas a situação geral do bolão e o nome de quem já pagou.
+          Telefones, valores individuais e pagamentos não são exibidos.
         </p>
       </div>
 

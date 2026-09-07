@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Undo2, Wallet } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { MetricCard } from "@/components/common/Cards";
+import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { EmptyState } from "@/components/common/StateViews";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -25,14 +27,22 @@ export function FinancePanel({
     queryFn: () => poolService.payments(pool.id),
   });
 
+  const [correcting, setCorrecting] = useState<
+    { id: string; name: string; amount: number; paidAt: string | null } | null
+  >(null);
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+
   const cancelMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => poolService.cancelPayment(id, reason),
     onSuccess: () => {
       toast.success("Pagamento corrigido");
+      setCorrecting(null);
+      setCorrectionError(null);
       void queryClient.invalidateQueries({ queryKey: ["pool-payments", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pools"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => setCorrectionError(error.message),
   });
 
   const summary = summarizeFinance(
@@ -107,9 +117,13 @@ export function FinancePanel({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        const reason = window.prompt("Motivo da correção deste pagamento:");
-                        if (!reason?.trim()) return;
-                        cancelMutation.mutate({ id: payment.id, reason: reason.trim() });
+                        setCorrectionError(null);
+                        setCorrecting({
+                          id: payment.id,
+                          name: nameOf(payment.participant_id),
+                          amount: Number(payment.amount),
+                          paidAt: payment.paid_at,
+                        });
                       }}
                     >
                       <Undo2 className="size-4" aria-hidden />
@@ -122,6 +136,34 @@ export function FinancePanel({
           </ul>
         )}
       </div>
+
+      <ReasonDialog
+        open={correcting !== null}
+        onOpenChange={(next) => (!next ? setCorrecting(null) : undefined)}
+        title="Corrigir pagamento"
+        description="O pagamento deixa de contar no total recebido e a situação do participante é recalculada. O histórico guarda o registro da correção."
+        fieldLabel="Motivo da correção"
+        placeholder="Ex.: valor lançado em duplicidade."
+        confirmLabel="Corrigir pagamento"
+        cancelLabel="Voltar"
+        destructive
+        loading={cancelMutation.isPending}
+        error={correctionError}
+        details={
+          correcting ? (
+            <div className="rounded-lg bg-surface-secondary p-3 text-sm text-text-secondary">
+              <p className="text-text-primary">{correcting.name}</p>
+              <p>
+                {formatCurrency(correcting.amount)}
+                {correcting.paidAt ? ` · ${formatDate(correcting.paidAt)}` : ""}
+              </p>
+            </div>
+          ) : null
+        }
+        onConfirm={(reason) =>
+          correcting ? cancelMutation.mutate({ id: correcting.id, reason }) : undefined
+        }
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Ban, Plus, UserMinus, UserPlus, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { EmptyState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,10 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   const [adjustment, setAdjustment] = useState("0");
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<PoolParticipantRow | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [eligibilityTarget, setEligibilityTarget] = useState<PoolParticipantRow | null>(null);
+  const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
   const active = participants.filter((p) => p.status === "ACTIVE");
   const quotasTaken = active.reduce((sum, p) => sum + p.quotas, 0);
@@ -83,9 +88,11 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       poolService.cancelParticipant(id, reason),
     onSuccess: () => {
       toast.success("Participante cancelado");
+      setCancelTarget(null);
+      setCancelError(null);
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => setCancelError(error.message),
   });
 
   const eligibilityMutation = useMutation({
@@ -93,9 +100,14 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       poolService.setEligibility(id, eligible, reason),
     onSuccess: () => {
       toast.success("Participação no rateio atualizada");
+      setEligibilityTarget(null);
+      setEligibilityError(null);
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      if (eligibilityTarget) setEligibilityError(error.message);
+      else toast.error(error.message);
+    },
   });
 
   const submit = () => {
@@ -210,15 +222,8 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
                       size="sm"
                       onClick={() => {
                         if (participant.eligible_for_prize_share) {
-                          const reason = window.prompt(
-                            "Por que este participante fica fora do rateio?",
-                          );
-                          if (!reason?.trim()) return;
-                          eligibilityMutation.mutate({
-                            id: participant.id,
-                            eligible: false,
-                            reason: reason.trim(),
-                          });
+                          setEligibilityError(null);
+                          setEligibilityTarget(participant);
                         } else {
                           eligibilityMutation.mutate({ id: participant.id, eligible: true });
                         }
@@ -232,9 +237,8 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
                       size="sm"
                       className="text-danger"
                       onClick={() => {
-                        const reason = window.prompt("Motivo do cancelamento deste participante:");
-                        if (!reason?.trim()) return;
-                        cancelMutation.mutate({ id: participant.id, reason: reason.trim() });
+                        setCancelError(null);
+                        setCancelTarget(participant);
                       }}
                     >
                       <Ban className="size-4" aria-hidden />
@@ -329,6 +333,49 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReasonDialog
+        open={eligibilityTarget !== null}
+        onOpenChange={(next) => (!next ? setEligibilityTarget(null) : undefined)}
+        title="Tirar do rateio?"
+        description={
+          eligibilityTarget
+            ? `${eligibilityTarget.name} deixa de receber parte do prêmio. O rateio já calculado passa a ficar desatualizado e precisa ser recalculado.`
+            : ""
+        }
+        fieldLabel="Motivo"
+        placeholder="Ex.: não concluiu o pagamento."
+        confirmLabel="Tirar do rateio"
+        cancelLabel="Voltar"
+        loading={eligibilityMutation.isPending}
+        error={eligibilityError}
+        onConfirm={(reason) =>
+          eligibilityTarget
+            ? eligibilityMutation.mutate({ id: eligibilityTarget.id, eligible: false, reason })
+            : undefined
+        }
+      />
+
+      <ReasonDialog
+        open={cancelTarget !== null}
+        onOpenChange={(next) => (!next ? setCancelTarget(null) : undefined)}
+        title="Cancelar participante?"
+        description={
+          cancelTarget
+            ? `${cancelTarget.name} sai do bolão e do rateio. Os pagamentos já registrados são preservados no histórico.`
+            : ""
+        }
+        fieldLabel="Motivo do cancelamento"
+        placeholder="Ex.: desistiu de participar."
+        confirmLabel="Cancelar participante"
+        cancelLabel="Voltar"
+        destructive
+        loading={cancelMutation.isPending}
+        error={cancelError}
+        onConfirm={(reason) =>
+          cancelTarget ? cancelMutation.mutate({ id: cancelTarget.id, reason }) : undefined
+        }
+      />
     </div>
   );
 }
