@@ -114,6 +114,13 @@ export interface GenerationMetrics {
   durationMs: number;
   stopReason: GenerationStopReason;
   activeFilters: number;
+  /** Caminho usado pelo motor nesta execução (diagnóstico interno). */
+  samplingMode?:
+    | "uniform_enumeration"
+    | "uniform_sampling"
+    | "weighted_enumeration"
+    | "weighted_sampling";
+
   /** Diagnóstico da ponderação, quando houve estratégia ativa. */
   weights?: {
     strategyId: string;
