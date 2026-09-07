@@ -220,6 +220,7 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={eligibilityMutation.isPending}
                       onClick={() => {
                         if (participant.eligible_for_prize_share) {
                           setEligibilityError(null);

@@ -306,3 +306,14 @@
     background-color: var(--color-surface-secondary);
   }
 }
+
+/*
+ * Em telas de toque, qualquer botão tem altura confortável para o dedo,
+ * mesmo os compactos usados dentro de listas.
+ */
+@media (pointer: coarse) {
+  button:not([data-slot="checkbox"]):not([role="checkbox"]):not([role="switch"]),
+  [role="button"] {
+    min-height: 44px;
+  }
+}
