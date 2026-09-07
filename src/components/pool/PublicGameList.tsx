@@ -64,7 +64,8 @@ export function PublicGameList({
                   key={number}
                   value={number}
                   size="sm"
-                  variant={drawn.has(number) ? "hit" : "lottery"}
+                  // Só destacamos acerto depois da conferência oficial.
+                  variant={game.hits !== null && drawn.has(number) ? "hit" : "lottery"}
                 />
               ))}
             </div>
