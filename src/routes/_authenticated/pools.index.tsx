@@ -60,9 +60,22 @@ function PoolsPage() {
       }),
   });
 
-  const all = useQuery({ queryKey: ["pools", "all"], queryFn: () => poolService.list({}) });
+  /*
+   * Os indicadores no topo contam sempre todos os bolões. Quando nenhum filtro
+   * está aplicado, a listagem já traz exatamente essa mesma lista — buscar de
+   * novo faria a mesma consulta duas vezes a cada abertura da tela.
+   */
+  const hasFilters = (Object.entries(search) as [keyof ListSearch, string][]).some(
+    ([key, value]) => key !== "page" && key !== "sort" && Boolean(value),
+  );
+  const all = useQuery({
+    queryKey: ["pools", "all"],
+    queryFn: () => poolService.list({}),
+    enabled: hasFilters,
+  });
   const rows = pools.data ?? [];
-  const totals = all.data ?? [];
+  const totals = hasFilters ? (all.data ?? []) : rows;
+
 
   const countByStatus = (status: string) => totals.filter((pool) => pool.status === status).length;
   const pendingPayments = totals.filter((pool) =>
