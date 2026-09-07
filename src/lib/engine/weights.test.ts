@@ -276,7 +276,7 @@ describe("pesos com o gerador", () => {
 
   it("pesos não violam filtros, fixas nem excluídas", () => {
     const filters = defaultFilterStates();
-    filters.evenOdd = { enabled: true, config: { minEven: 2, maxEven: 4 } };
+    filters.parity = { enabled: true, config: { min: 2, max: 4 } };
     const outcome = generateGames(
       {
         lotterySlug: "mega-sena",
