@@ -40,11 +40,13 @@ function NewPoolPage() {
   const [contest, setContest] = useState("");
   const [drawDate, setDrawDate] = useState("");
   const [quotaValue, setQuotaValue] = useState("");
-  const [totalQuotas, setTotalQuotas] = useState("10");
+  const [totalQuotas, setTotalQuotas] = useState("");
   const [deadline, setDeadline] = useState("");
   const [notes, setNotes] = useState("");
 
-  const total = Number(quotaValue) * Number(totalQuotas);
+  const parsedTotal = totalQuotas.trim() === "" ? null : Number(totalQuotas);
+  const total = parsedTotal === null ? 0 : Number(quotaValue) * parsedTotal;
+
 
   const create = useMutation({
     mutationFn: () =>
