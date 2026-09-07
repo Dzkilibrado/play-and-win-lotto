@@ -184,14 +184,125 @@ export function generateGames(
 
   const outOfTime = () => (options.now ?? Date.now)() - startedAt > maxDurationMs;
 
-  // Com pesos ativos não enumeramos o espaço: a enumeração embaralhada é
-  // uniforme por construção e ignoraria a preferência escolhida.
+  /**
+   * Peso do JOGO a partir dos pesos das dezenas: MÉDIA GEOMÉTRICA em log-space,
+   * exp( (1/k) * Σ ln w_i ). Escolhida por ser estável (sem underflow/overflow
+   * do produto direto) e independente da quantidade de dezenas, então não
+   * favorece jogos maiores. Ela apenas reflete a preferência já definida pelos
+   * pesos individuais — não é uma estratégia nova.
+   */
+  const candidateWeight = (numbers: number[]) => {
+    let logSum = 0;
+    for (const value of numbers) logSum += Math.log(Math.max(weightOf(value), 1e-9));
+    return Math.exp(logSum / numbers.length);
+  };
+
+  // Enumeração ponderada: espaço gerenciável + pesos ativos.
+  const useWeightedEnumeration =
+    weighted &&
+    toChoose > 0 &&
+    total <= BigInt(generationConfig.weightedEnumerationLimit);
+
+  // Sem pesos, o caminho eficiente da Fase 3B permanece intacto.
   const useEnumeration =
     !weighted &&
     total <= BigInt(generationConfig.exhaustiveEnumerationLimit) &&
     (activeFilters > 0 || BigInt(request.gamesCount) * 2n >= total);
 
-  if (useEnumeration) {
+  let samplingMode: NonNullable<GenerationMetrics["samplingMode"]> = weighted
+    ? "weighted_sampling"
+    : useEnumeration
+      ? "uniform_enumeration"
+      : "uniform_sampling";
+
+  if (useWeightedEnumeration) {
+    samplingMode = "weighted_enumeration";
+    /**
+     * Seleção ponderada sem reposição entre TODOS os candidatos válidos
+     * (Efraimidis–Spirakis): chave = ln(u)/w; os k maiores formam a amostra.
+     * Mantemos apenas os k melhores num heap de mínimo — memória O(k).
+     */
+    const keys: number[] = [];
+    const items: number[][] = [];
+    const wanted = request.gamesCount;
+
+    const swap = (a: number, b: number) => {
+      const key = keys[a]!;
+      keys[a] = keys[b]!;
+      keys[b] = key;
+      const item = items[a]!;
+      items[a] = items[b]!;
+      items[b] = item;
+    };
+    const siftUp = (start: number) => {
+      let index = start;
+      while (index > 0) {
+        const parent = (index - 1) >> 1;
+        if (keys[parent]! <= keys[index]!) break;
+        swap(parent, index);
+        index = parent;
+      }
+    };
+    const siftDown = () => {
+      let index = 0;
+      for (;;) {
+        const left = index * 2 + 1;
+        const right = left + 1;
+        let smallest = index;
+        if (left < keys.length && keys[left]! < keys[smallest]!) smallest = left;
+        if (right < keys.length && keys[right]! < keys[smallest]!) smallest = right;
+        if (smallest === index) break;
+        swap(smallest, index);
+        index = smallest;
+      }
+    };
+
+    const enumerationBudget =
+      options.limits?.maxDurationMs ?? generationConfig.weightedEnumerationDurationMs;
+    const enumerationOutOfTime = () =>
+      (options.now ?? Date.now)() - startedAt > enumerationBudget;
+
+    stopReason = "space_exhausted";
+    for (let rank = 0n; rank < total; rank += 1n) {
+      if (candidatesEvaluated % 512 === 0 && enumerationOutOfTime()) {
+        stopReason = "time_limit";
+        break;
+      }
+      const numbers = buildNumbers(unrankCombination(pool, toChoose, rank));
+      candidatesEvaluated += 1;
+      if (!accepts(numbers)) {
+        candidatesRejected += 1;
+        continue;
+      }
+      // ln(u)/w: peso maior ⇒ chave tipicamente maior ⇒ mais chance de entrar.
+      const key = Math.log(Math.max(randomUnit(random), Number.MIN_VALUE)) / candidateWeight(numbers);
+      if (keys.length < wanted) {
+        keys.push(key);
+        items.push(numbers);
+        siftUp(keys.length - 1);
+      } else if (key > keys[0]!) {
+        keys[0] = key;
+        items[0] = numbers;
+        siftDown();
+      }
+    }
+
+    // Ordena do maior para o menor peso sorteado e materializa os jogos.
+    const order = keys.map((key, index) => ({ key, index })).sort((a, b) => b.key - a.key);
+    for (const entry of order) {
+      const numbers = items[entry.index]!;
+      const canonical = canonicalKey(numbers);
+      if (seenKeys.has(canonical)) continue;
+      seenKeys.add(canonical);
+      games.push({
+        index: games.length + 1,
+        numbers,
+        key: canonical,
+        analysis: analyzeGame(numbers, rules, options.analyzer ?? {}),
+      });
+    }
+    if (games.length >= request.gamesCount) stopReason = "complete";
+  } else if (useEnumeration) {
     // Espaço pequeno: percorremos o espaço inteiro embaralhado.
     const ranks: bigint[] = [];
     for (let rank = 0n; rank < total; rank += 1n) ranks.push(rank);
@@ -228,13 +339,14 @@ export function generateGames(
         toChoose <= 0
           ? []
           : weighted
-            ? weightedSampleWithoutReplacement(pool, weightOf, toChoose, random)
+            ? sampleWeightedChosen()
             : total <= BigInt(Number.MAX_SAFE_INTEGER)
               ? sampleCombination(pool, toChoose, random)
               : unrankCombination(pool, toChoose, randomBelowBig(random, total));
       consider(buildNumbers(chosen));
     }
   }
+
 
   const metrics: GenerationMetrics = {
     requested: request.gamesCount,
