@@ -184,7 +184,10 @@ export function generateGames(
 
   const outOfTime = () => (options.now ?? Date.now)() - startedAt > maxDurationMs;
 
+  // Com pesos ativos não enumeramos o espaço: a enumeração embaralhada é
+  // uniforme por construção e ignoraria a preferência escolhida.
   const useEnumeration =
+    !weighted &&
     total <= BigInt(generationConfig.exhaustiveEnumerationLimit) &&
     (activeFilters > 0 || BigInt(request.gamesCount) * 2n >= total);
 
