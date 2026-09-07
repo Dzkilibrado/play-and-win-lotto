@@ -54,7 +54,8 @@ export const moreNavItem: NavItem = { label: "Mais", to: "/more", icon: LayoutGr
 
 export const desktopNav: { title: string; items: NavItem[] }[] = [
   { title: "Principal", items: primaryNav },
-  { title: "Consultas", items: secondaryNav.slice(0, 3) },
-  { title: "Conta", items: secondaryNav.slice(3) },
+  { title: "Consultas", items: secondaryNav.slice(0, 4) },
+  { title: "Conta", items: secondaryNav.slice(4) },
+
   { title: "Sistema", items: adminNav },
 ];
