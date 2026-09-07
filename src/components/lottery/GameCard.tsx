@@ -59,6 +59,7 @@ export function GameCard({
   cost,
   createdAt,
   origin,
+  check,
   to,
   params,
   actions,
@@ -66,6 +67,7 @@ export function GameCard({
   className,
 }: GameCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const matched = new Set(check?.matchedNumbers ?? []);
 
   return (
     <article
@@ -93,11 +95,37 @@ export function GameCard({
         ) : null}
       </div>
 
+      {check ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs",
+            check.isPrized ? "bg-success-soft text-success" : "bg-surface-secondary text-text-secondary",
+          )}
+        >
+          <span className="font-medium">
+            {check.hits} {check.hits === 1 ? "dezena acertada" : "dezenas acertadas"}
+          </span>
+          <span className="font-medium">
+            {check.isPrized
+              ? check.totalPrize == null
+                ? `${check.prizeLabel ?? "Premiado"} · valor ainda não informado`
+                : `${check.prizeLabel ?? "Premiado"} · ${formatCurrency(check.totalPrize)}`
+              : "Sem premiação"}
+          </span>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-1.5">
         {numbers.map((number) => (
-          <NumberBall key={number} value={number} variant="lottery" size="sm" />
+          <NumberBall
+            key={number}
+            value={number}
+            variant={check ? (matched.has(number) ? "hit" : "muted") : "lottery"}
+            size="sm"
+          />
         ))}
       </div>
+
 
       <dl className="grid grid-cols-3 gap-2 text-xs sm:grid-cols-6">
         <MetricCard label="Par" value={analysis.evenCount} />
