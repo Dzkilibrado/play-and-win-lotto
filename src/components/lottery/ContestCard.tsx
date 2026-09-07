@@ -6,75 +6,68 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { getLotteryConfig } from "@/config/lotteries";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { DrawWithNumbers } from "@/lib/services/lotteryDataService";
+import type { ContestSummary } from "@/lib/contests/contestSearch";
 
+/** Card compacto e inteiramente clicável de um concurso oficial. */
 export function ContestCard({
-  draw,
+  contest,
   className,
   compact = false,
 }: {
-  draw: DrawWithNumbers;
+  contest: ContestSummary;
   className?: string | undefined;
   compact?: boolean;
 }) {
-  const config = getLotteryConfig(draw.lotteries?.slug);
-  const numbers = [...(draw.draw_numbers ?? [])].sort((a, b) => a.number - b.number);
+  const config = getLotteryConfig(contest.lotterySlug ?? undefined);
+  const drawn = contest.numbers.length > 0;
 
   return (
     <Link
       to="/contests/$id"
-      params={{ id: draw.id }}
+      params={{ id: contest.id }}
       data-lottery={config?.colorKey}
-      aria-label={`Abrir concurso ${draw.contest_number} da ${draw.lotteries?.name ?? "loteria"}`}
+      aria-label={`Abrir concurso ${contest.contestNumber} da ${contest.lotteryName ?? "loteria"}`}
       className={cn(
         "tappable block rounded-xl border border-border bg-surface p-4 hover:border-lottery/60",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
           <p className="truncate font-display text-sm font-semibold text-lottery">
-            {draw.lotteries?.name ?? "—"}
+            {contest.lotteryName ?? "—"}
           </p>
           <p className="text-xs text-text-secondary">
-            Concurso {draw.contest_number} · {formatDate(draw.draw_date)}
+            Concurso {contest.contestNumber} · {formatDate(contest.drawDate)}
           </p>
         </div>
         <StatusBadge
-          tone={draw.is_accumulated ? "warning" : "success"}
-          label={draw.is_accumulated ? "Acumulado" : "Com ganhador"}
+          tone={!drawn ? "neutral" : contest.isAccumulated ? "warning" : "success"}
+          label={!drawn ? "Previsto" : contest.isAccumulated ? "Acumulou" : "Com ganhador"}
         />
       </div>
 
-      {numbers.length > 0 ? (
+      {drawn ? (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {numbers.map((item) => (
-            <NumberBall key={item.number} value={item.number} variant="lottery" size="sm" />
+          {contest.numbers.map((value) => (
+            <NumberBall key={value} value={value} variant="lottery" size="sm" />
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-text-secondary">Dezenas ainda não importadas.</p>
+        <p className="mt-3 text-xs text-text-secondary">Dezenas ainda não divulgadas.</p>
       )}
 
       {!compact && (
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <dt className="text-text-secondary">Prêmio principal</dt>
-            <dd className="font-medium text-text-primary">
-              {draw.main_prize === null
-                ? "—"
-                : Number(draw.main_prize) === 0
-                  ? "Não houve ganhador"
-                  : formatCurrency(draw.main_prize)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-secondary">Próximo concurso</dt>
-            <dd className="font-medium text-text-primary">
-              {draw.next_contest_number ?? "—"} · {formatDate(draw.next_draw_date)}
-            </dd>
-          </div>
-        </dl>
+        <p className="mt-3 text-xs text-text-secondary">
+          Prêmio principal:{" "}
+          <span className="font-medium text-text-primary">
+            {contest.mainPrize === null
+              ? "—"
+              : contest.mainPrize === 0
+                ? "Não houve ganhador"
+                : formatCurrency(contest.mainPrize)}
+          </span>
+        </p>
       )}
 
       <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-lottery">
