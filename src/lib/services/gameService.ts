@@ -198,4 +198,17 @@ export const gameService = {
       .in("status", ["PLANNED", "BET", "RECEIPTED", "AWAITING_DRAW", "AWAITING_CHECK"]);
     if (error) throw error;
   },
+
+  /**
+   * Link temporário e privado para a imagem do jogo (canhoto/comprovante).
+   * O bucket permanece privado: nada é publicado de forma permanente.
+   */
+  async getImageUrl(imagePath: string, expiresInSeconds = 300) {
+    const { data, error } = await supabase.storage
+      .from("game-imports")
+      .createSignedUrl(imagePath, expiresInSeconds);
+    if (error) throw error;
+    return data.signedUrl;
+  },
 };
+

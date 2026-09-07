@@ -47,7 +47,7 @@ Classifique a imagem em:
 
 Extraia, sem inventar nada:
 - lottery: "mega-sena", "lotofacil", "quina" ou null.
-- contest_number: número do concurso impresso (inteiro) ou null. Em volantes em branco normalmente não existe: use null.
+- contest_number: número do concurso impresso (inteiro) ou null. Em volantes/canhotos normalmente não existe: use null. NUNCA deduza, calcule ou presuma o próximo concurso — só informe o número que estiver legível na imagem.
 - numbers: lista das dezenas marcadas/jogadas, como inteiros, sem repetição, em ordem crescente. Se não conseguir ler todas com segurança, retorne apenas as que tem certeza.
 - bet_amount: valor da aposta em reais (número) ou null.
 - bet_date: data no formato AAAA-MM-DD ou null.

@@ -227,6 +227,10 @@ function GameDetailPage() {
             </section>
           ) : null}
 
+          {game.image_path ? (
+            <GameDocumentSection imagePath={game.image_path} source={game.source} />
+          ) : null}
+
 
           <section className="surface-card space-y-2 p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">Excluir jogo</h2>
@@ -265,3 +269,52 @@ function GameDetailPage() {
     </div>
   );
 }
+
+/**
+ * Documento do jogo: miniatura e visualização por link temporário e privado.
+ * Nunca mostramos caminho de arquivo, identificadores internos ou o endereço gerado.
+ */
+function GameDocumentSection({ imagePath, source }: { imagePath: string; source: string }) {
+  const title = source === "PHOTO_RECEIPT" ? "Comprovante da aposta" : "Canhoto importado";
+
+  const image = useQuery({
+    queryKey: ["game-image", imagePath],
+    queryFn: () => gameService.getImageUrl(imagePath),
+    staleTime: 4 * 60 * 1000,
+  });
+
+  return (
+    <section className="surface-card space-y-3 p-4">
+      <h2 className="font-display text-sm font-semibold text-text-primary">Documento do jogo</h2>
+      <p className="text-xs text-text-secondary">{title}</p>
+
+      {image.isLoading ? <LoadingState /> : null}
+      {image.isError ? (
+        <ErrorState
+          title="Não foi possível abrir a imagem"
+          description="Tente novamente em instantes."
+          onRetry={() => void image.refetch()}
+        />
+      ) : null}
+
+      {image.data ? (
+        <>
+          <img
+            src={image.data}
+            alt={title}
+            className="max-h-56 w-full rounded-lg border border-border object-contain"
+          />
+          <Button asChild variant="outline" size="sm" className="h-11">
+            <a href={image.data} target="_blank" rel="noreferrer">
+              Visualizar imagem
+            </a>
+          </Button>
+          <p className="text-xs text-text-secondary">
+            A imagem fica guardada em área privada e só você tem acesso.
+          </p>
+        </>
+      ) : null}
+    </section>
+  );
+}
+

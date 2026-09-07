@@ -92,8 +92,9 @@ function GeneratePage() {
   };
 
   const toggleFixed = (value: number) => {
+    // Uma dezena excluída não pode virar fixa por toque: o usuário desfaz a exclusão antes.
+    if (excluded.includes(value)) return;
     setGames(null);
-    setExcluded((prev) => prev.filter((item) => item !== value));
     setFixed((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
@@ -102,14 +103,16 @@ function GeneratePage() {
   };
 
   const toggleExcluded = (value: number) => {
+    // Dezenas fixas nem aparecem neste quadro; a guarda evita troca implícita.
+    if (fixed.includes(value)) return;
     setGames(null);
-    setFixed((prev) => prev.filter((item) => item !== value));
     setExcluded((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
         : [...prev, value].sort((a, b) => a - b),
     );
   };
+
 
   const request = useMemo(
     () => ({ lotterySlug: slug, numbersCount, gamesCount, fixed, excluded }),
@@ -321,7 +324,8 @@ function GeneratePage() {
             <section className="surface-card space-y-3 p-4">
               <Label>4. Dezenas fixas (opcional)</Label>
               <p className="text-xs text-text-secondary">
-                Estas dezenas aparecem em todos os jogos criados.
+                Estas dezenas aparecem em todos os jogos criados. Dezenas já excluídas ficam
+                bloqueadas aqui: retire da exclusão para poder fixar.
               </p>
               <p className="text-xs text-text-secondary">
                 Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
@@ -331,6 +335,7 @@ function GeneratePage() {
                 rules={rules}
                 fixed={fixed}
                 excluded={excluded}
+                locked={excluded}
                 onSelect={toggleFixed}
               />
               {fixed.length > 0 ? (
@@ -343,7 +348,8 @@ function GeneratePage() {
             <section className="surface-card space-y-3 p-4">
               <Label>5. Dezenas excluídas (opcional)</Label>
               <p className="text-xs text-text-secondary">
-                Estas dezenas nunca aparecem nos jogos criados.
+                Estas dezenas nunca aparecem nos jogos criados. Dezenas fixadas não aparecem
+                nesta lista.
               </p>
               <p className="text-xs text-text-secondary">
                 Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
@@ -351,10 +357,11 @@ function GeneratePage() {
               </p>
               <LotteryNumberGrid
                 rules={rules}
-                fixed={fixed}
                 excluded={excluded}
+                hidden={fixed}
                 onSelect={toggleExcluded}
               />
+
               {excluded.length > 0 ? (
                 <Button variant="ghost" size="sm" onClick={() => setExcluded([])}>
                   Limpar dezenas excluídas

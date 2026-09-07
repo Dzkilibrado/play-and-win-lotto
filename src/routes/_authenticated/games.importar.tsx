@@ -65,6 +65,7 @@ function ImportGamePage() {
   const [kind, setKind] = useState<PhotoDocumentKind>("UNKNOWN");
   const [slug, setSlug] = useState<LotterySlug | "">("");
   const [contestText, setContestText] = useState("");
+  const [dateText, setDateText] = useState("");
   const [numbers, setNumbers] = useState<number[]>([]);
   const [readingNotes, setReadingNotes] = useState<string | null>(null);
   const [uncertain, setUncertain] = useState<string[]>([]);
@@ -82,6 +83,18 @@ function ImportGamePage() {
   const situation: ContestSituation = hasContest
     ? (contestQuery.data?.situation ?? "unknown")
     : "unknown";
+
+  const nextContestQuery = useQuery({
+    queryKey: ["import-next-contest", slug],
+    enabled: Boolean(slug),
+    queryFn: () => lotteryDataService.getNextContest(slug as string),
+  });
+
+  const byDateQuery = useQuery({
+    queryKey: ["import-contest-by-date", slug, dateText],
+    enabled: Boolean(slug) && /^\d{4}-\d{2}-\d{2}$/.test(dateText),
+    queryFn: () => lotteryDataService.findContestsByDate(slug as string, dateText),
+  });
 
   const lotteriesQuery = useQuery({
     queryKey: ["lotteries"],
@@ -107,14 +120,19 @@ function ImportGamePage() {
         `A ${rules.name} aceita de ${rules.selectable.min} a ${rules.selectable.max} dezenas. Você marcou ${numbers.length}.`,
       );
     }
-    if (kind === "RECEIPT" && !hasContest) {
-      list.push("Informe o número do concurso do comprovante.");
+    // Canhoto e comprovante exigem o concurso confirmado por você antes de salvar.
+    if (!hasContest) {
+      list.push("Informe e confirme o concurso deste jogo.");
+    }
+    if (hasContest && kind === "TICKET" && situation === "drawn") {
+      list.push("Este concurso já foi sorteado. Escolha um concurso futuro para o canhoto.");
     }
     return list;
-  }, [config, rules, numbers, kind, hasContest]);
+  }, [config, rules, numbers, kind, hasContest, situation]);
 
   const suggestedStatus: GameStatus =
     kind === "RECEIPT" ? statusForReceipt(situation) : ("PLANNED" as GameStatus);
+
 
   const onPick = async (picked: File | null) => {
     setFileError(null);
@@ -198,10 +216,17 @@ function ImportGamePage() {
         source: kind === "RECEIPT" ? "PHOTO_RECEIPT" : "PHOTO_TICKET",
         status: suggestedStatus,
         imagePath,
-        extraNotes: "origem=foto; revisado_pelo_usuario=sim",
+        extraNotes:
+          "origem=foto; revisado_pelo_usuario=sim" +
+          (situation === "unknown" ? "; situacao_concurso=nao_validada" : ""),
       });
 
-      toast.success("Jogo importado e salvo.");
+      toast.success(
+        situation === "unknown"
+          ? "Jogo salvo. Ainda não foi possível validar a situação deste concurso."
+          : "Jogo importado e salvo.",
+      );
+
       void navigate({ to: "/games/$id", params: { id } });
     } catch {
       toast.error("Não foi possível salvar o jogo importado.");
@@ -357,7 +382,7 @@ function ImportGamePage() {
                 <input
                   id="import-contest"
                   inputMode="numeric"
-                  placeholder="Opcional para canhoto"
+                  placeholder="Número do concurso"
                   className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm"
                   value={contestText}
                   onChange={(event) => setContestText(event.target.value.replace(/\D/g, ""))}
@@ -365,11 +390,72 @@ function ImportGamePage() {
               </div>
             </div>
 
-            {hasContest && situation === "unknown" ? (
-              <p className="text-xs text-warning">
-                Ainda não temos esse concurso no aplicativo. Confira o número informado.
+            <div className="space-y-2 rounded-lg bg-surface-secondary p-3">
+              <p className="text-xs font-medium text-text-primary">Localizar o concurso</p>
+              <div className="flex flex-wrap items-end gap-2">
+                {nextContestQuery.data?.contestNumber ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-11"
+                    onClick={() =>
+                      setContestText(String(nextContestQuery.data?.contestNumber ?? ""))
+                    }
+                  >
+                    Usar o próximo concurso ({nextContestQuery.data.contestNumber})
+                  </Button>
+                ) : null}
+                <div className="space-y-1">
+                  <Label htmlFor="import-date">Buscar por data do sorteio</Label>
+                  <input
+                    id="import-date"
+                    type="date"
+                    className="touch-target rounded-lg border border-border bg-surface px-3 text-sm"
+                    value={dateText}
+                    onChange={(event) => setDateText(event.target.value)}
+                  />
+                </div>
+              </div>
+              {byDateQuery.data?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {byDateQuery.data.map((row) => (
+                    <Button
+                      key={row.contest_number}
+                      variant="outline"
+                      size="sm"
+                      className="h-11"
+                      onClick={() => setContestText(String(row.contest_number))}
+                    >
+                      Concurso {row.contest_number}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              {byDateQuery.isFetched && !byDateQuery.data?.length && dateText ? (
+                <p className="text-xs text-text-secondary">
+                  Nenhum concurso desta modalidade nessa data na nossa base.
+                </p>
+              ) : null}
+            </div>
+
+            {hasContest && situation === "pending" ? (
+              <p className="text-xs text-text-secondary">
+                Concurso ainda não sorteado
+                {contestQuery.data?.drawDate ? ` (previsto para ${contestQuery.data.drawDate})` : ""}
+                .
               </p>
             ) : null}
+            {hasContest && situation === "drawn" ? (
+              <p className="text-xs text-text-secondary">Concurso já sorteado.</p>
+            ) : null}
+            {hasContest && situation === "unknown" ? (
+              <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning">
+                Ainda não foi possível validar a situação deste concurso: ele não consta na base
+                oficial que já recebemos. Confira o número. Você pode salvar assim mesmo — quando o
+                concurso for publicado, a situação passa a ser validada.
+              </p>
+            ) : null}
+
           </section>
 
           <section className="surface-card space-y-3 p-4">
@@ -406,9 +492,12 @@ function ImportGamePage() {
               {kind === "RECEIPT"
                 ? situation === "drawn"
                   ? "O concurso já foi sorteado, então o jogo entra para conferência."
-                  : "Comprovante de aposta paga: o jogo fica aguardando o sorteio."
-                : "Canhoto não comprova aposta paga, então o jogo entra como planejado."}
+                  : situation === "pending"
+                    ? "Comprovante de aposta paga: o jogo fica aguardando o sorteio."
+                    : "Comprovante registrado. Ainda não foi possível validar a situação deste concurso; ela será reavaliada quando o concurso entrar na nossa base."
+                : "Canhoto não comprova aposta paga, então o jogo entra como planejado, mesmo com o concurso informado."}
             </p>
+
           </section>
 
           <div className="flex flex-wrap gap-2">

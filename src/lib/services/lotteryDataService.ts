@@ -132,6 +132,40 @@ export const lotteryDataService = {
     return data as unknown as DrawWithNumbers | null;
   },
 
+  /** Busca de concursos por data (para localizar o concurso de um canhoto/comprovante). */
+  async findContestsByDate(lotterySlug: string, date: string) {
+    const { data, error } = await supabase
+      .from("lottery_draws")
+      .select("id, contest_number, draw_date, draw_numbers(number), lotteries!inner(slug)")
+      .eq("lotteries.slug", lotterySlug)
+      .eq("draw_date", date)
+      .order("contest_number", { ascending: true })
+      .limit(5);
+    if (error) throw error;
+    return (data ?? []) as unknown as {
+      id: string;
+      contest_number: number;
+      draw_date: string | null;
+      draw_numbers: { number: number }[];
+    }[];
+  },
+
+  /** Próximo concurso previsto de uma modalidade, conforme o último resultado oficial. */
+  async getNextContest(lotterySlug: string) {
+    const { data, error } = await supabase
+      .from("lottery_draws")
+      .select("next_contest_number, next_draw_date, lotteries!inner(slug)")
+      .eq("lotteries.slug", lotterySlug)
+      .order("contest_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data
+      ? { contestNumber: data.next_contest_number, drawDate: data.next_draw_date }
+      : null;
+  },
+
+
   /**
    * Situação de um concurso para vincular a um jogo:
    * já sorteado, ainda pendente ou desconhecido pelo nosso banco.
