@@ -212,93 +212,17 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
         </ul>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar participante</DialogTitle>
-            <DialogDescription>
-              O valor devido é calculado automaticamente: cotas × {formatCurrency(pool.quota_value)}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="participant-name">Nome</Label>
-              <Input
-                id="participant-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="h-11"
-                // O nome é gravado exatamente como digitado: nada de autocompletar,
-                // corrigir ortografia ou sugerir nomes parecidos.
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="participant-phone">Telefone (opcional)</Label>
-                <Input
-                  id="participant-phone"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  className="h-11"
-                  inputMode="tel"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="participant-quotas">Cotas</Label>
-                <Input
-                  id="participant-quotas"
-                  value={quotas}
-                  onChange={(event) => setQuotas(event.target.value)}
-                  className="h-11"
-                  inputMode="numeric"
-                />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="participant-adjustment">Ajuste no valor (opcional)</Label>
-                <Input
-                  id="participant-adjustment"
-                  value={adjustment}
-                  onChange={(event) => setAdjustment(event.target.value)}
-                  className="h-11"
-                  inputMode="decimal"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="participant-adjustment-reason">Motivo do ajuste</Label>
-                <Input
-                  id="participant-adjustment-reason"
-                  value={adjustmentReason}
-                  onChange={(event) => setAdjustmentReason(event.target.value)}
-                  className="h-11"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="participant-notes">Observações</Label>
-              <Textarea
-                id="participant-notes"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                rows={2}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} className="h-11">
-              Cancelar
-            </Button>
-            <Button onClick={submit} disabled={addMutation.isPending} className="h-11">
-              Adicionar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ParticipantFormDialog
+        pool={pool}
+        participant={editTarget}
+        open={formOpen}
+        onOpenChange={(next) => {
+          setFormOpen(next);
+          if (!next) setEditTarget(null);
+        }}
+        maxQuotas={maxQuotasFor(editTarget)}
+      />
+
 
       <ReasonDialog
         open={eligibilityTarget !== null}
