@@ -88,7 +88,7 @@ export function PoolShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-[min(30rem,calc(100vw-2rem))] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-[30rem] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Compartilhar bolão</DialogTitle>
           <DialogDescription>
