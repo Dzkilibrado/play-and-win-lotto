@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
 import { resolveRules, universeNumbers } from "@/lib/engine/rules";
-import { describeFilters, sanitizeFilterStates } from "@/lib/engine/filters";
+import { describeFilters, generationRulesVersion, sanitizeFilterStates } from "@/lib/engine/filters";
 import {
   automaticStatuses,
   gameDisplayName,
@@ -335,11 +335,15 @@ function AppliedFiltersSection({
   };
 }) {
   const rules = resolveRules(game.lotteries?.slug ?? null);
-  const raw = game.generation_constraints as { filters?: unknown } | null;
+  const raw = game.generation_constraints as { filters?: unknown; version?: unknown } | null;
   if (!rules || !raw || typeof raw !== "object" || !raw.filters) return null;
 
   const numbers = game.game_numbers.map((item) => item.number);
   const states = sanitizeFilterStates(raw.filters);
+  // A regra de saltos mudou de significado na versão 2. Jogos salvos com a
+  // regra antiga não são reinterpretados: o filtro fica de fora da lista.
+  const legacyRules = (typeof raw.version === "number" ? raw.version : 1) < generationRulesVersion;
+  if (legacyRules) states.gapRun = { enabled: false, config: { max: null } };
   const chips = describeFilters(states, {
     rules,
     numbersCount: numbers.length,
@@ -360,6 +364,12 @@ function AppliedFiltersSection({
           <li key={chip.id}>{chip.summary}</li>
         ))}
       </ul>
+      {legacyRules ? (
+        <p className="text-xs text-text-secondary">
+          Este jogo foi criado com uma versão anterior do filtro de saltos, por isso esse item não
+          é exibido aqui.
+        </p>
+      ) : null}
       <p className="text-xs text-text-secondary">
         Filtros organizam a escolha das dezenas e não aumentam a chance de premiação.
       </p>

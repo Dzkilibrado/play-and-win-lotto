@@ -29,8 +29,12 @@ export const filterIds: FilterId[] = [
   "prime",
 ];
 
-/** Versão do conjunto de regras — permite reinterpretar jogos antigos. */
-export const generationRulesVersion = 1;
+/**
+ * Versão do conjunto de regras — permite reinterpretar jogos antigos.
+ * v1: "saltos" contava DEZENAS envolvidas no mesmo intervalo.
+ * v2: "saltos" conta a QUANTIDADE de saltos iguais seguidos (definição atual).
+ */
+export const generationRulesVersion = 2;
 
 export interface RangeConfig {
   min: number | null;
