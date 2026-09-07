@@ -552,75 +552,8 @@ function GeneratePage() {
 
           </section>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div id="fixos-card" className="scroll-mt-24">
-            <NumberSelectionCard
-              label="4. Fixar números (opcional)"
-              drawerTitle="Fixar números"
-              description="Escolha dezenas que deverão estar em todos os jogos."
-              drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
-              value={fixed}
-              onChange={(next) => {
-                setFixed(next);
-                setGames(null);
-              }}
-              rules={rules}
-              locked={excluded}
-              excludedMarks={excluded}
-              limit={numbersCount}
-              notice={(openDrawer) =>
-                fixed.length > numbersCount ? (
-                  <div className="space-y-2 rounded-lg bg-warning-soft p-3">
-                    <p className="text-xs text-warning">
-                      Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
-                      {numbersCount} dezenas.
-                    </p>
-                    <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
-                      Editar números fixos
-                    </Button>
-                  </div>
-                ) : null
-              }
-            />
-            </div>
-
-            <NumberSelectionCard
-              label="5. Excluir números (opcional)"
-              drawerTitle="Excluir números"
-              description="Escolha dezenas que não poderão aparecer nos jogos."
-              drawerDescription="Selecione as dezenas que não devem aparecer nos jogos. Dezenas fixas não aparecem aqui."
-              value={excluded}
-              onChange={(next) => {
-                setExcluded(next);
-                setGames(null);
-              }}
-              rules={rules}
-              hidden={fixed}
-              notice={
-                <p className="text-xs text-text-secondary">
-                  Disponíveis para sorteio: {availableCount} de {universeSize} dezenas.
-                </p>
-              }
-            />
-          </div>
-
-
-          <div id="filtros-card" className="scroll-mt-24">
-          <GenerationFilters
-            states={filters}
-            onChange={(next) => {
-              setFilters(next);
-              setGames(null);
-              setMetrics(null);
-            }}
-            context={filterContext}
-            issuesByFilter={issuesByFilter}
-            previousDrawLabel={previousDrawLabel}
-          />
-          </div>
-
           <section className="surface-card space-y-3 p-4">
-            <Label>7. Concurso (opcional)</Label>
+            <Label>4. Concurso (opcional)</Label>
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -659,6 +592,73 @@ function GeneratePage() {
               </div>
             ) : null}
           </section>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div id="fixos-card" className="scroll-mt-24">
+            <NumberSelectionCard
+              label="5. Fixar números (opcional)"
+              drawerTitle="Fixar números"
+              description="Escolha dezenas que deverão estar em todos os jogos."
+              drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
+              value={fixed}
+              onChange={(next) => {
+                setFixed(next);
+                setGames(null);
+              }}
+              rules={rules}
+              locked={excluded}
+              excludedMarks={excluded}
+              limit={numbersCount}
+              notice={(openDrawer) =>
+                fixed.length > numbersCount ? (
+                  <div className="space-y-2 rounded-lg bg-warning-soft p-3">
+                    <p className="text-xs text-warning">
+                      Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
+                      {numbersCount} dezenas.
+                    </p>
+                    <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
+                      Editar números fixos
+                    </Button>
+                  </div>
+                ) : null
+              }
+            />
+            </div>
+
+            <NumberSelectionCard
+              label="6. Excluir números (opcional)"
+              drawerTitle="Excluir números"
+              description="Escolha dezenas que não poderão aparecer nos jogos."
+              drawerDescription="Selecione as dezenas que não devem aparecer nos jogos. Dezenas fixas não aparecem aqui."
+              value={excluded}
+              onChange={(next) => {
+                setExcluded(next);
+                setGames(null);
+              }}
+              rules={rules}
+              hidden={fixed}
+              notice={
+                <p className="text-xs text-text-secondary">
+                  Disponíveis para sorteio: {availableCount} de {universeSize} dezenas.
+                </p>
+              }
+            />
+          </div>
+
+
+          <div id="filtros-card" className="scroll-mt-24">
+          <GenerationFilters
+            states={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setGames(null);
+              setMetrics(null);
+            }}
+            context={filterContext}
+            issuesByFilter={issuesByFilter}
+            previousDrawLabel={previousDrawLabel}
+          />
+          </div>
 
           <SmartWeights
             selection={weightSelection}
