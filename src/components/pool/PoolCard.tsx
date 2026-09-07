@@ -43,33 +43,38 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
       </div>
 
       <div className="mt-3 space-y-1.5">
-        <div className="flex items-center justify-between text-xs text-text-secondary">
-          <span className="inline-flex items-center gap-1">
-            <Users className="size-3.5" aria-hidden />
+        <div className="flex items-center justify-between gap-2 text-xs text-text-secondary">
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <Users className="size-3.5 shrink-0" aria-hidden />
             {active.length} {active.length === 1 ? "participante" : "participantes"}
           </span>
-          <span>
-            {quotasTaken}/{pool.total_quotas} cotas
+          <span className="shrink-0">
+            {livres === null
+              ? `${quotasTaken} ${quotasTaken === 1 ? "cota" : "cotas"}`
+              : `${quotaLabel(pool.total_quotas, quotasTaken)} cotas`}
           </span>
         </div>
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
-          role="progressbar"
-          aria-valuenow={quotaProgress(pool.total_quotas, quotasTaken)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Cotas preenchidas"
-        >
+        {livres === null ? null : (
           <div
-            className="h-full rounded-full bg-lottery"
-            style={{ width: `${quotaProgress(pool.total_quotas, quotasTaken)}%` }}
-          />
-        </div>
+            className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
+            role="progressbar"
+            aria-valuenow={quotaProgress(pool.total_quotas, quotasTaken)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Cotas preenchidas"
+          >
+            <div
+              className="h-full rounded-full bg-lottery"
+              style={{ width: `${quotaProgress(pool.total_quotas, quotasTaken)}%` }}
+            />
+          </div>
+        )}
         <p className="text-xs text-text-secondary">
-          {remainingQuotas(pool.total_quotas, quotasTaken)} cotas livres ·{" "}
+          {livres === null ? noQuotaLimitLabel : `${livres} cotas livres`} ·{" "}
           {formatCurrency(pool.quota_value)} por cota
         </p>
       </div>
+
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-secondary">
         <span className="inline-flex items-center gap-1">
