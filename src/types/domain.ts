@@ -26,6 +26,17 @@ export type GameStatus = Database["public"]["Enums"]["game_status"];
 export type PoolStatus = Database["public"]["Enums"]["pool_status"];
 export type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 export type AppRole = Database["public"]["Enums"]["app_role"];
+export type ParticipantStatus = Database["public"]["Enums"]["participant_status"];
+export type DistributionStatus = Database["public"]["Enums"]["distribution_status"];
+
+export type PoolEvent = Tables["pool_events"]["Row"];
+export type PoolPrizeDistribution = Tables["pool_prize_distributions"]["Row"];
+export type PoolPrizeParticipant = Tables["pool_prize_participants"]["Row"];
+
+export const participantStatusLabel: Record<ParticipantStatus, string> = {
+  ACTIVE: "Ativo",
+  CANCELLED: "Cancelado",
+};
 
 export const gameStatusLabel: Record<GameStatus, string> = {
   PLANNED: "Planejado",

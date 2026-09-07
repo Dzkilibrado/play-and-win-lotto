@@ -186,7 +186,7 @@ export const poolService = {
     const { error } = await supabase.rpc("pool_set_status", {
       _pool_id: poolId,
       _status: status,
-      _reason: reason ?? undefined,
+      ...(reason ? { _reason: reason } : {}),
     });
     if (error) throw error;
   },
@@ -254,7 +254,7 @@ export const poolService = {
     const { error } = await supabase.rpc("pool_set_participant_eligibility", {
       _participant_id: id,
       _eligible: eligible,
-      _reason: reason ?? undefined,
+      ...(reason ? { _reason: reason } : {}),
     });
     if (error) throw error;
   },
@@ -283,8 +283,8 @@ export const poolService = {
       _participant_id: input.participantId,
       _amount: input.amount,
       _paid_at: input.paidAt,
-      _method: input.method ?? undefined,
-      _notes: input.notes ?? undefined,
+      ...(input.method ? { _method: input.method } : {}),
+      ...(input.notes ? { _notes: input.notes } : {}),
       _allow_overpay: input.allowOverpay ?? false,
     });
     if (error) throw error;
