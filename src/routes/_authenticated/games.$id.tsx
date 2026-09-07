@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
 import { resolveRules, universeNumbers } from "@/lib/engine/rules";
+import { sanitizeStrategySnapshot } from "@/lib/engine/weights";
+import { weightIntensityLabels, weightsDisclaimer, windowLabel } from "@/config/weights.config";
 import { describeFilters, generationRulesVersion, sanitizeFilterStates } from "@/lib/engine/filters";
 import {
   automaticStatuses,
