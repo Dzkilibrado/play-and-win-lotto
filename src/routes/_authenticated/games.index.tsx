@@ -35,7 +35,9 @@ export const Route = createFileRoute("/_authenticated/games/")({
 
 /** Converte a análise persistida para o formato usado pelo GameCard. */
 export function rowAnalysis(row: GameRow): GameAnalysisResult {
-  const analysis = row.game_analysis?.[0];
+  const raw = row.game_analysis;
+  const analysis = Array.isArray(raw) ? raw[0] : (raw ?? undefined);
+
   const numbers = row.game_numbers.map((item) => item.number).sort((a, b) => a - b);
   let maxGap = 0;
   for (let index = 1; index < numbers.length; index += 1) {
