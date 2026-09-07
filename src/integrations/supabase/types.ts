@@ -223,6 +223,8 @@ export type Database = {
           cost: number | null
           created_at: string
           draw_id: string | null
+          generation_constraints: Json | null
+          generation_rules_version: number | null
           hits: number | null
           id: string
           image_path: string | null
@@ -242,6 +244,8 @@ export type Database = {
           cost?: number | null
           created_at?: string
           draw_id?: string | null
+          generation_constraints?: Json | null
+          generation_rules_version?: number | null
           hits?: number | null
           id?: string
           image_path?: string | null
@@ -261,6 +265,8 @@ export type Database = {
           cost?: number | null
           created_at?: string
           draw_id?: string | null
+          generation_constraints?: Json | null
+          generation_rules_version?: number | null
           hits?: number | null
           id?: string
           image_path?: string | null
