@@ -213,11 +213,14 @@ function GeneratePage() {
     enabled: weightsActive && weightSelectionIssues.length === 0,
     queryKey: ["number-statistics", slug, weightSelection.window, contestNumber],
     queryFn: () =>
-      statisticsService.getNumberStatistics({
-        lotterySlug: slug,
-        window: weightSelection.window,
-        maxContest: contestNumber,
-      }),
+      statisticsService.getNumberStatistics(
+        buildStatisticsQuery({
+          lotterySlug: slug,
+          window: weightSelection.window,
+          contestNumber,
+        }),
+      ),
+
   });
   const statisticsSnapshot = statisticsQuery.data ?? null;
 
