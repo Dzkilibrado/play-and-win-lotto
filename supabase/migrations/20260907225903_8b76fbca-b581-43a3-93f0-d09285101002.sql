@@ -1,0 +1,2 @@
+GRANT EXECUTE ON FUNCTION public.search_draws(text, integer, date, date, text, integer[], text, integer, integer) TO service_role, postgres;
+GRANT EXECUTE ON FUNCTION public.lottery_combination_stats(text, integer[], integer) TO service_role, postgres;
