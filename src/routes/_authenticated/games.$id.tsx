@@ -342,7 +342,7 @@ function AppliedFiltersSection({
   const states = sanitizeFilterStates(raw.filters);
   // A regra de saltos mudou de significado na versão 2. Jogos salvos com a
   // regra antiga não são reinterpretados: o filtro fica de fora da lista.
-  const legacyRules = (raw.version ?? 1) < generationRulesVersion;
+  const legacyRules = (typeof raw.version === "number" ? raw.version : 1) < generationRulesVersion;
   if (legacyRules) states.gapRun = { enabled: false, config: { max: null } };
   const chips = describeFilters(states, {
     rules,
