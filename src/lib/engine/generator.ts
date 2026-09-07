@@ -123,6 +123,26 @@ export function generateGames(
   const accepts = buildCandidatePredicate(request.filters, filterContext);
   const activeFilters = validation.activeFilters ?? 0;
 
+  /**
+   * Ponderação estatística (opcional). Os pesos influenciam APENAS a montagem
+   * do candidato: fixas continuam obrigatórias, excluídas continuam fora do
+   * pool e todos os filtros continuam sendo aplicados depois.
+   */
+  const weightVector = request.weights ?? null;
+  const weightByNumber = new Map<number, number>();
+  if (weightVector) {
+    for (let index = 0; index < weightVector.numbers.length; index += 1) {
+      const value = weightVector.values[index];
+      if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+        weightByNumber.set(weightVector.numbers[index]!, value);
+      }
+    }
+  }
+  // Uma dezena elegível sem peso informado nunca vira impossível: recebe 1.
+  const weightOf = (value: number) => weightByNumber.get(value) ?? 1;
+  const poolWeights = pool.map(weightOf);
+  const weighted = Boolean(weightVector) && poolWeights.some((value) => value !== poolWeights[0]);
+
   const maxDurationMs = options.limits?.maxDurationMs ?? generationConfig.maxDurationMs;
   const maxCandidates = Math.min(
     options.limits?.maxCandidatesTotal ?? generationConfig.maxCandidatesTotal,
