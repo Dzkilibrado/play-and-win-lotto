@@ -52,7 +52,7 @@ export interface PoolRow {
   draw_date_planned: string | null;
   name: string;
   quota_value: number;
-  total_quotas: number;
+  total_quotas: number | null;
   payment_deadline: string | null;
   status: PoolStatus;
   notes: string | null;
