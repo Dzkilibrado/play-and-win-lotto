@@ -2,6 +2,8 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  Camera,
+
   Home,
   LayoutGrid,
   ListChecks,
@@ -34,8 +36,10 @@ export const primaryNav: NavItem[] = [
 
 /** Itens agrupados em "Mais" no mobile e listados na sidebar no desktop. */
 export const secondaryNav: NavItem[] = [
+  { label: "Importar por foto", to: "/games/importar", icon: Camera },
   { label: "Resultados", to: "/results", icon: Trophy },
   { label: "Concursos", to: "/contests", icon: CalendarDays },
+
   { label: "Estatísticas", to: "/statistics", icon: BarChart3, feature: "statistics" },
   { label: "Notificações", to: "/notifications", icon: Bell, feature: "notifications" },
   { label: "Perfil", to: "/profile", icon: User },
@@ -50,7 +54,8 @@ export const moreNavItem: NavItem = { label: "Mais", to: "/more", icon: LayoutGr
 
 export const desktopNav: { title: string; items: NavItem[] }[] = [
   { title: "Principal", items: primaryNav },
-  { title: "Consultas", items: secondaryNav.slice(0, 3) },
-  { title: "Conta", items: secondaryNav.slice(3) },
+  { title: "Consultas", items: secondaryNav.slice(0, 4) },
+  { title: "Conta", items: secondaryNav.slice(4) },
+
   { title: "Sistema", items: adminNav },
 ];

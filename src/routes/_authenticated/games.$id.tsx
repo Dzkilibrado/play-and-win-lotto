@@ -46,6 +46,27 @@ export const Route = createFileRoute("/_authenticated/games/$id")({
   component: GameDetailPage,
 });
 
+/** Traduz o registro interno de origem em frases simples para o usuário. */
+function originFacts(notes: string | null): string[] {
+  if (!notes) return [];
+  const map = new Map<string, string>();
+  for (const part of notes.split(";")) {
+    const [key, ...rest] = part.split("=");
+    if (!key || rest.length === 0) continue;
+    map.set(key.trim(), rest.join("=").trim());
+  }
+  const facts: string[] = [];
+  const price = map.get("preco");
+  if (price) facts.push(`Valor da aposta informado: R$ ${Number(price).toFixed(2).replace(".", ",")}`);
+  const source = map.get("fonte");
+  if (source) facts.push(`Referência de preço: ${source}`);
+  if (map.get("origem") === "foto") facts.push("Dezenas lidas a partir de uma foto enviada por você.");
+  if (map.get("revisado_pelo_usuario") === "sim") facts.push("Você revisou e confirmou as dezenas antes de salvar.");
+  return facts;
+}
+
+
+
 function GameDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -193,14 +214,19 @@ function GameDetailPage() {
             </div>
           </section>
 
-          {game.notes ? (
+          {originFacts(game.notes).length > 0 ? (
             <section className="surface-card space-y-2 p-4">
               <h2 className="font-display text-sm font-semibold text-text-primary">
-                Registro de origem
+                Como este jogo foi registrado
               </h2>
-              <p className="break-words text-xs text-text-secondary">{game.notes}</p>
+              <ul className="space-y-1 text-xs text-text-secondary">
+                {originFacts(game.notes).map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
             </section>
           ) : null}
+
 
           <section className="surface-card space-y-2 p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">Excluir jogo</h2>
