@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -13,7 +14,7 @@ import { appConfig } from "@/config/app.config";
 import { generationConfig } from "@/config/generation.config";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { useSession } from "@/hooks/useAuth";
-import { generateGames } from "@/lib/engine/generator";
+import { useGameGeneration } from "@/lib/engine/useGameGeneration";
 import {
   activeFilterIds,
   buildConstraintsSnapshot,
@@ -72,6 +73,7 @@ function GeneratePage() {
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPriceHelp, setShowPriceHelp] = useState(false);
+  const { generating, generate, cancel } = useGameGeneration();
 
   const lotteriesQuery = useQuery({
     queryKey: ["lotteries"],
@@ -212,20 +214,24 @@ function GeneratePage() {
 
   const activeFilterCount = activeFilterIds(filters).length;
 
-  const handleGenerate = () => {
-    const outcome = generateGames(request, {
-      analyzer: {
+  const handleGenerate = async () => {
+    if (generating) return;
+    try {
+      const outcome = await generate(request, {
         lastDrawNumbers: lastNumbers,
         lastContestNumber: lastDraw?.contest_number ?? null,
-      },
-    });
-    if (!outcome.validation.ok) {
-      toast.error(outcome.validation.issues[0]?.message ?? "Configuração inválida.");
-      return;
+      });
+      if (!outcome) return;
+      if (!outcome.validation.ok) {
+        toast.error(outcome.validation.issues[0]?.message ?? "Configuração inválida.");
+        return;
+      }
+      setGames(outcome.games);
+      setMetrics(outcome.metrics);
+      setSavedKeys([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível criar os jogos.");
     }
-    setGames(outcome.games);
-    setMetrics(outcome.metrics);
-    setSavedKeys([]);
   };
 
   const saveGames = async (drafts: GeneratedGameDraft[]) => {
@@ -274,7 +280,9 @@ function GeneratePage() {
       {games ? (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={handleGenerate}>Criar novamente</Button>
+            <Button disabled={generating} onClick={() => void handleGenerate()}>
+              {generating ? "Gerando jogos…" : "Criar novamente"}
+            </Button>
             <Button variant="outline" onClick={() => setGames(null)}>
               Editar configuração
             </Button>
@@ -314,8 +322,13 @@ function GeneratePage() {
                     <Button size="sm" variant="secondary" onClick={() => setGames(null)}>
                       Ajustar filtros
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleGenerate}>
-                      Tentar novamente
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={generating}
+                      onClick={() => void handleGenerate()}
+                    >
+                      {generating ? "Gerando jogos…" : "Tentar novamente"}
                     </Button>
                   </div>
                 </div>
@@ -596,9 +609,30 @@ function GeneratePage() {
               </p>
             )}
 
-            <Button className="h-12 w-full" disabled={!validation.ok} onClick={handleGenerate}>
-              Criar jogos
+            <Button
+              className="h-12 w-full"
+              disabled={!validation.ok || generating}
+              onClick={() => void handleGenerate()}
+            >
+              {generating ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Gerando jogos…
+                </span>
+              ) : (
+                "Criar jogos"
+              )}
             </Button>
+            {generating ? (
+              <div className="space-y-2 text-center" role="status" aria-live="polite">
+                <p className="text-xs text-text-secondary">
+                  Procurando jogos que atendem à sua configuração. Você pode continuar usando o app.
+                </p>
+                <Button variant="ghost" size="sm" onClick={cancel}>
+                  Cancelar
+                </Button>
+              </div>
+            ) : null}
           </section>
         </>
       )}
