@@ -171,7 +171,9 @@ describe("conferência — faixas oficiais", () => {
       baseSize: 6,
       tiers: [...megaTiers, { drawPrizeId: "x", tier: "Faixa inválida", hits: 7, prizePerWinner: 9 }],
     });
-    expect(result.breakdown.map((item) => item.hitsRequired)).toEqual([6, 5, 4]);
+    // Com 7 acertos em 7 dezenas não sobra dezena errada: só a faixa máxima existe.
+    expect(result.breakdown.map((item) => item.hitsRequired)).toEqual([6]);
+    expect(result.breakdown[0]?.winningCombinations).toBe(7);
   });
 });
 
