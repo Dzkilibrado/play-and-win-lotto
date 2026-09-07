@@ -55,7 +55,7 @@ function benchmark(
         excluded: [],
         filters,
         previousDraw: null,
-        weights: weightsFor(slug, universe),
+        weights: weightsFor(universe),
       },
       { random: seededRandomSource(1000 + round) },
     );
