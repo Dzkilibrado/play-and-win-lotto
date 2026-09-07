@@ -10,6 +10,7 @@ import { appConfig } from "@/config/app.config";
 import { syncConfig } from "@/config/sync.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
+import { checkService } from "@/lib/services/checkService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 
 export const Route = createFileRoute("/_authenticated/contests/$id")({
@@ -36,6 +37,12 @@ function ContestDetailPage() {
   const numbers = [...(draw?.draw_numbers ?? [])].sort((a, b) => a.position - b.position);
   const ascending = [...numbers].sort((a, b) => a.number - b.number);
   const prizes = [...(draw?.draw_prizes ?? [])].sort((a, b) => b.hits - a.hits);
+
+  const myChecks = useQuery({
+    queryKey: ["contest-checks", id],
+    queryFn: () => checkService.getChecksForDraw(id),
+  });
+  const myGames = myChecks.data ?? [];
 
   return (
     <div className="space-y-4" data-lottery={config?.colorKey}>
@@ -114,6 +121,43 @@ function ContestDetailPage() {
               label="Fonte / última atualização"
               value={`${syncConfig.sourceLabel} · ${formatDate(draw.source_updated_at?.slice(0, 10) ?? null)}`}
             />
+          </section>
+
+          <section className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="font-display text-sm font-semibold text-text-primary">
+              Seus jogos neste concurso
+            </h2>
+            {myGames.length === 0 ? (
+              <p className="mt-2 text-xs text-text-secondary">
+                Você não tem jogos conferidos neste concurso.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {myGames.map((result) => (
+                  <li key={result.id}>
+                    <Link
+                      to="/games/$id"
+                      params={{ id: result.game_id }}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium text-text-primary">
+                        {result.hits} {result.hits === 1 ? "acerto" : "acertos"}
+                      </span>
+                      <StatusBadge
+                        label={
+                          result.is_prized
+                            ? result.total_prize == null
+                              ? `${result.prize_label ?? "Premiado"} · valor a divulgar`
+                              : `${result.prize_label ?? "Premiado"} · ${formatCurrency(result.total_prize)}`
+                            : "Sem premiação"
+                        }
+                        tone={result.is_prized ? "success" : "neutral"}
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="rounded-xl border border-border bg-surface p-4">

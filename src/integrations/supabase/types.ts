@@ -188,6 +188,182 @@ export type Database = {
           },
         ]
       }
+      game_check_errors: {
+        Row: {
+          created_at: string
+          draw_id: string | null
+          error_type: string
+          game_id: string | null
+          id: string
+          job_id: string | null
+          message: string
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          draw_id?: string | null
+          error_type: string
+          game_id?: string | null
+          id?: string
+          job_id?: string | null
+          message: string
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          draw_id?: string | null
+          error_type?: string
+          game_id?: string | null
+          id?: string
+          job_id?: string | null
+          message?: string
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_check_errors_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_check_errors_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "generated_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_check_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          draw_id: string
+          failed: number
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          last_game_id: string | null
+          prized: number
+          processed: number
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          draw_id: string
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_game_id?: string | null
+          prized?: number
+          processed?: number
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          draw_id?: string
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_game_id?: string | null
+          prized?: number
+          processed?: number
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_check_jobs_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_draws"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_check_results: {
+        Row: {
+          amount_pending: boolean
+          calculation_version: number
+          checked_at: string
+          contest_number: number
+          created_at: string
+          draw_id: string
+          game_id: string
+          hits: number
+          id: string
+          is_prized: boolean
+          matched_numbers: number[]
+          prize_label: string | null
+          prize_tier_hits: number | null
+          source_updated_at: string | null
+          total_prize: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount_pending?: boolean
+          calculation_version?: number
+          checked_at?: string
+          contest_number: number
+          created_at?: string
+          draw_id: string
+          game_id: string
+          hits: number
+          id?: string
+          is_prized?: boolean
+          matched_numbers?: number[]
+          prize_label?: string | null
+          prize_tier_hits?: number | null
+          source_updated_at?: string | null
+          total_prize?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount_pending?: boolean
+          calculation_version?: number
+          checked_at?: string
+          contest_number?: number
+          created_at?: string
+          draw_id?: string
+          game_id?: string
+          hits?: number
+          id?: string
+          is_prized?: boolean
+          matched_numbers?: number[]
+          prize_label?: string | null
+          prize_tier_hits?: number | null
+          source_updated_at?: string | null
+          total_prize?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_check_results_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_check_results_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "generated_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_numbers: {
         Row: {
           game_id: string
@@ -213,6 +389,57 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "generated_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_prize_breakdown: {
+        Row: {
+          check_result_id: string
+          created_at: string
+          draw_prize_id: string | null
+          hits_required: number
+          id: string
+          prize_per_combination: number | null
+          tier: string
+          total_for_tier: number | null
+          winning_combinations: number
+        }
+        Insert: {
+          check_result_id: string
+          created_at?: string
+          draw_prize_id?: string | null
+          hits_required: number
+          id?: string
+          prize_per_combination?: number | null
+          tier: string
+          total_for_tier?: number | null
+          winning_combinations: number
+        }
+        Update: {
+          check_result_id?: string
+          created_at?: string
+          draw_prize_id?: string | null
+          hits_required?: number
+          id?: string
+          prize_per_combination?: number | null
+          tier?: string
+          total_for_tier?: number | null
+          winning_combinations?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_prize_breakdown_check_result_id_fkey"
+            columns: ["check_result_id"]
+            isOneToOne: false
+            referencedRelation: "game_check_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_prize_breakdown_draw_prize_id_fkey"
+            columns: ["draw_prize_id"]
+            isOneToOne: false
+            referencedRelation: "draw_prizes"
             referencedColumns: ["id"]
           },
         ]
@@ -984,6 +1211,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_game_check: {
+        Args: { _draw_id: string; _game_id: string; _payload: Json }
+        Returns: string
+      }
       can_read_game: { Args: { _game_id: string }; Returns: boolean }
       claim_sync_job_batch: {
         Args: { _batch_size: number; _job_id: string; _stale_after?: string }
@@ -1047,6 +1278,7 @@ export type Database = {
         Args: { _lottery_slug: string; _max_contest?: number; _window?: number }
         Returns: Json
       }
+      mark_games_awaiting_check: { Args: { _draw_id: string }; Returns: number }
       owns_game: { Args: { _game_id: string }; Returns: boolean }
       persist_official_draw: {
         Args: {

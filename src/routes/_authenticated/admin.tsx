@@ -13,6 +13,14 @@ import { syncConfig } from "@/config/sync.config";
 import { useIsAdmin, useSession } from "@/hooks/useAuth";
 import { formatDate, formatNumber } from "@/lib/format";
 import { getSyncOverview, listSyncErrors, runSyncBatch, startSync } from "@/lib/sync.functions";
+import {
+  getCheckOverview,
+  listCheckErrors,
+  reprocessDrawCheck,
+  runCheckBatch,
+  scanPendingChecks,
+  startDrawCheck,
+} from "@/lib/check.functions";
 import type { StatusTone } from "@/types/domain";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -62,7 +70,161 @@ function AdminPage() {
     <div className="space-y-4">
       <PageHeader title="Administração" description="Gestão de dados e recursos do sistema." />
       <SyncPanel />
+      <CheckPanel />
     </div>
+  );
+}
+
+/** Conferência automática: fila por concurso, reprocessamento e erros. */
+function CheckPanel() {
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+
+  const overviewFn = useServerFn(getCheckOverview);
+  const errorsFn = useServerFn(listCheckErrors);
+  const startFn = useServerFn(startDrawCheck);
+  const batchFn = useServerFn(runCheckBatch);
+  const reprocessFn = useServerFn(reprocessDrawCheck);
+  const scanFn = useServerFn(scanPendingChecks);
+
+  const overview = useQuery({ queryKey: ["check-overview"], queryFn: () => overviewFn({}) });
+  const errors = useQuery({ queryKey: ["check-errors"], queryFn: () => errorsFn({}) });
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["check-overview"] }),
+      queryClient.invalidateQueries({ queryKey: ["check-errors"] }),
+      queryClient.invalidateQueries({ queryKey: ["games"] }),
+      queryClient.invalidateQueries({ queryKey: ["check-summary"] }),
+    ]);
+  };
+
+  const action = useMutation({
+    mutationFn: async (input: { slug: string; kind: "latest" | "reprocess" | "scan" }) => {
+      if (input.kind === "scan") {
+        const result = await scanFn({});
+        setProgress(`${result.queued} concurso(s) na fila de conferência.`);
+        return;
+      }
+      if (input.kind === "reprocess") {
+        const result = await reprocessFn({ data: { slug: input.slug } });
+        setProgress(
+          `Concurso ${result.contestNumber}: ${result.processed} jogo(s) reconferido(s), ${result.prized} premiado(s).`,
+        );
+        return;
+      }
+      const started = await startFn({ data: { slug: input.slug } });
+      let guard = 0;
+      let status = "running";
+      while (!["completed", "completed_with_errors", "failed"].includes(status) && guard < 100) {
+        const step = await batchFn({ data: { jobId: started.jobId } });
+        status = step.status;
+        guard += 1;
+        setProgress(
+          `Concurso ${started.contestNumber}: ${step.processed} jogo(s) conferido(s), ${step.prized} premiado(s), ${step.failed} com erro.`,
+        );
+      }
+    },
+    onMutate: (input) => setBusy(`${input.slug}:${input.kind}`),
+    onSuccess: async () => {
+      toast.success("Conferência concluída.");
+      await refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+    onSettled: () => setBusy(null),
+  });
+
+  if (overview.isLoading) return <LoadingState rows={2} />;
+  if (overview.isError) return <ErrorState onRetry={() => overview.refetch()} />;
+
+  return (
+    <section className="space-y-4">
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <h2 className="font-display text-sm font-semibold text-text-primary">
+          Conferência automática
+        </h2>
+        <p className="mt-1 text-xs text-text-secondary">
+          Compara os jogos dos usuários com o resultado oficial já validado no banco.
+        </p>
+        {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3 h-11"
+          disabled={busy !== null}
+          onClick={() => action.mutate({ slug: "", kind: "scan" })}
+        >
+          {busy === ":scan" ? "Procurando…" : "Procurar jogos pendentes"}
+        </Button>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-3">
+        {(overview.data ?? []).map((row) => (
+          <article
+            key={row.lotteryId}
+            className="space-y-3 rounded-xl border border-border bg-surface p-4"
+          >
+            <h3 className="font-display text-sm font-semibold text-text-primary">{row.name}</h3>
+            <dl className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <dt className="text-text-secondary">A conferir</dt>
+                <dd className="font-medium text-text-primary">{formatNumber(row.pending)}</dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Conferidos</dt>
+                <dd className="font-medium text-text-primary">{formatNumber(row.checked)}</dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Premiados</dt>
+                <dd className="font-medium text-text-primary">{formatNumber(row.prized)}</dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Último concurso</dt>
+                <dd className="font-medium text-text-primary">{row.lastContest ?? "—"}</dd>
+              </div>
+            </dl>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                className="h-11"
+                disabled={busy !== null}
+                onClick={() => action.mutate({ slug: row.slug, kind: "latest" })}
+              >
+                {busy === `${row.slug}:latest` ? "Conferindo…" : "Conferir último concurso"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-11"
+                disabled={busy !== null}
+                onClick={() => action.mutate({ slug: row.slug, kind: "reprocess" })}
+              >
+                {busy === `${row.slug}:reprocess` ? "Reprocessando…" : "Reprocessar"}
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <h2 className="font-display text-sm font-semibold text-text-primary">
+          Erros de conferência
+        </h2>
+        {(errors.data ?? []).length === 0 ? (
+          <p className="mt-2 text-xs text-text-secondary">Nenhum erro pendente.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-xs">
+            {(errors.data ?? []).map((item) => (
+              <li key={item.id} className="rounded-lg bg-surface-secondary px-3 py-2">
+                <span className="font-medium text-text-primary">{item.error_type}</span>
+                <span className="block text-text-secondary">{item.message}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }
 

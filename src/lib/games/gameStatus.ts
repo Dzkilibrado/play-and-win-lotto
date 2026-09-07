@@ -26,7 +26,7 @@ export const manualStatuses: GameStatus[] = [
   "AWAITING_CHECK",
 ];
 
-/** Situações definidas apenas pela conferência automática (etapa futura). */
+/** Situações definidas apenas pela conferência automática (servidor). */
 export const automaticStatuses: GameStatus[] = ["CHECKED", "PRIZED", "NOT_PRIZED"];
 
 export const gameStatusMeaning: Record<GameStatus, string> = {

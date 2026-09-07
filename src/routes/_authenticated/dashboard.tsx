@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { appConfig } from "@/config/app.config";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { checkService } from "@/lib/services/checkService";
 import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,11 @@ function DashboardPage() {
   const recent = useQuery({
     queryKey: ["recent-results", resultsLottery],
     queryFn: () => lotteryDataService.listRecentResults(resultsLottery, 2),
+  });
+
+  const checkSummary = useQuery({
+    queryKey: ["check-summary"],
+    queryFn: () => checkService.summary(),
   });
 
   const byStatus = counts.data?.counts ?? {};
@@ -116,6 +122,14 @@ function DashboardPage() {
             search={{ status: "PRIZED" }}
           />
         </div>
+        {checkSummary.data && checkSummary.data.checked > 0 ? (
+          <p className="text-xs text-text-secondary">
+            {checkSummary.data.prized > 0
+              ? `Conferência automática: ${checkSummary.data.prized} de ${checkSummary.data.checked} jogos conferidos tiveram premiação, somando ${formatCurrency(checkSummary.data.totalPrize)}${checkSummary.data.amountPending ? " (há faixas com valor ainda não divulgado)" : ""}.`
+              : `Conferência automática: ${checkSummary.data.checked} jogos conferidos, nenhum premiado até agora.`}
+          </p>
+        ) : null}
+
         <Button asChild variant="ghost" size="sm" className="h-11">
           <Link to="/pools">
             <Users className="size-4" aria-hidden />
