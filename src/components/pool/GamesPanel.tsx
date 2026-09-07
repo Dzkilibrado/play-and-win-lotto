@@ -64,6 +64,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   const rows = games.data ?? [];
   const totalCost = rows.reduce((sum, row) => sum + Number(row.generated_games?.cost ?? 0), 0);
   const linkedIds = new Set(rows.map((row) => row.game_id));
+  const available = (candidates.data?.rows ?? []).filter((game) => !linkedIds.has(game.id));
 
   return (
     <div className="space-y-3">
@@ -149,7 +150,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
           </DialogHeader>
           {candidates.isLoading ? (
             <p className="text-sm text-text-secondary">Carregando seus jogos…</p>
-          ) : (candidates.data ?? []).filter((game) => !linkedIds.has(game.id)).length === 0 ? (
+          ) : available.length === 0 ? (
             <EmptyState
               icon={Ticket}
               title="Nenhum jogo disponível para vincular"
@@ -157,26 +158,24 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
             />
           ) : (
             <ul className="space-y-2">
-              {(candidates.data ?? [])
-                .filter((game) => !linkedIds.has(game.id))
-                .map((game) => (
-                  <li
-                    key={game.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm text-text-primary">
-                        Jogo {game.sequence_number ?? "—"} · {game.numbers_count} dezenas
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {game.contest_number ? `Concurso ${game.contest_number}` : "Concurso a definir"}
-                      </p>
-                    </div>
-                    <Button size="sm" onClick={() => attach.mutate(game.id)} disabled={attach.isPending}>
-                      Vincular
-                    </Button>
-                  </li>
-                ))}
+              {available.map((game) => (
+                <li
+                  key={game.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm text-text-primary">
+                      Jogo {game.sequence_number ?? "—"} · {game.numbers_count} dezenas
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {game.contest_number ? `Concurso ${game.contest_number}` : "Concurso a definir"}
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => attach.mutate(game.id)} disabled={attach.isPending}>
+                    Vincular
+                  </Button>
+                </li>
+              ))}
             </ul>
           )}
         </DialogContent>
