@@ -392,7 +392,7 @@ function GeneratePage() {
                   {metrics.activeFilters > 0
                     ? ` com ${metrics.activeFilters} ${metrics.activeFilters === 1 ? "filtro aplicado" : "filtros aplicados"}`
                     : " sem filtros"}
-                  .
+                  {metrics.weights ? ` · ${describeWeightSelection(weightSelection)}` : ""}.
                 </p>
               )}
             </div>
