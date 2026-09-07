@@ -71,27 +71,28 @@ export function maxConsecutiveRun(numbers: number[]): number {
 }
 
 /**
- * Sequência de saltos — definição adotada:
+ * Saltos iguais consecutivos — definição de produto (regra v2):
  * dado o jogo ordenado n1<n2<...<nk e gap[i] = n[i+1]-n[i],
- * a métrica é o maior número de DEZENAS envolvidas em saltos iguais seguidos.
- * 05,10,15,20 → gaps 5,5,5 → 3 saltos iguais seguidos → 4 dezenas na sequência.
- * Retornamos o comprimento em dezenas (mínimo 1 para jogos não vazios).
+ * a métrica é a maior quantidade de SALTOS iguais seguidos.
+ * 05,10,15,20 → gaps 5,5,5 → 3 saltos iguais consecutivos (não 4 dezenas).
+ * Jogo com menos de 2 dezenas → 0 saltos.
  */
-export function maxEqualGapRun(numbers: number[]): number {
+export function maxEqualGapStreak(numbers: number[]): number {
   const list = gaps(numbers);
-  if (!list.length) return numbers.length ? 1 : 0;
-  let bestGaps = 1;
-  let currentGaps = 1;
+  if (!list.length) return 0;
+  let best = 1;
+  let current = 1;
   for (let index = 1; index < list.length; index += 1) {
     if (list[index] === list[index - 1]) {
-      currentGaps += 1;
-      if (currentGaps > bestGaps) bestGaps = currentGaps;
+      current += 1;
+      if (current > best) best = current;
     } else {
-      currentGaps = 1;
+      current = 1;
     }
   }
-  return bestGaps + 1;
+  return best;
 }
+
 
 export interface GridDistribution {
   rows: Record<string, number>;
