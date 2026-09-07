@@ -35,7 +35,7 @@ export interface CheckResultRow {
   game_prize_breakdown: PrizeBreakdownRow[];
 }
 
-const RESULT_SELECT = "*, game_prize_breakdown(*)";
+const RESULT_SELECT = "*, game_prize_breakdown(*, draw_prizes(winners))";
 
 export const checkService = {
   async getGameCheck(gameId: string) {
