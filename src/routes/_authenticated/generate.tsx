@@ -35,6 +35,11 @@ import {
   validateWeightSelection,
 } from "@/lib/engine/weights";
 import { statisticsService } from "@/lib/services/statisticsService";
+import {
+  buildStatisticsQuery,
+  resolveReferenceContest,
+} from "@/lib/services/statisticsReference";
+
 import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
