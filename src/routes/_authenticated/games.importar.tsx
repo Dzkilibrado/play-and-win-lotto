@@ -391,7 +391,14 @@ function ImportGamePage() {
             </div>
 
             <div className="space-y-2 rounded-lg bg-surface-secondary p-3">
-              <p className="text-xs font-medium text-text-primary">Localizar o concurso</p>
+              <p className="text-xs font-medium text-text-primary">
+                Selecionar outro concurso
+              </p>
+              <p className="text-xs text-text-secondary">
+                Digite o número acima, use o atalho do próximo concurso ou procure pela data do
+                sorteio.
+              </p>
+
               <div className="flex flex-wrap items-end gap-2">
                 {nextContestQuery.data?.contestNumber ? (
                   <Button
