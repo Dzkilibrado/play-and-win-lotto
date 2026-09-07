@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { MetricCard } from "@/components/common/Cards";
@@ -15,19 +16,26 @@ import { ParticipantsPanel } from "@/components/pool/ParticipantsPanel";
 import { PaymentDialog } from "@/components/pool/PaymentDialog";
 import { PoolActions } from "@/components/pool/PoolActions";
 import { PoolCountdown } from "@/components/pool/PoolCountdown";
+import { PoolEditDialog } from "@/components/pool/PoolEditDialog";
+import { PoolSectionNav } from "@/components/pool/PoolSectionNav";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { poolNotices } from "@/config/pools.config";
 import { useSession } from "@/hooks/useAuth";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { quotaProgress, remainingQuotas, summarizeFinance } from "@/lib/pools/poolMath";
+import {
+  noQuotaLimitLabel,
+  quotaLabel,
+  quotaProgress,
+  remainingQuotas,
+  summarizeFinance,
+} from "@/lib/pools/poolMath";
 import { poolService, type PoolParticipantRow } from "@/lib/services/poolService";
 import { validateListSearch } from "@/lib/searchFilters";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
 
-const tabs = [
+const sections = [
   { value: "overview", label: "Visão Geral" },
   { value: "participants", label: "Participantes" },
   { value: "games", label: "Jogos" },
@@ -56,6 +64,7 @@ function PoolDetailPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = useSession();
   const [payTarget, setPayTarget] = useState<PoolParticipantRow | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const pool = useQuery({ queryKey: ["pool", id], queryFn: () => poolService.get(id) });
   const participants = useQuery({
