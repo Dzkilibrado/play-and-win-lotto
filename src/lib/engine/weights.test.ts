@@ -237,7 +237,7 @@ describe("amostragem ponderada", () => {
     expect(counts.get(1)!).toBeGreaterThan(counts.get(2)! * 2);
   });
 
-  it("peso mínimo mantém toda dezena elegível", () => {
+  it("o piso de peso mantém toda dezena elegível", () => {
     const random = seededRandom(7);
     const seen = new Set<number>();
     for (let round = 0; round < 3000; round += 1) {
@@ -246,11 +246,19 @@ describe("amostragem ponderada", () => {
         (value) => (value === 3 ? 0 : 10),
         2,
         random,
+        // Piso explícito: mesmo com indicador zerado a dezena continua no sorteio.
+        0.5,
       )) {
         seen.add(value);
       }
     }
     expect(seen.has(3)).toBe(true);
+    // E a camada de pesos nunca produz zero, por construção.
+    expect(
+      computeWeights(selection({ strategyId: "delayed", intensity: "high" }), base).every(
+        (item) => item.finalWeight >= weightsConfig.minWeight,
+      ),
+    ).toBe(true);
   });
 
   it("é reproduzível com a mesma fonte determinística", () => {
