@@ -249,9 +249,11 @@ export function generateGames(
 
   // Enumeração ponderada: espaço gerenciável + pesos ativos.
   const useWeightedEnumeration =
+    !options.legacyWeightedSampling &&
     weighted &&
     toChoose > 0 &&
     total <= BigInt(generationConfig.weightedEnumerationLimit);
+
 
   // Sem pesos, o caminho eficiente da Fase 3B permanece intacto.
   const useEnumeration =
