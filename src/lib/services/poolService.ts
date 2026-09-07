@@ -3,6 +3,7 @@
  * Sempre pelo cliente autenticado (RLS). Regras críticas — situação, rateio,
  * pagamentos e vínculo de jogos — passam por funções protegidas no banco.
  */
+import type { PaymentMethod } from "@/config/pools.config";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   GameStatus,
@@ -11,6 +12,7 @@ import type {
   ParticipantStatus,
   DistributionStatus,
 } from "@/types/domain";
+
 
 const POOL_SELECT =
   "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
