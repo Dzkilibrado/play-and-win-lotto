@@ -1396,6 +1396,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          favorite_lottery_id: string | null
+          followed_lottery_ids: string[] | null
+          home_blocks: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          favorite_lottery_id?: string | null
+          followed_lottery_ids?: string[] | null
+          home_blocks?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          favorite_lottery_id?: string | null
+          followed_lottery_ids?: string[] | null
+          home_blocks?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_favorite_lottery_id_fkey"
+            columns: ["favorite_lottery_id"]
+            isOneToOne: false
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

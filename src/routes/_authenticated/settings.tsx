@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeSelector } from "@/components/layout/ThemeSelector";
+import { HomePreferencesPanel } from "@/components/settings/HomePreferencesPanel";
 import { appConfig, featureStatusLabel } from "@/config/app.config";
-import { activeLotteries } from "@/config/lotteries";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 const toneByStatus = {
@@ -18,9 +19,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: `Configurações — ${appConfig.name}` },
-      { name: "description", content: "Tema, modalidades ativas e recursos do aplicativo." },
+      {
+        name: "description",
+        content: "Tema, personalização da tela inicial e recursos do aplicativo.",
+      },
       { property: "og:title", content: `Configurações — ${appConfig.name}` },
-      { property: "og:description", content: "Tema, modalidades ativas e recursos." },
+      { property: "og:description", content: "Tema, tela inicial e recursos." },
     ],
   }),
   component: SettingsPage,
@@ -31,30 +35,31 @@ function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Configurações" description="Preferências de exibição e recursos." />
+      <PageHeader title="Configurações" description="Comportamento e exibição do aplicativo." />
 
       <section className="surface-card space-y-3 p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">Tema</h2>
+        <h2 className="font-display text-sm font-semibold text-text-primary">Aparência</h2>
         <ThemeSelector variant="list" />
       </section>
 
-      <section className="surface-card space-y-3 p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">Modalidades ativas</h2>
-        <ul className="space-y-2">
-          {activeLotteries.map((lottery) => (
-            <li
-              key={lottery.slug}
-              data-lottery={lottery.colorKey}
-              className="flex items-center gap-2 text-sm"
-            >
-              <span className="size-2.5 rounded-full bg-lottery" aria-hidden />
-              <span className="text-text-primary">{lottery.name}</span>
-              <span className="ml-auto text-xs text-text-secondary">
-                {lottery.universe.min}–{lottery.universe.max}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <section className="surface-card space-y-4 p-4">
+        <div>
+          <h2 className="font-display text-sm font-semibold text-text-primary">Tela inicial</h2>
+          <p className="text-xs text-text-secondary">
+            Escolha os blocos, a ordem e as loterias que quer acompanhar.
+          </p>
+        </div>
+        <HomePreferencesPanel />
+      </section>
+
+      <section className="surface-card p-0">
+        <Link
+          to="/lotteries"
+          className="flex touch-target items-center gap-3 px-4 py-3 text-sm font-medium text-text-primary"
+        >
+          Ver todas as loterias
+          <ChevronRight className="ml-auto size-4 text-text-secondary" aria-hidden />
+        </Link>
       </section>
 
       <section className="surface-card space-y-3 p-4">
@@ -62,7 +67,7 @@ function SettingsPage() {
         <ul className="space-y-2">
           {Object.entries(flags.flags).map(([key, status]) => (
             <li key={key} className="flex items-center justify-between gap-2 text-sm">
-              <span className="text-text-primary">{key}</span>
+              <span className="min-w-0 truncate text-text-primary">{key}</span>
               <StatusBadge label={featureStatusLabel[status]} tone={toneByStatus[status]} />
             </li>
           ))}

@@ -1,7 +1,7 @@
 import asyncio, json, os
 from playwright.async_api import async_playwright
 
-ROUTES = ["/login","/dashboard","/generate","/games","/games/importar","/results","/contests","/pools","/pools/new","/notifications","/profile","/settings","/admin","/statistics","/"]
+ROUTES = ["/login","/dashboard","/generate","/games","/games/importar","/results","/contests","/pools","/pools/new","/notifications","/profile","/settings","/admin","/statistics","/lotteries","/"]
 VPS = [(320,568),(360,800),(390,844),(768,1024),(1280,720),(1440,900)]
 
 async def main():
