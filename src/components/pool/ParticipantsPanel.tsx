@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
-import { remainingQuotas } from "@/lib/pools/poolMath";
+import { noQuotaLimitLabel, quotaLabel, remainingQuotas } from "@/lib/pools/poolMath";
 import { paymentStatusLabel, paymentStatusTone } from "@/types/domain";
 
 interface Props {
