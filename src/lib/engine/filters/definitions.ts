@@ -351,17 +351,28 @@ const consecutiveFilter: GameFilterDefinition<"consecutive"> = {
       );
       return issues;
     }
-    // Capacidade exata: blocos de `max` dezenas separados por um espaço.
-    const universeSize = context.rules.universe.max - context.rules.universe.min + 1;
+    // Capacidade real: só as dezenas DISPONÍVEIS (pool + fixas) entram na conta.
+    // Cada bloco de inteiros consecutivos disponíveis comporta, no máximo,
+    // `max` dezenas a cada `max + 1` posições.
+    const available = [...new Set([...context.pool, ...context.fixed])].sort((a, b) => a - b);
     const block = max + 1;
-    const capacity =
-      Math.floor(universeSize / block) * max + Math.min(universeSize % block, max);
+    let capacity = 0;
+    let runLength = 0;
+    const closeRun = () => {
+      capacity += Math.floor(runLength / block) * max + Math.min(runLength % block, max);
+      runLength = 0;
+    };
+    for (let index = 0; index < available.length; index += 1) {
+      if (index > 0 && available[index]! - available[index - 1]! !== 1) closeRun();
+      runLength += 1;
+    }
+    closeRun();
     if (capacity < context.numbersCount) {
       issues.push(
         issue(
           this.id,
           "IMPOSSIBLE_CAPACITY",
-          `Não é possível gerar jogos com esta configuração: com no máximo ${max} dezenas em sequência, cabem apenas ${capacity} dezenas.`,
+          `Não é possível gerar jogos com esta configuração: com no máximo ${max} dezenas em sequência, cabem apenas ${capacity} dezenas entre as disponíveis.`,
         ),
       );
     }
@@ -376,25 +387,28 @@ const gapRunFilter: GameFilterDefinition<"gapRun"> = {
   id: "gapRun",
   label: "Saltos entre dezenas",
   description:
-    "Evita sequências com o mesmo intervalo entre várias dezenas. Ex.: 05 → 10 → 15 → 20 repete o intervalo 5.",
+    "Limita quantas vezes o mesmo intervalo pode se repetir em sequência. Ex.: 05 → 10 → 15 → 20 repete o intervalo +5 três vezes.",
   defaultConfig: { max: null },
   isConfigured: (config) => config.max != null,
   validateConfiguration(config, context) {
     const issues: FilterIssue[] = [];
     const max = config.max;
     if (max == null) return issues;
-    if (max < 2) {
+    if (max < 1) {
       issues.push(
-        issue(this.id, "INVALID_MAX", "O máximo de dezenas em salto igual precisa ser pelo menos 2."),
+        issue(this.id, "INVALID_MAX", "O máximo de saltos iguais seguidos precisa ser pelo menos 1."),
       );
       return issues;
     }
-    if (context.fixed.length && maxEqualGapStreak(context.fixed) > max) {
+    // Só é conflito comprovado quando nenhuma dezena adicional pode quebrar a
+    // sequência — ou seja, quando o jogo já é formado apenas pelas fixas.
+    const fixedStreak = maxEqualGapStreak(context.fixed);
+    if (context.fixed.length === context.numbersCount && fixedStreak > max) {
       issues.push(
         issue(
           this.id,
           "FIXED_CONFLICT",
-          `Os números fixados já formam ${maxEqualGapStreak(context.fixed)} dezenas com o mesmo intervalo, acima do máximo de ${max}.`,
+          `Os números fixados já formam ${fixedStreak} saltos iguais seguidos, acima do máximo de ${max}.`,
         ),
       );
     }
@@ -402,8 +416,10 @@ const gapRunFilter: GameFilterDefinition<"gapRun"> = {
   },
   evaluateCandidate: (numbers, config) =>
     config.max == null || maxEqualGapStreak(numbers) <= config.max,
-  explain: (config) => `Máx. ${config.max} dezenas com o mesmo intervalo`,
+  explain: (config) =>
+    `Máx. ${config.max} ${config.max === 1 ? "salto igual seguido" : "saltos iguais seguidos"}`,
 };
+
 
 const fibonacciFilter: GameFilterDefinition<"fibonacci"> = {
   id: "fibonacci",
