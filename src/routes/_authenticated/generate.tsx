@@ -286,7 +286,8 @@ function GeneratePage() {
               Salvar todos
             </Button>
             <span className="text-xs text-text-secondary">
-              {games.length} jogos · {formatCurrency(totalPrice)}
+              {games.length} {games.length === 1 ? "jogo" : "jogos"} ·{" "}
+              {formatCurrency(unitPrice != null ? unitPrice * games.length : null)}
               {contestNumber ? ` · concurso ${contestNumber}` : " · sem concurso"}
             </span>
           </div>
