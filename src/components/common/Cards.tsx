@@ -55,11 +55,13 @@ export function StatCard({
     return <div className="surface-card min-w-0 p-4">{content}</div>;
   }
 
+  // Toda a superfície do cartão navega — a seta é apenas indicador visual.
   return (
     <Link
       to={to}
       search={search ?? {}}
-      className="surface-card block p-4 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary"
+      aria-label={`${label}: abrir listagem`}
+      className="surface-card tappable block min-w-0 p-4 hover:bg-surface-secondary focus-visible:bg-surface-secondary"
     >
       {content}
     </Link>

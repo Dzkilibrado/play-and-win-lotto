@@ -127,7 +127,12 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                     </Link>
                   </Button>
                   {canManage ? (
-                    <Button variant="ghost" size="sm" onClick={() => detach.mutate(row.game_id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => detach.mutate(row.game_id)}
+                      disabled={detach.isPending}
+                    >
                       <Unlink className="size-4" aria-hidden />
                       Remover do bolão
                     </Button>

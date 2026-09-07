@@ -21,18 +21,17 @@ export function ActiveFilterChip({
   label: string;
   onRemove: () => void;
 }) {
+  // O chip inteiro remove o filtro — não só o "x".
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-surface-secondary py-1 pl-3 pr-1 text-xs font-medium text-text-primary">
+    <button
+      type="button"
+      onClick={onRemove}
+      aria-label={`Remover filtro ${label}`}
+      className="tappable inline-flex min-h-9 items-center gap-1.5 rounded-full bg-surface-secondary py-1 pl-3 pr-2.5 text-xs font-medium text-text-primary hover:bg-border"
+    >
       {label}
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remover filtro ${label}`}
-        className="flex size-5 items-center justify-center rounded-full text-text-secondary hover:bg-border"
-      >
-        <X className="size-3" aria-hidden />
-      </button>
-    </span>
+      <X className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
+    </button>
   );
 }
 

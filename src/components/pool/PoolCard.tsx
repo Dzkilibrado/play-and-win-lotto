@@ -28,8 +28,9 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
       to="/pools/$id"
       params={{ id: pool.id }}
       data-lottery={config?.colorKey}
+      aria-label={`Abrir bolão ${pool.name}`}
       className={cn(
-        "block min-w-0 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-lottery/60",
+        "tappable block min-w-0 rounded-xl border border-border bg-surface p-4 hover:border-lottery/60",
         className,
       )}
     >

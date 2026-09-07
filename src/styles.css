@@ -258,6 +258,23 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
+
+  /*
+   * Toque sem atraso: remove os ~300ms de espera por duplo toque no celular
+   * e o realce cinza padrão, substituído por feedback próprio.
+   */
+  a,
+  button,
+  label,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="option"],
+  [role="menuitem"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @utility surface-card {
@@ -270,4 +287,33 @@
 @utility touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/**
+ * Superfície inteira clicável: cursor, transição e resposta imediata ao toque
+ * (o elemento "afunda" levemente enquanto o dedo está pressionado).
+ */
+@utility tappable {
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    transform: scale(0.99);
+    background-color: var(--color-surface-secondary);
+  }
+}
+
+/*
+ * Em telas de toque, qualquer botão tem altura confortável para o dedo,
+ * mesmo os compactos usados dentro de listas.
+ */
+@media (pointer: coarse) {
+  button:not([data-slot="checkbox"]):not([role="checkbox"]):not([role="switch"]),
+  [role="button"] {
+    min-height: 44px;
+  }
 }
