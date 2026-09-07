@@ -1043,6 +1043,10 @@ export type Database = {
       }
       is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
       is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
+      lottery_number_statistics: {
+        Args: { _lottery_slug: string; _max_contest?: number; _window?: number }
+        Returns: Json
+      }
       owns_game: { Args: { _game_id: string }; Returns: boolean }
       persist_official_draw: {
         Args: {
