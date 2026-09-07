@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
 import { resolveRules, universeNumbers } from "@/lib/engine/rules";
-import { describeFilters, sanitizeFilterStates } from "@/lib/engine/filters";
+import { describeFilters, generationRulesVersion, sanitizeFilterStates } from "@/lib/engine/filters";
 import {
   automaticStatuses,
   gameDisplayName,
