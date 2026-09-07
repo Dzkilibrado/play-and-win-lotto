@@ -11,6 +11,11 @@ export interface PrizeBreakdownRow {
   winning_combinations: number;
   prize_per_combination: number | null;
   total_for_tier: number | null;
+  /**
+   * Ganhadores oficiais da faixa, quando a fonte informou.
+   * Usado apenas para explicar um valor zero — nunca entra na matemática.
+   */
+  draw_prizes: { winners: number | null } | null;
 }
 
 export interface CheckResultRow {
