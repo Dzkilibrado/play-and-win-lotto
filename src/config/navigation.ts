@@ -2,6 +2,8 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  Camera,
+
   Home,
   LayoutGrid,
   ListChecks,
