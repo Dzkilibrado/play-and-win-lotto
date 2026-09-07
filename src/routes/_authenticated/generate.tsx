@@ -569,20 +569,6 @@ function GeneratePage() {
             previousDrawLabel={previousDrawLabel}
           />
 
-          <SmartWeights
-            selection={weightSelection}
-            onChange={(next) => {
-              setWeightSelection(next);
-              setGames(null);
-              setMetrics(null);
-            }}
-            weights={weights}
-            snapshot={statisticsSnapshot}
-            loading={statisticsQuery.isLoading}
-            error={statisticsQuery.isError}
-            colorKey={rules.colorKey}
-          />
-
           <section className="surface-card space-y-3 p-4">
             <Label>7. Concurso (opcional)</Label>
             <div className="flex flex-wrap gap-2">
@@ -623,6 +609,20 @@ function GeneratePage() {
               </div>
             ) : null}
           </section>
+
+          <SmartWeights
+            selection={weightSelection}
+            onChange={(next) => {
+              setWeightSelection(next);
+              setGames(null);
+              setMetrics(null);
+            }}
+            weights={weights}
+            snapshot={statisticsSnapshot}
+            loading={statisticsQuery.isLoading}
+            error={statisticsQuery.isError}
+            colorKey={rules.colorKey}
+          />
 
           <section className="surface-card sticky bottom-20 z-10 space-y-3 p-4 sm:bottom-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
