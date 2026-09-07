@@ -22,7 +22,6 @@ import {
   leastDrawn,
   mostDelayed,
   mostDrawn,
-  serializeWindow,
   statisticsWindows,
   toNumberRows,
   validateCombination,
