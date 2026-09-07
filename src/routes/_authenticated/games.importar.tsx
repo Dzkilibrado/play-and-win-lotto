@@ -216,10 +216,17 @@ function ImportGamePage() {
         source: kind === "RECEIPT" ? "PHOTO_RECEIPT" : "PHOTO_TICKET",
         status: suggestedStatus,
         imagePath,
-        extraNotes: "origem=foto; revisado_pelo_usuario=sim",
+        extraNotes:
+          "origem=foto; revisado_pelo_usuario=sim" +
+          (situation === "unknown" ? "; situacao_concurso=nao_validada" : ""),
       });
 
-      toast.success("Jogo importado e salvo.");
+      toast.success(
+        situation === "unknown"
+          ? "Jogo salvo. Ainda não foi possível validar a situação deste concurso."
+          : "Jogo importado e salvo.",
+      );
+
       void navigate({ to: "/games/$id", params: { id } });
     } catch {
       toast.error("Não foi possível salvar o jogo importado.");
