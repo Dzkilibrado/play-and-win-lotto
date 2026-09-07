@@ -200,7 +200,7 @@ export function generateGames(
    */
   const parityState = request.filters?.parity;
   const parityPlan = (() => {
-    if (!weighted || !parityState?.enabled) return null;
+    if (options.legacyWeightedSampling || !weighted || !parityState?.enabled) return null;
     const { min, max } = parityState.config;
     if (min == null && max == null) return null;
     const isEven = (value: number) => value % 2 === 0;
