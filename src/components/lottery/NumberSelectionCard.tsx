@@ -41,6 +41,8 @@ export function NumberSelectionCard({
   locked = [],
   /** Dezenas que não devem aparecer neste quadro. */
   hidden = [],
+  /** Dezenas marcadas visualmente como excluídas (leitura). */
+  excludedMarks = [],
   /** Mostrado como "3 de 6 selecionadas" quando existir limite aplicável. */
   limit = null,
   notice = null,
@@ -55,6 +57,7 @@ export function NumberSelectionCard({
   rules: LotteryRules;
   locked?: number[];
   hidden?: number[];
+  excludedMarks?: number[];
   limit?: number | null;
   notice?: React.ReactNode;
   emptyLabel?: string;
@@ -135,6 +138,7 @@ export function NumberSelectionCard({
               <LotteryNumberGrid
                 rules={rules}
                 picked={draft}
+                excluded={excludedMarks}
                 locked={locked}
                 hidden={hidden}
                 onSelect={toggle}
