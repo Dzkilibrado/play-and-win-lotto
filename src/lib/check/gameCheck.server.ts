@@ -408,6 +408,8 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
             : "completed"
           : "running",
         finished_at: finished ? new Date().toISOString() : null,
+        last_activity_at: new Date().toISOString(),
+        locked_at: finished ? null : new Date().toISOString(),
       } as never)
       .eq("id", jobId)
       .select("*")
