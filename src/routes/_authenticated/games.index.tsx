@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks } from "lucide-react";
+import { ListChecks, Trophy } from "lucide-react";
 import { useMemo } from "react";
 
 import { ActiveFilterChip, FilterBar } from "@/components/common/Filters";
@@ -17,6 +17,7 @@ import { resolveRules } from "@/lib/engine/rules";
 import { maxEqualGapStreak, maxGap } from "@/lib/engine/metrics";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import { gameDisplayName, originLabel } from "@/lib/games/gameStatus";
+import { checkService } from "@/lib/services/checkService";
 import { gameService, type GameRow } from "@/lib/services/gameService";
 import { gameStatusLabel, type GameStatus } from "@/types/domain";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
@@ -92,9 +93,15 @@ function GamesPage() {
     });
   }, [query.data, search.q]);
 
+  const checks = useQuery({
+    queryKey: ["game-checks", rows.map((row) => row.id).join(",")],
+    enabled: rows.length > 0,
+    queryFn: () => checkService.getChecksForGames(rows.map((row) => row.id)),
+  });
+
   const total = rows.length;
   const planned = rows.filter((row) => row.status === "PLANNED").length;
-  const linked = rows.filter((row) => row.contest_number != null).length;
+  const prized = rows.filter((row) => row.status === "PRIZED").length;
 
   const chips = (Object.entries(search) as [keyof ListSearch, string][])
     .filter(([key, value]) => key !== "page" && value)
@@ -132,7 +139,14 @@ function GamesPage() {
           to="/games"
           search={{ status: "PLANNED" }}
         />
-        <StatCard label="Com concurso" value={linked} tone="success" />
+        <StatCard
+          label="Premiados"
+          value={prized}
+          icon={Trophy}
+          tone="success"
+          to="/games"
+          search={{ status: "PRIZED" }}
+        />
       </div>
 
       <FilterBar
@@ -263,6 +277,7 @@ function GamesPage() {
       <div className="space-y-3">
         {rows.map((row) => {
           const rules = resolveRules(row.lotteries?.slug);
+          const result = checks.data?.get(row.id) ?? null;
           return (
             <GameCard
               key={row.id}
@@ -276,6 +291,18 @@ function GamesPage() {
               cost={row.cost}
               createdAt={row.created_at}
               origin={originLabel(row.source)}
+              check={
+                result
+                  ? {
+                      hits: result.hits,
+                      matchedNumbers: result.matched_numbers ?? [],
+                      isPrized: result.is_prized,
+                      totalPrize: result.total_prize,
+                      amountPending: result.amount_pending,
+                      prizeLabel: result.prize_label,
+                    }
+                  : null
+              }
               to="/games/$id"
               params={{ id: row.id }}
             />
