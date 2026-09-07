@@ -1114,6 +1114,7 @@ export type Database = {
           created_by: string | null
           id: string
           method: string | null
+          method_description: string | null
           notes: string | null
           paid_at: string | null
           participant_id: string
@@ -1126,6 +1127,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           method?: string | null
+          method_description?: string | null
           notes?: string | null
           paid_at?: string | null
           participant_id: string
@@ -1138,6 +1140,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           method?: string | null
+          method_description?: string | null
           notes?: string | null
           paid_at?: string | null
           participant_id?: string
@@ -1549,6 +1552,23 @@ export type Database = {
         }
         Returns: string
       }
+      pool_add_participant: {
+        Args: {
+          _adjustment?: number
+          _adjustment_reason?: string
+          _method?: string
+          _method_description?: string
+          _name: string
+          _notes?: string
+          _paid_at?: string
+          _payment_amount?: number
+          _payment_mode?: string
+          _phone?: string
+          _pool_id: string
+          _quotas?: number
+        }
+        Returns: string
+      }
       pool_attach_game: {
         Args: { _game_id: string; _pool_id: string }
         Returns: string
@@ -1573,19 +1593,36 @@ export type Database = {
         Args: { _game_id: string; _pool_id: string }
         Returns: undefined
       }
+      pool_outdate_distributions: {
+        Args: { _pool_id: string }
+        Returns: undefined
+      }
       pool_prize_total: { Args: { _pool_id: string }; Returns: number }
       pool_public_summary: { Args: { _token: string }; Returns: Json }
-      pool_register_payment: {
-        Args: {
-          _allow_overpay?: boolean
-          _amount: number
-          _method?: string
-          _notes?: string
-          _paid_at?: string
-          _participant_id: string
-        }
-        Returns: string
-      }
+      pool_register_payment:
+        | {
+            Args: {
+              _allow_overpay?: boolean
+              _amount: number
+              _method?: string
+              _notes?: string
+              _paid_at?: string
+              _participant_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _allow_overpay?: boolean
+              _amount: number
+              _method?: string
+              _method_description?: string
+              _notes?: string
+              _paid_at?: string
+              _participant_id: string
+            }
+            Returns: string
+          }
       pool_set_participant_eligibility: {
         Args: { _eligible: boolean; _participant_id: string; _reason?: string }
         Returns: undefined
@@ -1604,6 +1641,10 @@ export type Database = {
       }
       pool_update_details: {
         Args: { _patch: Json; _pool_id: string }
+        Returns: undefined
+      }
+      pool_update_participant: {
+        Args: { _participant_id: string; _patch: Json }
         Returns: undefined
       }
       recalc_participant_payment: {
