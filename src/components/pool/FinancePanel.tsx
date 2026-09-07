@@ -7,6 +7,8 @@ import { MetricCard } from "@/components/common/Cards";
 import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { EmptyState } from "@/components/common/StateViews";
 import { Button } from "@/components/ui/button";
+import { describePaymentMethod, type PaymentMethod } from "@/config/pools.config";
+
 import { formatCurrency, formatDate } from "@/lib/format";
 import { summarizeFinance } from "@/lib/pools/poolMath";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
