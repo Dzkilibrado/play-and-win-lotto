@@ -1,0 +1,25 @@
+REVOKE EXECUTE ON FUNCTION public.validate_pool_game() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.unlink_pool_game() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_payments_sync() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_participant_defaults() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_participant_after() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_outdate_on_check() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_resolve_planned_contest() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_created_event() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.pool_participant_event() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.log_pool_event(uuid, text, text, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.recalc_participant_payment(uuid) FROM PUBLIC, anon, authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.pool_register_payment(uuid, numeric, timestamptz, text, text, boolean) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_cancel_payment(uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_set_participant_eligibility(uuid, boolean, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_cancel_participant(uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_set_status(uuid, public.pool_status, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_set_public(uuid, boolean) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_prize_total(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_calculate_distribution(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_confirm_distribution(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_attach_game(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_detach_game(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pool_public_summary(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.pool_public_summary(text) TO anon, authenticated;

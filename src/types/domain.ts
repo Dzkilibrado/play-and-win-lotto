@@ -26,6 +26,17 @@ export type GameStatus = Database["public"]["Enums"]["game_status"];
 export type PoolStatus = Database["public"]["Enums"]["pool_status"];
 export type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 export type AppRole = Database["public"]["Enums"]["app_role"];
+export type ParticipantStatus = Database["public"]["Enums"]["participant_status"];
+export type DistributionStatus = Database["public"]["Enums"]["distribution_status"];
+
+export type PoolEvent = Tables["pool_events"]["Row"];
+export type PoolPrizeDistribution = Tables["pool_prize_distributions"]["Row"];
+export type PoolPrizeParticipant = Tables["pool_prize_participants"]["Row"];
+
+export const participantStatusLabel: Record<ParticipantStatus, string> = {
+  ACTIVE: "Ativo",
+  CANCELLED: "Cancelado",
+};
 
 export const gameStatusLabel: Record<GameStatus, string> = {
   PLANNED: "Planejado",
@@ -43,9 +54,11 @@ export const poolStatusLabel: Record<PoolStatus, string> = {
   OPEN: "Aberto",
   CLOSED: "Fechado",
   AWAITING_DRAW: "Aguardando sorteio",
+  AWAITING_CHECK: "Aguardando conferência",
   CHECKED: "Conferido",
   PRIZED: "Premiado",
   FINISHED: "Encerrado",
+  CANCELLED: "Cancelado",
 };
 
 export const paymentStatusLabel: Record<PaymentStatus, string> = {
@@ -53,7 +66,9 @@ export const paymentStatusLabel: Record<PaymentStatus, string> = {
   PARTIAL: "Parcial",
   PAID: "Pago",
   OVERDUE: "Vencido",
+  CANCELLED: "Cancelado",
 };
+
 
 export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
@@ -73,9 +88,11 @@ export const poolStatusTone: Record<PoolStatus, StatusTone> = {
   OPEN: "info",
   CLOSED: "warning",
   AWAITING_DRAW: "warning",
+  AWAITING_CHECK: "warning",
   CHECKED: "neutral",
   PRIZED: "success",
   FINISHED: "neutral",
+  CANCELLED: "danger",
 };
 
 export const paymentStatusTone: Record<PaymentStatus, StatusTone> = {
@@ -83,4 +100,6 @@ export const paymentStatusTone: Record<PaymentStatus, StatusTone> = {
   PARTIAL: "info",
   PAID: "success",
   OVERDUE: "danger",
+  CANCELLED: "neutral",
 };
+
