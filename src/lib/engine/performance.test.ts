@@ -41,6 +41,7 @@ function benchmark(
   label: string,
   build: () => { filters: FilterStates; slug: string; count: number; universe: number },
   rounds = 10,
+  legacy = false,
 ) {
   const runs: Run[] = [];
   for (let round = 0; round < rounds; round += 1) {
@@ -57,8 +58,9 @@ function benchmark(
         previousDraw: null,
         weights: weightsFor(universe),
       },
-      { random: seededRandomSource(1000 + round) },
+      { random: seededRandomSource(1000 + round), legacyWeightedSampling: legacy },
     );
+
     runs.push({
       generated: outcome.metrics.generated,
       candidatesEvaluated: outcome.metrics.candidatesEvaluated,
