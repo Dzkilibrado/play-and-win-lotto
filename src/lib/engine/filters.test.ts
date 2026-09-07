@@ -26,6 +26,7 @@ import {
   sanitizeFilterStates,
   describeFilters,
   activeFilterIds,
+  generationRulesVersion,
   type FilterStates,
   type PreviousDrawReference,
 } from "./filters";
@@ -673,7 +674,7 @@ describe("snapshot e sanitização dos filtros", () => {
         draft.sum = { enabled: true, config: { min: null, max: null } };
       }),
     );
-    expect(snapshot?.version).toBe(1);
+    expect(snapshot?.version).toBe(generationRulesVersion);
     expect(snapshot?.filters.parity).toEqual({ enabled: true, config: { min: 2, max: 4 } });
     expect(snapshot?.filters.sum.enabled).toBe(false);
   });
