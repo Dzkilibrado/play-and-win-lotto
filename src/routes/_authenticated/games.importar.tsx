@@ -382,7 +382,7 @@ function ImportGamePage() {
                 <input
                   id="import-contest"
                   inputMode="numeric"
-                  placeholder="Opcional para canhoto"
+                  placeholder="Número do concurso"
                   className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm"
                   value={contestText}
                   onChange={(event) => setContestText(event.target.value.replace(/\D/g, ""))}
@@ -390,11 +390,72 @@ function ImportGamePage() {
               </div>
             </div>
 
-            {hasContest && situation === "unknown" ? (
-              <p className="text-xs text-warning">
-                Ainda não temos esse concurso no aplicativo. Confira o número informado.
+            <div className="space-y-2 rounded-lg bg-surface-secondary p-3">
+              <p className="text-xs font-medium text-text-primary">Localizar o concurso</p>
+              <div className="flex flex-wrap items-end gap-2">
+                {nextContestQuery.data?.contestNumber ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-11"
+                    onClick={() =>
+                      setContestText(String(nextContestQuery.data?.contestNumber ?? ""))
+                    }
+                  >
+                    Usar o próximo concurso ({nextContestQuery.data.contestNumber})
+                  </Button>
+                ) : null}
+                <div className="space-y-1">
+                  <Label htmlFor="import-date">Buscar por data do sorteio</Label>
+                  <input
+                    id="import-date"
+                    type="date"
+                    className="touch-target rounded-lg border border-border bg-surface px-3 text-sm"
+                    value={dateText}
+                    onChange={(event) => setDateText(event.target.value)}
+                  />
+                </div>
+              </div>
+              {byDateQuery.data?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {byDateQuery.data.map((row) => (
+                    <Button
+                      key={row.contest_number}
+                      variant="outline"
+                      size="sm"
+                      className="h-11"
+                      onClick={() => setContestText(String(row.contest_number))}
+                    >
+                      Concurso {row.contest_number}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              {byDateQuery.isFetched && !byDateQuery.data?.length && dateText ? (
+                <p className="text-xs text-text-secondary">
+                  Nenhum concurso desta modalidade nessa data na nossa base.
+                </p>
+              ) : null}
+            </div>
+
+            {hasContest && situation === "pending" ? (
+              <p className="text-xs text-text-secondary">
+                Concurso ainda não sorteado
+                {contestQuery.data?.drawDate ? ` (previsto para ${contestQuery.data.drawDate})` : ""}
+                .
               </p>
             ) : null}
+            {hasContest && situation === "drawn" ? (
+              <p className="text-xs text-text-secondary">Concurso já sorteado.</p>
+            ) : null}
+            {hasContest && situation === "unknown" ? (
+              <p className="rounded-md bg-warning-soft px-3 py-2 text-xs text-warning">
+                Ainda não foi possível validar a situação deste concurso: ele não consta na base
+                oficial que já recebemos. Confira o número. Você pode salvar assim mesmo — quando o
+                concurso for publicado, a situação passa a ser validada.
+              </p>
+            ) : null}
+
           </section>
 
           <section className="surface-card space-y-3 p-4">
