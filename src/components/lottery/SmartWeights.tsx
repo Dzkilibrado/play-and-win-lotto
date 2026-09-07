@@ -279,7 +279,7 @@ export function SmartWeights({
                   <Label>Maior peso na geração</Label>
                   <div className="flex flex-wrap gap-2">
                     {preview.map((item) => (
-                      <NumberBall key={item.number} value={item.number} size="sm" />
+                      <NumberBall key={item.number} value={item.number} variant="lottery" size="sm" />
                     ))}
                   </div>
                   <Button
