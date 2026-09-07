@@ -14,7 +14,7 @@ import {
   fibonacciCount,
   gridDistribution,
   maxConsecutiveRun,
-  maxEqualGapRun,
+  maxEqualGapStreak,
   primeCount,
   repeatedCount,
   sumTotal,
@@ -68,11 +68,25 @@ describe("métricas compartilhadas", () => {
     expect(maxConsecutiveRun([2, 9, 17, 40])).toBe(1);
   });
 
-  it("detecta a sequência de saltos iguais", () => {
-    expect(maxEqualGapRun([5, 10, 15, 20])).toBe(4);
-    expect(maxEqualGapRun([5, 10, 15, 30])).toBe(3);
-    expect(maxEqualGapRun([1, 4, 10, 20, 35])).toBe(2);
-    expect(maxEqualGapRun([3, 6, 9, 12, 20, 30])).toBe(4);
+  it("conta saltos iguais seguidos (regra v2: saltos, não dezenas)", () => {
+    expect(maxEqualGapStreak([5, 10])).toBe(1);
+    expect(maxEqualGapStreak([5, 10, 15])).toBe(2);
+    expect(maxEqualGapStreak([5, 10, 15, 20])).toBe(3);
+    expect(maxEqualGapStreak([5, 10, 16, 21])).toBe(1);
+    expect(maxEqualGapStreak([1, 3, 5, 8, 11])).toBe(2);
+    expect(maxEqualGapStreak([5, 10, 15, 30])).toBe(2);
+    expect(maxEqualGapStreak([3, 6, 9, 12, 20, 30])).toBe(3);
+    expect(maxEqualGapStreak([7])).toBe(0);
+  });
+
+  it("Analyzer e Filter Engine reportam o mesmo número de saltos", () => {
+    for (const numbers of [
+      [5, 10, 15, 20],
+      [1, 3, 5, 8, 11, 30],
+      [2, 9, 17, 40, 41, 55],
+    ]) {
+      expect(analyzeGame(numbers, mega).maxEqualGapStreak).toBe(maxEqualGapStreak(numbers));
+    }
   });
 
   it("Fibonacci segue a definição única do sistema", () => {
@@ -365,7 +379,7 @@ describe("filtro de consecutivos", () => {
 });
 
 describe("filtro de saltos", () => {
-  it("limita dezenas ligadas pelo mesmo intervalo", () => {
+  it("limita a quantidade de saltos iguais seguidos", () => {
     const outcome = run({
       gamesCount: 25,
       filters: states((draft) => {
@@ -374,23 +388,153 @@ describe("filtro de saltos", () => {
     });
     expect(outcome.games.length).toBeGreaterThan(0);
     for (const game of outcome.games) {
-      expect(maxEqualGapRun(game.numbers)).toBeLessThanOrEqual(2);
+      expect(maxEqualGapStreak(game.numbers)).toBeLessThanOrEqual(2);
     }
   });
 
-  it("rejeita 05,10,15,20 quando o máximo é 3", () => {
-    const rules = resolveRules("mega-sena")!;
-    expect(rules).toBeTruthy();
-    expect(maxEqualGapRun([5, 10, 15, 20])).toBe(4);
+  it("com máximo 2: aceita 05,10,15 e rejeita 05,10,15,20", () => {
+    const quina = resolveRules("quina")!;
+    expect(quina).toBeTruthy();
+    const outcome = generateGames(
+      {
+        lotterySlug: "quina",
+        numbersCount: 5,
+        gamesCount: 30,
+        fixed: [5, 10, 15],
+        excluded: [],
+        filters: states((draft) => {
+          draft.gapRun = { enabled: true, config: { max: 2 } };
+        }),
+      },
+      { random: seededRandomSource(11) },
+    );
+    expect(outcome.validation.ok).toBe(true);
+    expect(outcome.games.length).toBeGreaterThan(0);
+    for (const game of outcome.games) {
+      expect(game.numbers).toEqual(expect.arrayContaining([5, 10, 15]));
+      expect(maxEqualGapStreak(game.numbers)).toBeLessThanOrEqual(2);
+      expect(game.numbers).not.toEqual([5, 10, 15, 20, 25]);
+    }
+  });
+
+  it("FIXED_CONFLICT quando as fixas já formam mais saltos iguais que o máximo", () => {
+    const validation = validateGenerationRequest({
+      lotterySlug: "quina",
+      numbersCount: 5,
+      gamesCount: 1,
+      fixed: [5, 10, 15, 20, 25],
+      excluded: [],
+      filters: states((draft) => {
+        draft.gapRun = { enabled: true, config: { max: 2 } };
+      }),
+    });
+    expect(validation.ok).toBe(false);
+    expect(validation.issues[0]?.filterId).toBe("gapRun");
+  });
+});
+
+describe("conflitos com dezenas fixas em linhas e colunas", () => {
+  it("linhas: fixas ultrapassam o máximo por linha", () => {
     const validation = validateGenerationRequest(
       request({
-        fixed: [5, 10, 15, 20],
+        fixed: [1, 2, 3],
         filters: states((draft) => {
-          draft.gapRun = { enabled: true, config: { max: 3 } };
+          draft.rows = { enabled: true, config: { maxPerLine: 2, minOccupied: null, maxOccupied: null } };
         }),
       }),
     );
     expect(validation.ok).toBe(false);
+    expect(validation.issues.some((issue) => issue.filterId === "rows")).toBe(true);
+  });
+
+  it("colunas: fixas ultrapassam o máximo por coluna", () => {
+    const validation = validateGenerationRequest(
+      request({
+        fixed: [1, 11, 21],
+        filters: states((draft) => {
+          draft.columns = {
+            enabled: true,
+            config: { maxPerLine: 2, minOccupied: null, maxOccupied: null },
+          };
+        }),
+      }),
+    );
+    expect(validation.ok).toBe(false);
+    expect(validation.issues.some((issue) => issue.filterId === "columns")).toBe(true);
+  });
+
+  it("linhas ocupadas: fixas já passam do máximo de linhas ocupadas", () => {
+    const validation = validateGenerationRequest(
+      request({
+        fixed: [1, 11, 21],
+        filters: states((draft) => {
+          draft.rows = { enabled: true, config: { maxPerLine: null, minOccupied: null, maxOccupied: 2 } };
+        }),
+      }),
+    );
+    expect(validation.ok).toBe(false);
+    expect(validation.issues.some((issue) => issue.filterId === "rows")).toBe(true);
+  });
+
+  it("colunas ocupadas: mínimo maior do que o jogo consegue ocupar", () => {
+    const validation = validateGenerationRequest(
+      request({
+        numbersCount: 6,
+        filters: states((draft) => {
+          draft.columns = {
+            enabled: true,
+            config: { maxPerLine: null, minOccupied: 8, maxOccupied: null },
+          };
+        }),
+      }),
+    );
+    expect(validation.ok).toBe(false);
+    expect(validation.issues.some((issue) => issue.filterId === "columns")).toBe(true);
+  });
+
+  it("colunas ocupadas: fixas já passam do máximo de colunas ocupadas", () => {
+    const validation = validateGenerationRequest(
+      request({
+        fixed: [1, 2, 3],
+        filters: states((draft) => {
+          draft.columns = {
+            enabled: true,
+            config: { maxPerLine: null, minOccupied: null, maxOccupied: 2 },
+          };
+        }),
+      }),
+    );
+    expect(validation.ok).toBe(false);
+    expect(validation.issues.some((issue) => issue.filterId === "columns")).toBe(true);
+  });
+});
+
+describe("consecutivos consideram as dezenas realmente disponíveis", () => {
+  it("rejeita antes de gerar quando as excluídas inviabilizam a configuração", () => {
+    // Sobram 1..12 na Mega-Sena; com no máximo 1 consecutivo cabem 6 dezenas.
+    const excluded = Array.from({ length: 48 }, (_, index) => index + 13);
+    const validation = validateGenerationRequest(
+      request({
+        numbersCount: 6,
+        excluded,
+        filters: states((draft) => {
+          draft.consecutive = { enabled: true, config: { max: 1 } };
+        }),
+      }),
+    );
+    expect(validation.ok).toBe(true);
+
+    const impossible = validateGenerationRequest(
+      request({
+        numbersCount: 6,
+        excluded: Array.from({ length: 50 }, (_, index) => index + 11),
+        filters: states((draft) => {
+          draft.consecutive = { enabled: true, config: { max: 1 } };
+        }),
+      }),
+    );
+    expect(impossible.ok).toBe(false);
+    expect(impossible.issues.some((issue) => issue.filterId === "consecutive")).toBe(true);
   });
 });
 
