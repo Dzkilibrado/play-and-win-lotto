@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -32,6 +33,9 @@ import {
   statusWarning,
   type ContestSituation,
 } from "@/lib/games/gameStatus";
+import { checkMyGame } from "@/lib/check.functions";
+import { CheckResultPanel } from "@/components/lottery/CheckResultPanel";
+import { checkService } from "@/lib/services/checkService";
 import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
@@ -74,6 +78,8 @@ function GameDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const runCheck = useServerFn(checkMyGame);
 
   const query = useQuery({
     queryKey: ["game", id],
@@ -86,6 +92,42 @@ function GameDetailPage() {
     enabled: Boolean(game?.lotteries?.slug && game?.contest_number),
     queryFn: () => lotteryDataService.resolveContest(game!.lotteries!.slug, game!.contest_number!),
   });
+
+  const check = useQuery({
+    queryKey: ["game-check", id],
+    queryFn: () => checkService.getGameCheck(id),
+  });
+
+  const drawNumbers = useQuery({
+    queryKey: ["game-check-draw", check.data?.draw_id],
+    enabled: Boolean(check.data?.draw_id && game?.lotteries?.slug),
+    queryFn: () => lotteryDataService.getContestById(check.data!.draw_id),
+  });
+
+  const conferir = async () => {
+    setChecking(true);
+    try {
+      const result = await runCheck({ data: { gameId: id } });
+      if (!result.ok) {
+        const messages: Record<string, string> = {
+          planned: "Marque o jogo como apostado antes de conferir.",
+          no_contest: "Informe o concurso deste jogo antes de conferir.",
+          draw_missing: "Ainda não temos este concurso no aplicativo.",
+          not_drawn: "Este concurso ainda não foi sorteado.",
+        };
+        toast.info(messages[result.reason] ?? "Ainda não é possível conferir este jogo.");
+      } else {
+        toast.success(
+          result.isPrized ? "Conferido: seu jogo foi premiado." : "Conferido: sem premiação.",
+        );
+      }
+      await Promise.all([query.refetch(), check.refetch()]);
+    } catch {
+      toast.error("Não foi possível conferir agora. Tente novamente.");
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const situation: ContestSituation = game?.contest_number
     ? (contest.data?.situation ?? "unknown")
@@ -156,6 +198,35 @@ function GameDetailPage() {
             defaultExpanded
           />
 
+          {check.data ? (
+            <CheckResultPanel
+              result={check.data}
+              gameNumbers={game.game_numbers.map((item) => item.number)}
+              drawNumbers={(drawNumbers.data?.draw_numbers ?? []).map((item) => item.number)}
+            />
+          ) : (
+            <section className="surface-card space-y-3 p-4">
+              <h2 className="font-display text-sm font-semibold text-text-primary">
+                Conferência
+              </h2>
+              <p className="text-xs text-text-secondary">
+                {situation === "drawn"
+                  ? "Este concurso já foi sorteado. Confira para ver seus acertos."
+                  : situation === "pending"
+                    ? "Este concurso ainda não foi sorteado. A conferência acontece automaticamente assim que o resultado chegar."
+                    : "Vincule um concurso a este jogo para que ele possa ser conferido."}
+              </p>
+              <Button
+                size="sm"
+                className="h-11"
+                disabled={checking || situation !== "drawn"}
+                onClick={() => void conferir()}
+              >
+                {checking ? "Conferindo…" : "Conferir agora"}
+              </Button>
+            </section>
+          )}
+
           <section className="surface-card space-y-4 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-sm font-semibold text-text-primary">
@@ -203,7 +274,7 @@ function GameDetailPage() {
 
             <div className="space-y-2">
               <p className="text-xs font-medium text-text-secondary">
-                Definidas automaticamente pela conferência (em desenvolvimento):
+                Definidas automaticamente pela conferência:
               </p>
               <div className="flex flex-wrap gap-2">
                 {automaticStatuses.map((status) => (
