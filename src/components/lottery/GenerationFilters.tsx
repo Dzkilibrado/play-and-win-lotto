@@ -102,15 +102,11 @@ export function GenerationFilters({
   };
 
   const clearAll = () => {
-    const cleared = { ...states };
+    const cleared = { ...states } as unknown as Record<string, unknown>;
     for (const id of filterIds) {
-      cleared[id] = {
-        ...cleared[id],
-        enabled: false,
-        config: { ...filterDefinitions[id].defaultConfig },
-      } as FilterStates[typeof id];
+      cleared[id] = { enabled: false, config: { ...filterDefinitions[id].defaultConfig } };
     }
-    onChange(cleared);
+    onChange(cleared as unknown as FilterStates);
   };
 
   const sumRange = sumFeasibility(context);
@@ -120,7 +116,7 @@ export function GenerationFilters({
   const fibRange = countFeasibility(context, (value) => fibs.has(value));
 
   const renderConfig = (id: FilterId) => {
-    const config = states[id].config as Record<string, number | null | string>;
+    const config = states[id].config as unknown as Record<string, number | null | string>;
     switch (id) {
       case "parity":
         return (
