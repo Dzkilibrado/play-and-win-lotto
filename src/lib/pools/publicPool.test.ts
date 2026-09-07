@@ -6,6 +6,7 @@ import {
   publicGameName,
   publicGameStatuses,
   quotaText,
+  quotaTextUpper,
   type PublicParticipant,
 } from "@/lib/pools/publicPool";
 import { formatCount } from "@/components/common/CountBadge";
@@ -47,6 +48,8 @@ describe("participantes públicos", () => {
   it("usa singular e plural de cota", () => {
     expect(quotaText(1)).toBe("1 cota");
     expect(quotaText(3)).toBe("3 cotas");
+    expect(quotaTextUpper(1)).toBe("1 COTA");
+    expect(quotaTextUpper(3)).toBe("3 COTAS");
   });
 });
 
