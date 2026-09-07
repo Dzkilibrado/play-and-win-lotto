@@ -59,19 +59,8 @@ export interface GameRow {
   source: string;
   created_at: string;
   game_numbers: { number: number; position: number }[];
-  game_analysis:
-    | {
-        even_count: number | null;
-        odd_count: number | null;
-        prime_count: number | null;
-        fibonacci_count: number | null;
-        sum_total: number | null;
-        max_sequence: number | null;
-        repeated_from_last: number | null;
-        row_distribution: unknown;
-        column_distribution: unknown;
-      }[]
-    | null;
+  game_analysis: GameAnalysisRow[] | GameAnalysisRow | null;
+
   lotteries: { slug: string; name: string; color_key: string } | null;
 }
 
