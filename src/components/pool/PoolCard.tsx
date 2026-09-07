@@ -14,6 +14,8 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
   const config = getLotteryConfig(pool.lotteries?.slug);
   const active = pool.pool_participants.filter((p) => p.status === "ACTIVE");
   const quotasTaken = active.reduce((sum, p) => sum + p.quotas, 0);
+  const livres = remainingQuotas(pool.total_quotas, quotasTaken);
+
   const pendentes = active.filter(
     (p) => p.payment_status === "PENDING" || p.payment_status === "PARTIAL" || p.payment_status === "OVERDUE",
   ).length;
