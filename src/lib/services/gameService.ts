@@ -4,6 +4,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { GameAnalysisResult } from "@/lib/engine/types";
+import type { GameOrigin } from "@/lib/games/gameStatus";
 import type { GameStatus } from "@/types/domain";
 
 export interface PriceSnapshot {
@@ -21,11 +22,17 @@ export interface SaveGameInput {
   contestNumber: number | null;
   drawId: string | null;
   price: PriceSnapshot | null;
+  /** Origem do jogo; padrão é criado pelo aplicativo. */
+  source?: GameOrigin;
+  status?: GameStatus;
+  imagePath?: string | null;
+  extraNotes?: string | null;
 }
 
 export interface GameListFilters {
   lotterySlug?: string | null;
   status?: string | null;
+  source?: string | null;
   contestNumber?: number | null;
   numbersCount?: number | null;
   dateFrom?: string | null;
@@ -40,6 +47,8 @@ const GAME_SELECT =
 export interface GameRow {
   id: string;
   user_id: string;
+  sequence_number: number | null;
+  image_path: string | null;
   lottery_id: string;
   contest_number: number | null;
   draw_id: string | null;
@@ -92,10 +101,13 @@ export const gameService = {
         contest_number: input.contestNumber,
         draw_id: input.drawId,
         numbers_count: input.numbers.length,
-        status: "PLANNED" as GameStatus,
-        source: "generator",
+        status: (input.status ?? "PLANNED") as GameStatus,
+        source: input.source ?? "GENERATED",
+        image_path: input.imagePath ?? null,
         cost: input.price ? input.price.price : null,
-        notes: priceNote(input.price, input.analysis),
+        notes: [priceNote(input.price, input.analysis), input.extraNotes]
+          .filter(Boolean)
+          .join("; "),
       })
       .select("id")
       .single();
@@ -132,6 +144,7 @@ export const gameService = {
 
     if (filters.lotterySlug) query = query.eq("lotteries.slug", filters.lotterySlug);
     if (filters.status) query = query.eq("status", filters.status as GameStatus);
+    if (filters.source) query = query.eq("source", filters.source);
     if (filters.contestNumber) query = query.eq("contest_number", filters.contestNumber);
     if (filters.numbersCount) query = query.eq("numbers_count", filters.numbersCount);
     if (filters.dateFrom) query = query.gte("created_at", `${filters.dateFrom}T00:00:00Z`);
@@ -145,6 +158,18 @@ export const gameService = {
     const { data, error, count } = await query;
     if (error) throw error;
     return { rows: (data ?? []) as unknown as GameRow[], total: count ?? 0 };
+  },
+
+  /** Contadores por situação para os indicadores clicáveis do início. */
+  async statusCounts() {
+    const { data, error } = await supabase.from("generated_games").select("status");
+    if (error) throw error;
+    const counts: Partial<Record<GameStatus, number>> = {};
+    for (const row of data ?? []) {
+      const status = row.status as GameStatus;
+      counts[status] = (counts[status] ?? 0) + 1;
+    }
+    return { counts, total: (data ?? []).length };
   },
 
   async getGame(id: string) {
@@ -169,7 +194,7 @@ export const gameService = {
       .from("generated_games")
       .delete()
       .eq("id", id)
-      .eq("status", "PLANNED");
+      .in("status", ["PLANNED", "BET", "RECEIPTED", "AWAITING_DRAW", "AWAITING_CHECK"]);
     if (error) throw error;
   },
 };

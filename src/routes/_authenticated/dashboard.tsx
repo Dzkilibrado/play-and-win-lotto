@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { CheckCircle2, Clock, Trophy, Users, Wallet } from "lucide-react";
+import { Camera, CheckCircle2, Clock, ListChecks, Sparkles, Trophy, Users } from "lucide-react";
 
 import { StatCard } from "@/components/common/Cards";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ContestCard } from "@/components/lottery/ContestCard";
-import { LotteryCard, type UpcomingContestInfo } from "@/components/lottery/LotteryCard";
 import { Button } from "@/components/ui/button";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { appConfig } from "@/config/app.config";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { cn } from "@/lib/utils";
 
@@ -34,98 +35,134 @@ function DashboardPage() {
     queryFn: () => lotteryDataService.getLatestDraws(),
   });
 
+  const counts = useQuery({
+    queryKey: ["game-status-counts"],
+    queryFn: () => gameService.statusCounts(),
+  });
+
   const recent = useQuery({
     queryKey: ["recent-results", resultsLottery],
-    queryFn: () => lotteryDataService.listRecentResults(resultsLottery, 3),
+    queryFn: () => lotteryDataService.listRecentResults(resultsLottery, 2),
   });
+
+  const byStatus = counts.data?.counts ?? {};
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Início"
-        description="Acompanhe os próximos concursos e a situação dos seus jogos."
+        description="O essencial primeiro: seus jogos, os próximos sorteios e os últimos resultados."
       />
 
-      <section aria-labelledby="next-contests" className="space-y-3">
-        <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
-          Próximos concursos
+      <section aria-labelledby="shortcuts" className="space-y-3">
+        <h2 id="shortcuts" className="sr-only">
+          Atalhos
         </h2>
-        {latest.isLoading ? (
-          <LoadingState rows={3} />
-        ) : latest.isError ? (
-          <ErrorState onRetry={() => latest.refetch()} />
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {activeLotteries.map((lottery) => {
-              const draw = (latest.data ?? []).find(
-                (item) => item.lotteries?.slug === lottery.slug,
-              );
-              const contest: UpcomingContestInfo = draw
-                ? {
-                    contestNumber: draw.next_contest_number ?? null,
-                    drawDate: draw.next_draw_date ?? null,
-                    estimatedPrize: draw.estimated_next_prize ?? null,
-                    status: draw.next_contest_number ? "ready" : "unavailable",
-                  }
-                : {
-                    contestNumber: null,
-                    drawDate: null,
-                    estimatedPrize: null,
-                    status: "unavailable",
-                  };
-              return <LotteryCard key={lottery.slug} lottery={lottery} contest={contest} />;
-            })}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild className="h-11">
+            <Link to="/generate">
+              <Sparkles className="size-4" aria-hidden />
+              Criar jogo
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11">
+            <Link to="/games/importar">
+              <Camera className="size-4" aria-hidden />
+              Importar por foto
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" className="h-11">
+            <Link to="/games">
+              <ListChecks className="size-4" aria-hidden />
+              Meus jogos
+            </Link>
+          </Button>
+        </div>
       </section>
 
       <section aria-labelledby="my-numbers" className="space-y-3">
         <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
-          Seus indicadores
+          Seus jogos
         </h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard
+            label="Total salvos"
+            value={counts.data?.total ?? 0}
+            icon={ListChecks}
+            to="/games"
+          />
           <StatCard
             label="Aguardando sorteio"
-            value="0"
+            value={byStatus.AWAITING_DRAW ?? 0}
             icon={Clock}
             tone="info"
             to="/games"
             search={{ status: "AWAITING_DRAW" }}
           />
           <StatCard
-            label="Conferidos"
-            value="0"
+            label="A conferir"
+            value={byStatus.AWAITING_CHECK ?? 0}
             icon={CheckCircle2}
+            tone="warning"
             to="/games"
-            search={{ status: "CHECKED" }}
+            search={{ status: "AWAITING_CHECK" }}
           />
           <StatCard
             label="Premiados"
-            value="0"
+            value={byStatus.PRIZED ?? 0}
             icon={Trophy}
             tone="success"
             to="/games"
             search={{ status: "PRIZED" }}
           />
-          <StatCard
-            label="Bolões ativos"
-            value="0"
-            icon={Users}
-            to="/pools"
-            search={{ status: "OPEN" }}
-          />
-          <StatCard
-            label="Pagamentos pendentes"
-            value="0"
-            icon={Wallet}
-            tone="warning"
-            to="/pools"
-            search={{ payment: "PENDING" }}
-          />
         </div>
-        <p className="text-xs text-text-secondary">
-          Os contadores começam em zero: nenhum jogo ou bolão foi registrado ainda.
-        </p>
+        <Button asChild variant="ghost" size="sm" className="h-11">
+          <Link to="/pools">
+            <Users className="size-4" aria-hidden />
+            Ver bolões
+          </Link>
+        </Button>
+      </section>
+
+      <section aria-labelledby="next-contests" className="space-y-3">
+        <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
+          Próximos sorteios
+        </h2>
+        {latest.isLoading ? (
+          <LoadingState rows={2} />
+        ) : latest.isError ? (
+          <ErrorState onRetry={() => latest.refetch()} />
+        ) : (
+          <ul className="grid gap-2 md:grid-cols-3">
+            {activeLotteries.map((lottery) => {
+              const draw = (latest.data ?? []).find(
+                (item) => item.lotteries?.slug === lottery.slug,
+              );
+              return (
+                <li
+                  key={lottery.slug}
+                  data-lottery={lottery.colorKey}
+                  className="surface-card flex items-center gap-3 p-3"
+                >
+                  <span className="size-2.5 shrink-0 rounded-full bg-lottery" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-sm font-semibold text-text-primary">
+                      {lottery.name}
+                    </p>
+                    <p className="truncate text-xs text-text-secondary">
+                      {draw?.next_contest_number
+                        ? `Concurso ${draw.next_contest_number} · ${formatDate(draw.next_draw_date)}`
+                        : "Sem data disponível"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-display text-sm font-semibold text-lottery">
+                    {formatCurrency(draw?.estimated_next_prize ?? null)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section aria-labelledby="recent-results" className="space-y-3">
@@ -134,7 +171,7 @@ function DashboardPage() {
             id="recent-results"
             className="font-display text-base font-semibold text-text-primary"
           >
-            Resultados anteriores
+            Últimos resultados
           </h2>
           <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Modalidade">
             {activeLotteries.map((lottery) => (
@@ -166,7 +203,7 @@ function DashboardPage() {
           <EmptyState
             icon={Trophy}
             title="Nenhum resultado disponível"
-            description="Nenhum concurso desta modalidade foi importado ainda. Nenhum número fictício é exibido."
+            description="Nenhum concurso desta modalidade foi importado ainda."
             actions={
               <Button variant="outline" size="sm" onClick={() => recent.refetch()}>
                 Atualizar
@@ -174,7 +211,7 @@ function DashboardPage() {
             }
           />
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {(recent.data ?? []).map((draw) => (
               <ContestCard key={draw.id} draw={draw} compact />
             ))}

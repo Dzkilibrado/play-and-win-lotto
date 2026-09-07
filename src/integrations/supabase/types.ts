@@ -225,11 +225,13 @@ export type Database = {
           draw_id: string | null
           hits: number | null
           id: string
+          image_path: string | null
           lottery_id: string
           notes: string | null
           numbers_count: number
           pool_id: string | null
           prize_amount: number | null
+          sequence_number: number | null
           source: string
           status: Database["public"]["Enums"]["game_status"]
           updated_at: string
@@ -242,11 +244,13 @@ export type Database = {
           draw_id?: string | null
           hits?: number | null
           id?: string
+          image_path?: string | null
           lottery_id: string
           notes?: string | null
           numbers_count: number
           pool_id?: string | null
           prize_amount?: number | null
+          sequence_number?: number | null
           source?: string
           status?: Database["public"]["Enums"]["game_status"]
           updated_at?: string
@@ -259,11 +263,13 @@ export type Database = {
           draw_id?: string | null
           hits?: number | null
           id?: string
+          image_path?: string | null
           lottery_id?: string
           notes?: string | null
           numbers_count?: number
           pool_id?: string | null
           prize_amount?: number | null
+          sequence_number?: number | null
           source?: string
           status?: Database["public"]["Enums"]["game_status"]
           updated_at?: string
@@ -1051,6 +1057,7 @@ export type Database = {
         | "BET"
         | "RECEIPTED"
         | "AWAITING_DRAW"
+        | "AWAITING_CHECK"
         | "CHECKED"
         | "PRIZED"
         | "NOT_PRIZED"
@@ -1204,6 +1211,7 @@ export const Constants = {
         "BET",
         "RECEIPTED",
         "AWAITING_DRAW",
+        "AWAITING_CHECK",
         "CHECKED",
         "PRIZED",
         "NOT_PRIZED",
