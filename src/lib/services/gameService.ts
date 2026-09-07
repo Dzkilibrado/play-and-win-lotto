@@ -35,6 +35,8 @@ export interface SaveGameInput {
   extraNotes?: string | null;
   /** Snapshot estruturado dos filtros usados na geração deste jogo. */
   constraints?: GenerationConstraints | null;
+  /** Estratégia de ponderação usada (sem os pesos individuais). */
+  strategy?: StrategySnapshot | null;
 }
 
 export interface GameListFilters {
@@ -116,6 +118,9 @@ function safeConstraints(constraints: GenerationConstraints | null | undefined) 
 export const gameService = {
   async saveGame(input: SaveGameInput) {
     const constraints = safeConstraints(input.constraints);
+    // O snapshot guarda estratégia, janela, intensidade, coeficientes,
+    // referência estatística e hash — nunca os pesos dezena a dezena.
+    const strategy = sanitizeStrategySnapshot(input.strategy ?? null);
     const { data: game, error } = await supabase
       .from("generated_games")
       .insert({
@@ -127,8 +132,15 @@ export const gameService = {
         status: (input.status ?? "PLANNED") as GameStatus,
         source: input.source ?? "GENERATED",
         image_path: input.imagePath ?? null,
-        generation_constraints: (constraints as never) ?? null,
-        generation_rules_version: constraints ? constraints.version : null,
+        generation_constraints:
+          constraints || strategy
+            ? (({
+                version: constraints ? constraints.version : generationRulesVersion,
+                ...(constraints ? { filters: constraints.filters } : {}),
+                ...(strategy ? { strategy } : {}),
+              }) as never)
+            : null,
+        generation_rules_version: constraints || strategy ? generationRulesVersion : null,
         cost: input.price ? input.price.price : null,
         notes: [priceNote(input.price, input.analysis), input.extraNotes]
           .filter(Boolean)
