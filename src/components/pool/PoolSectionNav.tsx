@@ -22,7 +22,7 @@ export function PoolSectionNav({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const current = sections.find((section) => section.value === value) ?? sections[0];
+  const current = sections.find((section) => section.value === value) ?? sections[0]!;
 
   return (
     <div>
