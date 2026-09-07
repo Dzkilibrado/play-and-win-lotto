@@ -29,11 +29,11 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
       params={{ id: pool.id }}
       data-lottery={config?.colorKey}
       className={cn(
-        "block rounded-xl border border-border bg-surface p-4 transition-colors hover:border-lottery/60",
+        "block min-w-0 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-lottery/60",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-display text-base font-semibold text-text-primary">{pool.name}</p>
           <p className="mt-0.5 truncate text-xs text-text-secondary">
@@ -45,7 +45,7 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
       </div>
 
       <div className="mt-3 space-y-1.5">
-        <div className="flex items-center justify-between gap-2 text-xs text-text-secondary">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs text-text-secondary">
           <span className="inline-flex min-w-0 items-center gap-1">
             <Users className="size-3.5 shrink-0" aria-hidden />
             {active.length} {active.length === 1 ? "participante" : "participantes"}

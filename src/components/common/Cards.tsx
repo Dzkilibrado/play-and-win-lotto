@@ -36,9 +36,9 @@ export function StatCard({
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium text-text-secondary">{label}</span>
+        <span className="min-w-0 break-words text-sm font-medium text-text-secondary">{label}</span>
         {Icon ? (
-          <span className={cn("flex size-8 items-center justify-center rounded-lg", toneRing[tone])}>
+          <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", toneRing[tone])}>
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}
@@ -52,7 +52,7 @@ export function StatCard({
   );
 
   if (!to) {
-    return <div className="surface-card p-4">{content}</div>;
+    return <div className="surface-card min-w-0 p-4">{content}</div>;
   }
 
   return (

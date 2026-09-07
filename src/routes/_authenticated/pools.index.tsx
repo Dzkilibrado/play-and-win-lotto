@@ -255,7 +255,7 @@ function PoolsPage() {
           }
         />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
           {rows.map((pool) => (
             <PoolCard key={pool.id} pool={pool} />
           ))}

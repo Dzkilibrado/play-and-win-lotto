@@ -130,7 +130,7 @@ function GamesPage() {
         }
       />
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Total" value={total} icon={ListChecks} />
         <StatCard
           label="Planejados"
