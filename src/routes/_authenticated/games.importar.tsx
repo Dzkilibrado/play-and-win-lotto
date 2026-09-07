@@ -492,9 +492,12 @@ function ImportGamePage() {
               {kind === "RECEIPT"
                 ? situation === "drawn"
                   ? "O concurso já foi sorteado, então o jogo entra para conferência."
-                  : "Comprovante de aposta paga: o jogo fica aguardando o sorteio."
-                : "Canhoto não comprova aposta paga, então o jogo entra como planejado."}
+                  : situation === "pending"
+                    ? "Comprovante de aposta paga: o jogo fica aguardando o sorteio."
+                    : "Comprovante registrado. Ainda não foi possível validar a situação deste concurso; ela será reavaliada quando o concurso entrar na nossa base."
+                : "Canhoto não comprova aposta paga, então o jogo entra como planejado, mesmo com o concurso informado."}
             </p>
+
           </section>
 
           <div className="flex flex-wrap gap-2">
