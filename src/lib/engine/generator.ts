@@ -19,6 +19,7 @@ import {
   randomBelow,
   randomBelowBig,
   shuffleInPlace,
+  weightedSampleWithoutReplacement,
   type RandomSource,
 } from "./random";
 import { resolveRules, universeNumbers } from "./rules";
