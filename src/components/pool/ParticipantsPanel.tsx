@@ -96,7 +96,8 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
           <Button
             size="sm"
             className="h-11"
-            onClick={() => setOpen(true)}
+            onClick={openAdd}
+
             disabled={livres !== null && livres <= 0}
           >
             <UserPlus className="size-4" aria-hidden />
@@ -113,7 +114,7 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
           description="Adicione as pessoas e a quantidade de cotas de cada uma para acompanhar os pagamentos."
           actions={
             openForChanges ? (
-              <Button size="sm" onClick={() => setOpen(true)}>
+              <Button size="sm" onClick={openAdd}>
                 <Plus className="size-4" aria-hidden />
                 Adicionar participante
               </Button>
@@ -168,6 +169,13 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
                       <Wallet className="size-4" aria-hidden />
                       Registrar pagamento
                     </Button>
+                    {openForChanges ? (
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(participant)}>
+                        <Pencil className="size-4" aria-hidden />
+                        Editar
+                      </Button>
+                    ) : null}
+
                     <Button
                       variant="ghost"
                       size="sm"
