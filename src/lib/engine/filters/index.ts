@@ -125,7 +125,10 @@ export function sanitizeFilterStates(input: unknown): FilterStates {
     const entry = raw[id] as { enabled?: unknown; config?: unknown } | undefined;
     if (!entry || typeof entry !== "object") continue;
     const config = (entry.config ?? {}) as Record<string, unknown>;
-    const target = states[id] as { enabled: boolean; config: Record<string, unknown> };
+    const target = states[id] as unknown as {
+      enabled: boolean;
+      config: Record<string, unknown>;
+    };
     target.enabled = entry.enabled === true;
     for (const key of Object.keys(target.config)) {
       if (key === "reference") {
