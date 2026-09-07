@@ -64,7 +64,7 @@ export interface GameAnalysisResult {
   fibonacciCount: number;
   maxSequence: number;
   maxGap: number;
-  /** Maior quantidade de dezenas ligadas pelo mesmo intervalo (saltos iguais). */
+  /** Maior quantidade de saltos iguais consecutivos (intervalos repetidos em sequência). */
   maxEqualGapStreak: number;
   rowDistribution: Record<string, number>;
   columnDistribution: Record<string, number>;
