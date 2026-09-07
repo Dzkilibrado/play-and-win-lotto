@@ -46,6 +46,27 @@ export const Route = createFileRoute("/_authenticated/games/$id")({
   component: GameDetailPage,
 });
 
+/** Traduz o registro interno de origem em frases simples para o usuário. */
+function originFacts(notes: string | null): string[] {
+  if (!notes) return [];
+  const map = new Map<string, string>();
+  for (const part of notes.split(";")) {
+    const [key, ...rest] = part.split("=");
+    if (!key || rest.length === 0) continue;
+    map.set(key.trim(), rest.join("=").trim());
+  }
+  const facts: string[] = [];
+  const price = map.get("preco");
+  if (price) facts.push(`Valor da aposta informado: R$ ${Number(price).toFixed(2).replace(".", ",")}`);
+  const source = map.get("fonte");
+  if (source) facts.push(`Referência de preço: ${source}`);
+  if (map.get("origem") === "foto") facts.push("Dezenas lidas a partir de uma foto enviada por você.");
+  if (map.get("revisado_pelo_usuario") === "sim") facts.push("Você revisou e confirmou as dezenas antes de salvar.");
+  return facts;
+}
+
+
+
 function GameDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
