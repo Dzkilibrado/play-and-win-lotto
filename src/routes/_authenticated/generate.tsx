@@ -131,7 +131,7 @@ function GeneratePage() {
   const hasOptionalConfig =
     fixed.length > 0 ||
     excluded.length > 0 ||
-    activeFilterIds(filters).length > 0 ||
+    Object.values(filters).some((state) => state?.enabled) ||
     weightSelection.strategyId !== "none";
 
   const requestLotteryChange = (next: LotterySlug) => {
