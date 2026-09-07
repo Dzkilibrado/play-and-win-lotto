@@ -1,23 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Ban, Plus, UserMinus, UserPlus, Wallet } from "lucide-react";
+import { Ban, Pencil, Plus, UserMinus, UserPlus, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { EmptyState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { ParticipantFormDialog } from "@/components/pool/ParticipantFormDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
 import { noQuotaLimitLabel, quotaLabel, remainingQuotas } from "@/lib/pools/poolMath";
@@ -34,13 +24,8 @@ const editableStatuses = ["FORMING", "OPEN", "CLOSED"];
 
 export function ParticipantsPanel({ pool, participants, canManage, onPay }: Props) {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [quotas, setQuotas] = useState("1");
-  const [adjustment, setAdjustment] = useState("0");
-  const [adjustmentReason, setAdjustmentReason] = useState("");
-  const [notes, setNotes] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<PoolParticipantRow | null>(null);
   const [cancelTarget, setCancelTarget] = useState<PoolParticipantRow | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [eligibilityTarget, setEligibilityTarget] = useState<PoolParticipantRow | null>(null);
@@ -52,36 +37,10 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   const semLimite = livres === null;
   const openForChanges = editableStatuses.includes(pool.status) && canManage;
 
-
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
     void queryClient.invalidateQueries({ queryKey: ["pools"] });
   };
-
-  const addMutation = useMutation({
-    mutationFn: () =>
-      poolService.addParticipant({
-        poolId: pool.id,
-        name: name.trim(),
-        phone: phone.trim() || null,
-        quotas: Number(quotas),
-        adjustment: Number(adjustment) || 0,
-        adjustmentReason: adjustmentReason.trim() || null,
-        notes: notes.trim() || null,
-      }),
-    onSuccess: () => {
-      toast.success("Participante adicionado");
-      setOpen(false);
-      setName("");
-      setPhone("");
-      setQuotas("1");
-      setAdjustment("0");
-      setAdjustmentReason("");
-      setNotes("");
-      invalidate();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
 
   const cancelMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
@@ -110,27 +69,19 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
     },
   });
 
-  const submit = () => {
-    const parsedQuotas = Number(quotas);
-    if (!name.trim()) {
-      toast.error("Informe o nome do participante.");
-      return;
-    }
-    if (!Number.isInteger(parsedQuotas) || parsedQuotas < 1) {
-      toast.error("A quantidade de cotas deve ser um número inteiro maior que zero.");
-      return;
-    }
-    if (livres !== null && parsedQuotas > livres) {
-      toast.error(`Restam apenas ${livres} cotas neste bolão.`);
-      return;
-    }
+  /** Na edição, o próprio participante já ocupa cotas: elas voltam ao limite. */
+  const maxQuotasFor = (target: PoolParticipantRow | null) =>
+    livres === null ? null : livres + (target?.quotas ?? 0);
 
-    if (Number(adjustment) !== 0 && !adjustmentReason.trim()) {
-      toast.error("Informe o motivo do ajuste de valor.");
-      return;
-    }
-    addMutation.mutate();
+  const openAdd = () => {
+    setEditTarget(null);
+    setFormOpen(true);
   };
+  const openEdit = (participant: PoolParticipantRow) => {
+    setEditTarget(participant);
+    setFormOpen(true);
+  };
+
 
   return (
     <div className="space-y-3">
