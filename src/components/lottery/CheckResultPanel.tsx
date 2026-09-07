@@ -1,6 +1,7 @@
 import { NumberBall } from "@/components/lottery/NumberBall";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { checkDisclaimer } from "@/config/check.config";
+import { prizeValueLabel } from "@/lib/check/prizeLabels";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import type { CheckResultRow } from "@/lib/services/checkService";
 
@@ -22,6 +23,19 @@ export function CheckResultPanel({
     (a, b) => b.hits_required - a.hits_required,
   );
   const detailed = breakdown.length > 1 || (breakdown[0]?.winning_combinations ?? 1) > 1;
+  // Explicação de faixa com valor oficial zero (nunca confundido com "sem valor").
+  const zeroNotes = [
+    ...new Set(
+      breakdown
+        .map((entry) => {
+          const label = prizeValueLabel(entry.prize_per_combination, entry.draw_prizes?.winners);
+          return entry.prize_per_combination === 0 && label.note
+            ? `${entry.tier}: ${label.note}`
+            : null;
+        })
+        .filter((note): note is string => Boolean(note)),
+    ),
+  ];
 
   return (
     <section className="surface-card space-y-4 p-4">
@@ -85,6 +99,11 @@ export function CheckResultPanel({
               quando o valor for publicado.
             </p>
           ) : null}
+          {zeroNotes.map((note) => (
+            <p key={note} className="text-xs text-text-secondary">
+              {note}
+            </p>
+          ))}
         </div>
       ) : (
         <p className="text-sm text-text-secondary">
@@ -114,8 +133,11 @@ export function CheckResultPanel({
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-text-secondary">
                       {entry.prize_per_combination == null
-                        ? "—"
-                        : formatCurrency(entry.prize_per_combination)}
+                        ? "Não informado"
+                        : prizeValueLabel(
+                            entry.prize_per_combination,
+                            entry.draw_prizes?.winners,
+                          ).value}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-text-primary">
                       {entry.total_for_tier == null ? "—" : formatCurrency(entry.total_for_tier)}

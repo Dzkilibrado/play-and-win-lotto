@@ -376,11 +376,17 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
   };
   if (["completed", "completed_with_errors", "failed"].includes(row.status)) return row;
 
+  // Reserva atômica: só uma execução assume a fila. Uma fila que ficou
+  // `running` sem atividade (queda/timeout) volta a ser assumível depois do
+  // prazo de recuperação — nunca fica travada para sempre.
+  const { data: claimed, error: claimError } = await (admin as unknown as Rpc).rpc(
+    "claim_check_job",
+    { _job_id: jobId, _stale_after: checkConfig.jobStaleAfter },
+  );
+  if (claimError) throw new Error(claimError.message);
+  if (claimed !== true) return row;
+
   const startedAt = row.started_at ?? new Date().toISOString();
-  await admin
-    .from("game_check_jobs")
-    .update({ status: "running", started_at: startedAt } as never)
-    .eq("id", jobId);
 
   try {
     const context = await loadDrawContext(admin, row.draw_id);
@@ -402,6 +408,8 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
             : "completed"
           : "running",
         finished_at: finished ? new Date().toISOString() : null,
+        last_activity_at: new Date().toISOString(),
+        locked_at: finished ? null : new Date().toISOString(),
       } as never)
       .eq("id", jobId)
       .select("*")
@@ -431,6 +439,8 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
         status: "failed",
         last_error: message.slice(0, 500),
         finished_at: new Date().toISOString(),
+        last_activity_at: new Date().toISOString(),
+        locked_at: null,
       } as never)
       .eq("id", jobId)
       .select("*")

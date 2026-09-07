@@ -18,6 +18,11 @@ export const checkConfig = {
   recentDrawsToScan: 12,
   /** Tempo máximo de uma execução de fila, em milissegundos. */
   maxBatchDurationMs: 20_000,
+  /**
+   * Tempo sem atividade após o qual uma fila `running` é considerada
+   * abandonada (queda/timeout) e pode ser reassumida por outra execução.
+   */
+  jobStaleAfter: "00:10:00",
 } as const;
 
 export const checkDisclaimer =

@@ -216,3 +216,43 @@ describe("conferência — dados inconsistentes", () => {
     expect(checkGame(input)).toEqual(checkGame(input));
   });
 });
+
+describe("faixa com valor oficial zero", () => {
+  it("mantém a faixa, calcula combinações e total zero sem virar pendente", () => {
+    const outcome = checkGame({
+      gameNumbers: [1, 13, 25, 35, 39, 51],
+      drawNumbers: [1, 13, 25, 35, 39, 51],
+      baseSize: 6,
+      tiers: [
+        { drawPrizeId: "a", tier: "Sena", hits: 6, prizePerWinner: 0 },
+        { drawPrizeId: "b", tier: "Quina", hits: 5, prizePerWinner: 100 },
+      ],
+    });
+    const sena = outcome.breakdown.find((entry) => entry.hitsRequired === 6);
+    expect(sena).toBeDefined();
+    expect(sena?.winningCombinations).toBe(1);
+    expect(sena?.prizePerCombination).toBe(0);
+    expect(sena?.totalForTier).toBe(0);
+    expect(outcome.amountPending).toBe(false);
+    expect(outcome.isPrized).toBe(true);
+    expect(outcome.totalPrize).toBe(0);
+  });
+
+  it("zero e null convivem: só o null deixa a conferência pendente", () => {
+    const outcome = checkGame({
+      gameNumbers: [1, 13, 25, 35, 39, 51, 2],
+      drawNumbers: [1, 13, 25, 35, 39, 51],
+      baseSize: 6,
+      tiers: [
+        { drawPrizeId: "a", tier: "Sena", hits: 6, prizePerWinner: 0 },
+        { drawPrizeId: "b", tier: "Quina", hits: 5, prizePerWinner: null },
+      ],
+    });
+    const sena = outcome.breakdown.find((entry) => entry.hitsRequired === 6);
+    const quina = outcome.breakdown.find((entry) => entry.hitsRequired === 5);
+    expect(sena?.totalForTier).toBe(0);
+    expect(quina?.totalForTier).toBeNull();
+    expect(outcome.amountPending).toBe(true);
+    expect(outcome.totalPrize).toBe(0);
+  });
+});
