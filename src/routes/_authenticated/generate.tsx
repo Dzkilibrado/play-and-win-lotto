@@ -148,12 +148,8 @@ function GeneratePage() {
   const totalPrice = unitPrice != null ? unitPrice * gamesCount : null;
   const combinationCount = priceQuery.data?.combination_count ?? null;
 
-  const contestNumber =
-    contestChoice === "none"
-      ? null
-      : contestChoice === "next"
-        ? nextContest
-        : Number(customContest) || null;
+  const contestNumber = resolveReferenceContest(contestChoice, nextContest, customContest);
+
 
   /**
    * Referência do filtro "Repetidas do concurso anterior".
