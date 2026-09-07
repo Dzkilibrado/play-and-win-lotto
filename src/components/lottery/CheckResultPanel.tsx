@@ -133,7 +133,7 @@ export function CheckResultPanel({
       ) : null}
 
       <p className="text-xs text-text-secondary">
-        Conferido em {formatDate(result.checked_at)}. {checkDisclaimer}
+        Conferido em {formatDate(result.checked_at.slice(0, 10))}. {checkDisclaimer}
       </p>
     </section>
   );
