@@ -20,6 +20,8 @@ export interface ListSearch {
   group?: string | undefined;
   /** "with" | "without" — bolões com ou sem jogos vinculados. */
   games?: string | undefined;
+  /** Quantidade de resultados por página. */
+  size?: string | undefined;
 }
 
 function str(value: unknown): string | undefined {
@@ -43,6 +45,7 @@ export function validateListSearch(search: Record<string, unknown>): ListSearch 
     "tab",
     "group",
     "games",
+    "size",
   ] as const;
   for (const key of keys) {
     const value = str(search[key]);
