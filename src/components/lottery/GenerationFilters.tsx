@@ -238,18 +238,20 @@ export function GenerationFilters({
         return (
           <>
             <NumberField
-              label="Máximo de dezenas com o mesmo intervalo"
+              label="Máximo de saltos iguais seguidos"
               value={config["max"] as number | null}
-              min={2}
-              max={context.numbersCount}
+              min={1}
+              max={Math.max(1, context.numbersCount - 1)}
               onChange={(value) => update("gapRun", { max: value })}
             />
             <Hint>
-              Em 05 → 10 → 15 → 20 o intervalo 5 se repete e liga 4 dezenas. Com o máximo 3, esse
-              jogo não é aceito.
+              Salto é a distância entre duas dezenas vizinhas. Em 05 → 10 → 15 → 20 o intervalo +5
+              se repete 3 vezes seguidas. Com o máximo 2, esse jogo é recusado e 05, 10, 15 é
+              aceito.
             </Hint>
           </>
         );
+
       case "fibonacci":
         return (
           <>
