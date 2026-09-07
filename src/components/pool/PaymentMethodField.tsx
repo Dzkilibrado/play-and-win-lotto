@@ -40,7 +40,8 @@ export function PaymentMethodField({
         <Select
           value={method}
           onValueChange={(value) => onMethodChange(value as PaymentMethod)}
-          disabled={disabled}
+          disabled={disabled ?? false}
+
         >
           <SelectTrigger id={`${idPrefix}-method`} className="h-11">
             <SelectValue />
