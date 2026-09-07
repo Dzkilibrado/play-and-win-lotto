@@ -398,6 +398,8 @@ export function generateGames(
     candidatesEvaluated,
     candidatesRejected,
     duplicatesDiscarded,
+    samplingMode,
+
     durationMs: (options.now ?? Date.now)() - startedAt,
     stopReason,
     activeFilters,
