@@ -245,6 +245,17 @@ export function generateGames(
     durationMs: (options.now ?? Date.now)() - startedAt,
     stopReason,
     activeFilters,
+    weights: weightVector
+      ? {
+          strategyId: weightVector.strategyId,
+          intensity: weightVector.intensity,
+          window: weightVector.window,
+          contestsAnalyzed: weightVector.contestsAnalyzed,
+          lastContestConsidered: weightVector.lastContestConsidered,
+          weightMin: poolWeights.length ? Math.min(...poolWeights) : 1,
+          weightMax: poolWeights.length ? Math.max(...poolWeights) : 1,
+        }
+      : null,
   };
 
   return { validation, games, metrics, partial: games.length < request.gamesCount };
