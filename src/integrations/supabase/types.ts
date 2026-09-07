@@ -244,8 +244,10 @@ export type Database = {
           failed: number
           finished_at: string | null
           id: string
+          last_activity_at: string | null
           last_error: string | null
           last_game_id: string | null
+          locked_at: string | null
           prized: number
           processed: number
           started_at: string | null
@@ -259,8 +261,10 @@ export type Database = {
           failed?: number
           finished_at?: string | null
           id?: string
+          last_activity_at?: string | null
           last_error?: string | null
           last_game_id?: string | null
+          locked_at?: string | null
           prized?: number
           processed?: number
           started_at?: string | null
@@ -274,8 +278,10 @@ export type Database = {
           failed?: number
           finished_at?: string | null
           id?: string
+          last_activity_at?: string | null
           last_error?: string | null
           last_game_id?: string | null
+          locked_at?: string | null
           prized?: number
           processed?: number
           started_at?: string | null
@@ -1216,6 +1222,10 @@ export type Database = {
         Returns: string
       }
       can_read_game: { Args: { _game_id: string }; Returns: boolean }
+      claim_check_job: {
+        Args: { _job_id: string; _stale_after?: string }
+        Returns: boolean
+      }
       claim_sync_job_batch: {
         Args: { _batch_size: number; _job_id: string; _stale_after?: string }
         Returns: {
@@ -1289,6 +1299,13 @@ export type Database = {
           _prizes: Json
         }
         Returns: string
+      }
+      set_manual_game_status: {
+        Args: {
+          _game_id: string
+          _status: Database["public"]["Enums"]["game_status"]
+        }
+        Returns: Database["public"]["Enums"]["game_status"]
       }
     }
     Enums: {
