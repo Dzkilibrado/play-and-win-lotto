@@ -92,8 +92,9 @@ function GeneratePage() {
   };
 
   const toggleFixed = (value: number) => {
+    // Uma dezena excluída não pode virar fixa por toque: o usuário desfaz a exclusão antes.
+    if (excluded.includes(value)) return;
     setGames(null);
-    setExcluded((prev) => prev.filter((item) => item !== value));
     setFixed((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
@@ -102,14 +103,16 @@ function GeneratePage() {
   };
 
   const toggleExcluded = (value: number) => {
+    // Dezenas fixas nem aparecem neste quadro; a guarda evita troca implícita.
+    if (fixed.includes(value)) return;
     setGames(null);
-    setFixed((prev) => prev.filter((item) => item !== value));
     setExcluded((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
         : [...prev, value].sort((a, b) => a - b),
     );
   };
+
 
   const request = useMemo(
     () => ({ lotterySlug: slug, numbersCount, gamesCount, fixed, excluded }),
