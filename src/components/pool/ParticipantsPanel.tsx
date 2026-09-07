@@ -125,14 +125,22 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-text-secondary">
           {active.length} {active.length === 1 ? "participante ativo" : "participantes ativos"} ·{" "}
-          {quotasTaken}/{pool.total_quotas} cotas · {livres} livres
+          {semLimite
+            ? `${quotasTaken} ${quotasTaken === 1 ? "cota atribuída" : "cotas atribuídas"} · ${noQuotaLimitLabel}`
+            : `${quotaLabel(pool.total_quotas, quotasTaken)} cotas · ${livres} livres`}
         </p>
         {openForChanges ? (
-          <Button size="sm" className="h-11" onClick={() => setOpen(true)} disabled={livres <= 0}>
+          <Button
+            size="sm"
+            className="h-11"
+            onClick={() => setOpen(true)}
+            disabled={livres !== null && livres <= 0}
+          >
             <UserPlus className="size-4" aria-hidden />
             Adicionar participante
           </Button>
         ) : null}
+
       </div>
 
       {participants.length === 0 ? (
