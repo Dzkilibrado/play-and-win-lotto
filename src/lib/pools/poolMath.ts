@@ -82,8 +82,19 @@ export function calculateDistribution(
   const remainder = cents - base * totalEligibleQuotas;
 
   const ordered = [...eligible].sort(distributionOrder);
+
+  /**
+   * A sobra pode ser maior que o número de participantes (acontece quando há
+   * muitas cotas): distribuímos um centavo por vez, dando voltas na mesma
+   * ordem, até zerar. A soma das partes fecha sempre com o total.
+   */
+  const extras = ordered.map(() => 0);
+  for (let left = remainder, index = 0; left > 0; left -= 1, index += 1) {
+    extras[index % ordered.length] = (extras[index % ordered.length] ?? 0) + 1;
+  }
+
   const shares = ordered.map((participant, index) => {
-    const extra = index < remainder ? 1 : 0;
+    const extra = extras[index] ?? 0;
     return {
       participantId: participant.id,
       quotas: participant.quotas,
