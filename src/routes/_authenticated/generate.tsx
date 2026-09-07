@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { NumberStepper } from "@/components/common/NumberStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
@@ -28,7 +29,7 @@ import {
   type FilterStates,
 } from "@/lib/engine/filters";
 import { universeNumbers } from "@/lib/engine/rules";
-import { allowedNumbersCounts, resolveRules } from "@/lib/engine/rules";
+import { resolveRules } from "@/lib/engine/rules";
 import { validateGenerationRequest } from "@/lib/engine/validator";
 import {
   buildStrategySnapshot,
@@ -133,6 +134,34 @@ function GeneratePage() {
     excluded.length > 0 ||
     Object.values(filters).some((state) => state?.enabled) ||
     weightSelection.strategyId !== "none";
+
+  /**
+   * Volta à geração simples sem tocar em modalidade, dezenas, quantidade
+   * de jogos ou concurso. Como é fácil desfazer, não usamos confirmação:
+   * o aviso traz a ação de restaurar.
+   */
+  const clearOptionalConfig = () => {
+    const snapshot = { fixed, excluded, filters, weightSelection };
+    setFixed([]);
+    setExcluded([]);
+    setFilters(defaultFilterStates());
+    setWeightSelection(defaultWeightSelection());
+    setGames(null);
+    setMetrics(null);
+    toast.success("Configurações opcionais limpas.", {
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          setFixed(snapshot.fixed);
+          setExcluded(snapshot.excluded);
+          setFilters(snapshot.filters);
+          setWeightSelection(snapshot.weightSelection);
+        },
+      },
+    });
+  };
+
+
 
   const requestLotteryChange = (next: LotterySlug) => {
     if (next === slug) return;
@@ -493,62 +522,34 @@ function GeneratePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>2. Dezenas por jogo</Label>
-              <div className="flex flex-wrap gap-2">
-                {allowedNumbersCounts(rules).map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    aria-pressed={count === numbersCount}
-                    onClick={() => {
-                      setNumbersCount(count);
-                      setGames(null);
-                    }}
-                    className={cn(
-                      "h-11 min-w-11 rounded-lg border px-3 text-sm font-semibold tabular-nums",
-                      count === numbersCount
-                        ? "border-lottery bg-lottery text-lottery-foreground"
-                        : "border-border bg-surface text-text-primary",
-                    )}
-                  >
-                    {count}
-                  </button>
-                ))}
-              </div>
+              <Label htmlFor="numbers-count">2. Dezenas por jogo</Label>
+              <NumberStepper
+                id="numbers-count"
+                label="dezenas por jogo"
+                value={numbersCount}
+                min={rules.selectable.min}
+                max={rules.selectable.max}
+                onChange={(next) => {
+                  setNumbersCount(next);
+                  setGames(null);
+                }}
+                hint={`De ${rules.selectable.min} a ${rules.selectable.max} dezenas na ${rules.name}.`}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="games-count">3. Quantidade de jogos</Label>
-              <div className="flex flex-wrap items-center gap-2">
-                {generationConfig.quickGameCounts.map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    aria-pressed={count === gamesCount}
-                    onClick={() => setGamesCount(count)}
-                    className={cn(
-                      "h-11 min-w-11 rounded-lg border px-3 text-sm font-semibold tabular-nums",
-                      count === gamesCount
-                        ? "border-lottery bg-lottery text-lottery-foreground"
-                        : "border-border bg-surface text-text-primary",
-                    )}
-                  >
-                    {count}
-                  </button>
-                ))}
-                <input
-                  id="games-count"
-                  inputMode="numeric"
-                  aria-label="Quantidade personalizada de jogos"
-                  value={gamesCount}
-                  onChange={(event) => setGamesCount(Number(event.target.value.replace(/\D/g, "")) || 0)}
-                  className="h-11 w-24 rounded-lg border border-border bg-surface px-3 text-sm tabular-nums"
-                />
-              </div>
-              <p className="text-xs text-text-secondary">
-                Limite de {generationConfig.maxGamesPerRequest} jogos por geração.
-              </p>
+              <NumberStepper
+                id="games-count"
+                label="quantidade de jogos"
+                value={gamesCount}
+                min={1}
+                max={generationConfig.maxGamesPerRequest}
+                onChange={setGamesCount}
+                hint={`De 1 a ${generationConfig.maxGamesPerRequest} jogos por geração.`}
+              />
             </div>
+
           </section>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -703,6 +704,16 @@ function GeneratePage() {
               {describeWeightSelection(weightSelection)}
             </p>
 
+            {hasOptionalConfig ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 w-full"
+                onClick={clearOptionalConfig}
+              >
+                Limpar configurações opcionais
+              </Button>
+            ) : null}
 
 
             <button
