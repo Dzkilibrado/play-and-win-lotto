@@ -295,19 +295,19 @@ function GeneratePage() {
             <div
               className={cn(
                 "rounded-xl p-3 text-sm",
-                metrics.partial ? "bg-warning-soft text-warning" : "bg-surface-secondary text-text-secondary",
+                metrics.generated < metrics.requested ? "bg-warning-soft text-warning" : "bg-surface-secondary text-text-secondary",
               )}
             >
-              {metrics.partial ? (
+              {metrics.generated < metrics.requested ? (
                 <div className="space-y-2">
                   <p>
                     Com os filtros escolhidos foi possível criar {metrics.generated} de{" "}
                     {metrics.requested} jogos.
                     {metrics.stopReason === "time_limit"
                       ? " A busca foi encerrada para não travar o aparelho."
-                      : metrics.stopReason === "candidate_limit"
-                        ? " Poucas combinações atendem a todos os filtros ao mesmo tempo."
-                        : ""}
+                      : metrics.stopReason === "space_exhausted"
+                        ? " Não existem mais combinações diferentes que atendam aos filtros."
+                        : " Poucas combinações atendem a todos os filtros ao mesmo tempo."}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" variant="secondary" onClick={() => setGames(null)}>
