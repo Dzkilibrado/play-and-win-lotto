@@ -123,7 +123,7 @@ const eligibleStatuses = [
   "CHECKED",
   "PRIZED",
   "NOT_PRIZED",
-];
+] as const;
 
 function needsCheck(game: GameRow, context: DrawContext, since: string | null): boolean {
   const result = game.game_check_results?.[0];
