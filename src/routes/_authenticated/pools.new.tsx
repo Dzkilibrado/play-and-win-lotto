@@ -170,15 +170,23 @@ function NewPoolPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pool-total-quotas">Total de cotas</Label>
+            <Label htmlFor="pool-total-quotas">
+              Total de cotas <span className="text-text-secondary">(opcional)</span>
+            </Label>
             <Input
               id="pool-total-quotas"
               className="h-11"
               inputMode="numeric"
+              placeholder="Sem limite"
               value={totalQuotas}
               onChange={(event) => setTotalQuotas(event.target.value)}
+              aria-describedby="pool-total-quotas-help"
             />
+            <p id="pool-total-quotas-help" className="text-xs text-text-secondary">
+              Deixe em branco se o bolão não tiver uma quantidade máxima de cotas.
+            </p>
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="pool-deadline">Prazo de pagamento</Label>
             <Input
