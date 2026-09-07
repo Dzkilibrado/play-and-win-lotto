@@ -225,11 +225,13 @@ export function generateGames(
         break;
       }
       const chosen =
-        toChoose > 0
-          ? total <= BigInt(Number.MAX_SAFE_INTEGER)
-            ? sampleCombination(pool, toChoose, random)
-            : unrankCombination(pool, toChoose, randomBelowBig(random, total))
-          : [];
+        toChoose <= 0
+          ? []
+          : weighted
+            ? weightedSampleWithoutReplacement(pool, weightOf, toChoose, random)
+            : total <= BigInt(Number.MAX_SAFE_INTEGER)
+              ? sampleCombination(pool, toChoose, random)
+              : unrankCombination(pool, toChoose, randomBelowBig(random, total));
       consider(buildNumbers(chosen));
     }
   }
