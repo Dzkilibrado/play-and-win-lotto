@@ -57,7 +57,7 @@ function NewPoolPage() {
         contestNumber: contest ? Number(contest) : null,
         drawDate: drawDate || null,
         quotaValue: Number(quotaValue),
-        totalQuotas: Number(totalQuotas),
+        totalQuotas: parsedTotal,
         paymentDeadline: deadline || null,
         notes: notes.trim() || null,
       }),
