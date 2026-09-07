@@ -63,9 +63,11 @@ export function PublicParticipantList({
         </p>
       ) : (
         <ul className="divide-y divide-border">
-          {visible.map((participant) => (
+          {visible.map((participant, index) => (
             <li
-              key={`${participant.name}-${participant.quotas}`}
+              // A identidade da linha é a posição na lista devolvida pelo banco,
+              // nunca o texto do nome: homônimos continuam sendo pessoas distintas.
+              key={index}
               // Conjunto compacto: nome · cotas · Pago, alinhados ao início da linha.
               className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2"
             >

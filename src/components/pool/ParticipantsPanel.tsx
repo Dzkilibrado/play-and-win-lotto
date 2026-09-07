@@ -268,6 +268,12 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="h-11"
+                // O nome é gravado exatamente como digitado: nada de autocompletar,
+                // corrigir ortografia ou sugerir nomes parecidos.
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">

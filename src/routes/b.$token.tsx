@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Timer } from "lucide-react";
 
+import { SectionTitleWithCount } from "@/components/common/CountBadge";
 import { EmptyState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { NumberBall } from "@/components/lottery/NumberBall";
@@ -174,8 +175,8 @@ function PublicPoolPage() {
         className="surface-card divide-y divide-border px-4"
       >
         <AccordionItem value="participants" className="border-0">
-          <AccordionTrigger className="py-3 text-sm font-semibold">
-            Participantes confirmados ({participants.length})
+          <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
+            <SectionTitleWithCount title="Participantes confirmados" count={participants.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
             <PublicParticipantList participants={participants} />
@@ -183,8 +184,8 @@ function PublicPoolPage() {
         </AccordionItem>
 
         <AccordionItem value="games" className="border-0">
-          <AccordionTrigger className="py-3 text-sm font-semibold">
-            Jogos do bolão ({games.length})
+          <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
+            <SectionTitleWithCount title="Jogos do bolão" count={games.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
             <PublicGameList games={games} drawnNumbers={drawn} />
