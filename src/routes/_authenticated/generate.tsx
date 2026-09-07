@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
@@ -110,6 +111,8 @@ function GeneratePage() {
   const lastNumbers = lastDraw?.draw_numbers?.map((item) => item.number) ?? null;
   const nextContest = lastDraw?.next_contest_number ?? (lastDraw ? lastDraw.contest_number + 1 : null);
 
+  const [pendingLottery, setPendingLottery] = useState<LotterySlug | null>(null);
+
   const changeLottery = (next: LotterySlug) => {
     const nextRules = resolveRules(next)!;
     setSlug(next);
@@ -122,6 +125,22 @@ function GeneratePage() {
     setMetrics(null);
     setSavedKeys([]);
     void navigate({ search: (prev) => ({ ...prev, lottery: next }) });
+  };
+
+  /** Opções que seriam perdidas ao trocar de modalidade. */
+  const hasOptionalConfig =
+    fixed.length > 0 ||
+    excluded.length > 0 ||
+    activeFilterIds(filters).length > 0 ||
+    weightSelection.strategyId !== "none";
+
+  const requestLotteryChange = (next: LotterySlug) => {
+    if (next === slug) return;
+    if (!hasOptionalConfig) {
+      changeLottery(next);
+      return;
+    }
+    setPendingLottery(next);
   };
 
   /**
@@ -436,7 +455,7 @@ function GeneratePage() {
                     role="tab"
                     aria-selected={item.slug === slug}
                     data-lottery={item.colorKey}
-                    onClick={() => changeLottery(item.slug)}
+                    onClick={() => requestLotteryChange(item.slug)}
                     className={cn(
                       "touch-target rounded-full px-4 text-sm font-medium transition-colors",
                       item.slug === slug
@@ -511,6 +530,7 @@ function GeneratePage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <NumberSelectionCard
+              className="scroll-mt-24"
               label="4. Fixar números (opcional)"
               drawerTitle="Fixar números"
               description="Escolha dezenas que deverão estar em todos os jogos."
@@ -524,12 +544,17 @@ function GeneratePage() {
               locked={excluded}
               excludedMarks={excluded}
               limit={numbersCount}
-              notice={
+              notice={(openDrawer) =>
                 fixed.length > numbersCount ? (
-                  <p className="rounded-lg bg-warning-soft p-3 text-xs text-warning">
-                    Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
-                    {numbersCount} dezenas. Ajuste os fixos ou a quantidade de dezenas.
-                  </p>
+                  <div className="space-y-2 rounded-lg bg-warning-soft p-3">
+                    <p className="text-xs text-warning">
+                      Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
+                      {numbersCount} dezenas.
+                    </p>
+                    <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
+                      Editar números fixos
+                    </Button>
+                  </div>
                 ) : null
               }
             />
