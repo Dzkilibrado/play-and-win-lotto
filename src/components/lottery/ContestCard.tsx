@@ -21,10 +21,13 @@ export function ContestCard({
   const numbers = [...(draw.draw_numbers ?? [])].sort((a, b) => a.number - b.number);
 
   return (
-    <article
+    <Link
+      to="/contests/$id"
+      params={{ id: draw.id }}
       data-lottery={config?.colorKey}
+      aria-label={`Abrir concurso ${draw.contest_number} da ${draw.lotteries?.name ?? "loteria"}`}
       className={cn(
-        "rounded-xl border border-border bg-surface p-4 transition-colors hover:border-lottery/60",
+        "tappable block rounded-xl border border-border bg-surface p-4 hover:border-lottery/60",
         className,
       )}
     >
@@ -74,13 +77,9 @@ export function ContestCard({
         </dl>
       )}
 
-      <Link
-        to="/contests/$id"
-        params={{ id: draw.id }}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-lottery"
-      >
-        Ver detalhes <ChevronRight className="size-3.5" />
-      </Link>
-    </article>
+      <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-lottery">
+        Ver detalhes <ChevronRight className="size-3.5" aria-hidden />
+      </span>
+    </Link>
   );
 }

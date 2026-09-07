@@ -139,14 +139,18 @@ export function GameCard({
         />
       </dl>
 
+      {/* Linha inteira expande/recolhe — a seta é só indicador. */}
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
-        className="flex items-center gap-1 text-xs font-medium text-text-secondary"
+        className="tappable -mx-2 flex min-h-11 w-full items-center justify-between gap-2 rounded-lg px-2 text-left text-xs font-medium text-text-secondary hover:bg-surface-secondary"
       >
-        <ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} aria-hidden />
-        {expanded ? "Ocultar análise" : "Ver análise completa"}
+        <span>{expanded ? "Ocultar análise" : "Ver análise completa"}</span>
+        <ChevronDown
+          className={cn("size-4 shrink-0 transition-transform", expanded && "rotate-180")}
+          aria-hidden
+        />
       </button>
 
       {expanded ? (
@@ -172,7 +176,8 @@ export function GameCard({
             <Link
               to={to}
               params={params ?? {}}
-              className="text-xs font-medium text-lottery underline-offset-4 hover:underline"
+              aria-label={`Abrir detalhe de ${title}`}
+              className="tappable inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-lottery hover:bg-surface-secondary"
             >
               Ver detalhe
             </Link>

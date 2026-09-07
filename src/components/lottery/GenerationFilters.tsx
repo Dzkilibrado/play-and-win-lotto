@@ -382,7 +382,7 @@ export function GenerationFilters({
                         type="button"
                         onClick={() => setExpanded(isOpen ? null : id)}
                         aria-expanded={isOpen}
-                        className="flex-1 text-left"
+                        className="tappable -m-1 flex min-h-11 flex-1 flex-col justify-center rounded-lg p-1 text-left"
                       >
                         <span className="text-sm font-medium text-text-primary">
                           {definition.label}
