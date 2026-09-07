@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GameCard } from "@/components/lottery/GameCard";
 import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
@@ -27,9 +26,9 @@ export const Route = createFileRoute("/_authenticated/generate")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
-      { title: `Gerar jogo — ${appConfig.name}` },
+      { title: `Criar jogo — ${appConfig.name}` },
       { name: "description", content: "Monte jogos com dezenas fixas, exclusões e análise." },
-      { property: "og:title", content: `Gerar jogo — ${appConfig.name}` },
+      { property: "og:title", content: `Criar jogo — ${appConfig.name}` },
       {
         property: "og:description",
         content: "Monte jogos com dezenas fixas, exclusões e análise completa.",
@@ -39,7 +38,6 @@ export const Route = createFileRoute("/_authenticated/generate")({
   component: GeneratePage,
 });
 
-type Mode = "fix" | "exclude";
 type ContestChoice = "next" | "custom" | "none";
 
 function GeneratePage() {
@@ -55,7 +53,6 @@ function GeneratePage() {
   const [gamesCount, setGamesCount] = useState(1);
   const [fixed, setFixed] = useState<number[]>([]);
   const [excluded, setExcluded] = useState<number[]>([]);
-  const [mode, setMode] = useState<Mode>("fix");
   const [contestChoice, setContestChoice] = useState<ContestChoice>("next");
   const [customContest, setCustomContest] = useState("");
   const [games, setGames] = useState<GeneratedGameDraft[] | null>(null);
@@ -94,19 +91,24 @@ function GeneratePage() {
     void navigate({ search: (prev) => ({ ...prev, lottery: next }) });
   };
 
-  const toggleNumber = (value: number) => {
+  const toggleFixed = (value: number) => {
     setGames(null);
-    if (mode === "fix") {
-      setExcluded((prev) => prev.filter((item) => item !== value));
-      setFixed((prev) =>
-        prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value].sort((a, b) => a - b),
-      );
-    } else {
-      setFixed((prev) => prev.filter((item) => item !== value));
-      setExcluded((prev) =>
-        prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value].sort((a, b) => a - b),
-      );
-    }
+    setExcluded((prev) => prev.filter((item) => item !== value));
+    setFixed((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value].sort((a, b) => a - b),
+    );
+  };
+
+  const toggleExcluded = (value: number) => {
+    setGames(null);
+    setFixed((prev) => prev.filter((item) => item !== value));
+    setExcluded((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value].sort((a, b) => a - b),
+    );
   };
 
   const request = useMemo(
@@ -182,14 +184,14 @@ function GeneratePage() {
   return (
     <div className="space-y-4 pb-28" data-lottery={rules.colorKey}>
       <PageHeader
-        title="Gerar jogo"
+        title="Criar jogo"
         description="Escolha a modalidade, as dezenas e gere quantos jogos quiser. Nada é salvo sem sua confirmação."
       />
 
       {games ? (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={handleGenerate}>Gerar novamente</Button>
+            <Button onClick={handleGenerate}>Criar novamente</Button>
             <Button variant="outline" onClick={() => setGames(null)}>
               Editar configuração
             </Button>
@@ -315,61 +317,54 @@ function GeneratePage() {
             </div>
           </section>
 
-          <section className="surface-card space-y-3 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label>4. Fixar ou excluir dezenas (opcional)</Label>
-              <div className="flex gap-2" role="group" aria-label="Modo de seleção">
-                {(
-                  [
-                    ["fix", "Fixar números"],
-                    ["exclude", "Excluir números"],
-                  ] as [Mode, string][]
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={mode === value}
-                    onClick={() => setMode(value)}
-                    className={cn(
-                      "touch-target rounded-full px-4 text-sm font-medium",
-                      mode === value
-                        ? "bg-lottery text-lottery-foreground"
-                        : "bg-surface-secondary text-text-secondary",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="surface-card space-y-3 p-4">
+              <Label>4. Dezenas fixas (opcional)</Label>
+              <p className="text-xs text-text-secondary">
+                Estas dezenas aparecem em todos os jogos criados.
+              </p>
+              <p className="text-xs text-text-secondary">
+                Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
+                {availableCount}
+              </p>
+              <LotteryNumberGrid
+                rules={rules}
+                fixed={fixed}
+                excluded={excluded}
+                onSelect={toggleFixed}
+              />
+              {fixed.length > 0 ? (
+                <Button variant="ghost" size="sm" onClick={() => setFixed([])}>
+                  Limpar dezenas fixas
+                </Button>
+              ) : null}
+            </section>
 
-            <p className="text-xs text-text-secondary">
-              Fixados: {fixed.length} · Excluídos: {excluded.length} · Disponíveis: {availableCount}
-            </p>
-
-            <LotteryNumberGrid
-              rules={rules}
-              fixed={fixed}
-              excluded={excluded}
-              onSelect={toggleNumber}
-            />
-
-            {(fixed.length > 0 || excluded.length > 0) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setFixed([]);
-                  setExcluded([]);
-                }}
-              >
-                Limpar seleção
-              </Button>
-            )}
-          </section>
+            <section className="surface-card space-y-3 p-4">
+              <Label>5. Dezenas excluídas (opcional)</Label>
+              <p className="text-xs text-text-secondary">
+                Estas dezenas nunca aparecem nos jogos criados.
+              </p>
+              <p className="text-xs text-text-secondary">
+                Fixadas: {fixed.length} · Excluídas: {excluded.length} · Disponíveis:{" "}
+                {availableCount}
+              </p>
+              <LotteryNumberGrid
+                rules={rules}
+                fixed={fixed}
+                excluded={excluded}
+                onSelect={toggleExcluded}
+              />
+              {excluded.length > 0 ? (
+                <Button variant="ghost" size="sm" onClick={() => setExcluded([])}>
+                  Limpar dezenas excluídas
+                </Button>
+              ) : null}
+            </section>
+          </div>
 
           <section className="surface-card space-y-3 p-4">
-            <Label>5. Concurso (opcional)</Label>
+            <Label>6. Concurso (opcional)</Label>
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -407,12 +402,6 @@ function GeneratePage() {
                 />
               </div>
             ) : null}
-            <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2">
-              <StatusBadge label="Em breve" tone="neutral" />
-              <span className="text-xs text-text-secondary">
-                Este jogo será usado em um bolão? A vinculação chega na próxima etapa.
-              </span>
-            </div>
           </section>
 
           <section className="surface-card sticky bottom-20 z-10 space-y-3 p-4 sm:bottom-4">
@@ -466,7 +455,7 @@ function GeneratePage() {
             )}
 
             <Button className="h-12 w-full" disabled={!validation.ok} onClick={handleGenerate}>
-              Gerar jogos
+              Criar jogos
             </Button>
           </section>
         </>
