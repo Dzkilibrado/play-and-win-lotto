@@ -193,14 +193,19 @@ function GameDetailPage() {
             </div>
           </section>
 
-          {game.notes ? (
+          {originFacts(game.notes).length > 0 ? (
             <section className="surface-card space-y-2 p-4">
               <h2 className="font-display text-sm font-semibold text-text-primary">
-                Registro de origem
+                Como este jogo foi registrado
               </h2>
-              <p className="break-words text-xs text-text-secondary">{game.notes}</p>
+              <ul className="space-y-1 text-xs text-text-secondary">
+                {originFacts(game.notes).map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
             </section>
           ) : null}
+
 
           <section className="surface-card space-y-2 p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">Excluir jogo</h2>
