@@ -32,6 +32,7 @@ export function summarizeNumbers(values: number[]) {
 
 export function NumberSelectionCard({
   label,
+  drawerTitle,
   description,
   drawerDescription,
   value,
@@ -50,6 +51,7 @@ export function NumberSelectionCard({
   className,
 }: {
   label: string;
+  drawerTitle?: string;
   description: string;
   drawerDescription: string;
   value: number[];
@@ -124,7 +126,7 @@ export function NumberSelectionCard({
         <DrawerContent>
           <div className="mx-auto flex max-h-[88vh] w-full max-w-lg flex-col">
             <DrawerHeader>
-              <DrawerTitle>{label}</DrawerTitle>
+              <DrawerTitle>{drawerTitle ?? label}</DrawerTitle>
               <DrawerDescription>{drawerDescription}</DrawerDescription>
             </DrawerHeader>
 

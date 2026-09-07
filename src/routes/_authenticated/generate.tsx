@@ -512,6 +512,7 @@ function GeneratePage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <NumberSelectionCard
               label="4. Fixar números (opcional)"
+              drawerTitle="Fixar números"
               description="Escolha dezenas que deverão estar em todos os jogos."
               drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
               value={fixed}
@@ -535,6 +536,7 @@ function GeneratePage() {
 
             <NumberSelectionCard
               label="5. Excluir números (opcional)"
+              drawerTitle="Excluir números"
               description="Escolha dezenas que não poderão aparecer nos jogos."
               drawerDescription="Selecione as dezenas que não devem aparecer nos jogos. Dezenas fixas não aparecem aqui."
               value={excluded}
