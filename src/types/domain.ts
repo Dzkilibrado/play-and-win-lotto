@@ -77,9 +77,11 @@ export const poolStatusTone: Record<PoolStatus, StatusTone> = {
   OPEN: "info",
   CLOSED: "warning",
   AWAITING_DRAW: "warning",
+  AWAITING_CHECK: "warning",
   CHECKED: "neutral",
   PRIZED: "success",
   FINISHED: "neutral",
+  CANCELLED: "danger",
 };
 
 export const paymentStatusTone: Record<PaymentStatus, StatusTone> = {
@@ -87,4 +89,6 @@ export const paymentStatusTone: Record<PaymentStatus, StatusTone> = {
   PARTIAL: "info",
   PAID: "success",
   OVERDUE: "danger",
+  CANCELLED: "neutral",
 };
+
