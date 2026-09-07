@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { NumberStepper } from "./NumberStepper";
 
@@ -13,6 +13,8 @@ function Harness({ min, max, start }: { min: number; max: number; start: number 
 }
 
 describe("NumberStepper", () => {
+  afterEach(cleanup);
+
   it("incrementa e decrementa de 1 em 1", () => {
     render(<Harness min={6} max={20} start={6} />);
     const input = screen.getByLabelText("dezenas por jogo") as HTMLInputElement;
