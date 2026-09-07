@@ -958,6 +958,44 @@ export type Database = {
           },
         ]
       }
+      pool_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          pool_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          pool_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          pool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_events_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pool_games: {
         Row: {
           created_at: string
@@ -996,9 +1034,14 @@ export type Database = {
       }
       pool_participants: {
         Row: {
+          adjustment_reason: string | null
+          amount_adjustment: number
           amount_due: number
+          cancelled_at: string | null
           created_at: string
+          eligible_for_prize_share: boolean
           id: string
+          ineligible_reason: string | null
           name: string
           notes: string | null
           paid_at: string | null
@@ -1006,13 +1049,20 @@ export type Database = {
           phone: string | null
           pool_id: string
           quotas: number
+          status: Database["public"]["Enums"]["participant_status"]
+          total_paid: number
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          adjustment_reason?: string | null
+          amount_adjustment?: number
           amount_due?: number
+          cancelled_at?: string | null
           created_at?: string
+          eligible_for_prize_share?: boolean
           id?: string
+          ineligible_reason?: string | null
           name: string
           notes?: string | null
           paid_at?: string | null
@@ -1020,13 +1070,20 @@ export type Database = {
           phone?: string | null
           pool_id: string
           quotas?: number
+          status?: Database["public"]["Enums"]["participant_status"]
+          total_paid?: number
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          adjustment_reason?: string | null
+          amount_adjustment?: number
           amount_due?: number
+          cancelled_at?: string | null
           created_at?: string
+          eligible_for_prize_share?: boolean
           id?: string
+          ineligible_reason?: string | null
           name?: string
           notes?: string | null
           paid_at?: string | null
@@ -1034,6 +1091,8 @@ export type Database = {
           phone?: string | null
           pool_id?: string
           quotas?: number
+          status?: Database["public"]["Enums"]["participant_status"]
+          total_paid?: number
           updated_at?: string
           user_id?: string | null
         }
@@ -1050,7 +1109,9 @@ export type Database = {
       pool_payments: {
         Row: {
           amount: number
+          cancelled_at: string | null
           created_at: string
+          created_by: string | null
           id: string
           method: string | null
           notes: string | null
@@ -1060,7 +1121,9 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          cancelled_at?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           method?: string | null
           notes?: string | null
@@ -1070,7 +1133,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cancelled_at?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           method?: string | null
           notes?: string | null
@@ -1095,51 +1160,191 @@ export type Database = {
           },
         ]
       }
+      pool_prize_distributions: {
+        Row: {
+          calculated_at: string
+          calculated_by: string | null
+          calculation_version: number
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          pool_id: string
+          rateable_prize: number
+          rounding_remainder: number
+          source_hash: string
+          status: Database["public"]["Enums"]["distribution_status"]
+          total_eligible_quotas: number
+          total_prize: number
+          updated_at: string
+          value_per_quota: number
+          version: number
+        }
+        Insert: {
+          calculated_at?: string
+          calculated_by?: string | null
+          calculation_version?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          pool_id: string
+          rateable_prize?: number
+          rounding_remainder?: number
+          source_hash: string
+          status?: Database["public"]["Enums"]["distribution_status"]
+          total_eligible_quotas?: number
+          total_prize?: number
+          updated_at?: string
+          value_per_quota?: number
+          version: number
+        }
+        Update: {
+          calculated_at?: string
+          calculated_by?: string | null
+          calculation_version?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          pool_id?: string
+          rateable_prize?: number
+          rounding_remainder?: number
+          source_hash?: string
+          status?: Database["public"]["Enums"]["distribution_status"]
+          total_eligible_quotas?: number
+          total_prize?: number
+          updated_at?: string
+          value_per_quota?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_prize_distributions_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pool_prize_participants: {
+        Row: {
+          created_at: string
+          distribution_id: string
+          eligible_quotas: number
+          id: string
+          participant_id: string
+          payment_status_at_calc: Database["public"]["Enums"]["payment_status"]
+          rounding_adjustment: number
+          share_amount: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          distribution_id: string
+          eligible_quotas: number
+          id?: string
+          participant_id: string
+          payment_status_at_calc: Database["public"]["Enums"]["payment_status"]
+          rounding_adjustment?: number
+          share_amount: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          distribution_id?: string
+          eligible_quotas?: number
+          id?: string
+          participant_id?: string
+          payment_status_at_calc?: Database["public"]["Enums"]["payment_status"]
+          rounding_adjustment?: number
+          share_amount?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_prize_participants_distribution_id_fkey"
+            columns: ["distribution_id"]
+            isOneToOne: false
+            referencedRelation: "pool_prize_distributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pool_prize_participants_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "pool_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pools: {
         Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          closed_at: string | null
           contest_id: string | null
           contest_number: number | null
+          contest_number_planned: number | null
           created_at: string
           draw_date: string | null
+          draw_date_planned: string | null
           id: string
+          is_public: boolean
           lottery_id: string
           name: string
           notes: string | null
           owner_id: string
           payment_deadline: string | null
+          public_token: string | null
           quota_value: number
+          reopened_at: string | null
           status: Database["public"]["Enums"]["pool_status"]
           total_quotas: number
           updated_at: string
         }
         Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          closed_at?: string | null
           contest_id?: string | null
           contest_number?: number | null
+          contest_number_planned?: number | null
           created_at?: string
           draw_date?: string | null
+          draw_date_planned?: string | null
           id?: string
+          is_public?: boolean
           lottery_id: string
           name: string
           notes?: string | null
           owner_id: string
           payment_deadline?: string | null
+          public_token?: string | null
           quota_value?: number
+          reopened_at?: string | null
           status?: Database["public"]["Enums"]["pool_status"]
           total_quotas?: number
           updated_at?: string
         }
         Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          closed_at?: string | null
           contest_id?: string | null
           contest_number?: number | null
+          contest_number_planned?: number | null
           created_at?: string
           draw_date?: string | null
+          draw_date_planned?: string | null
           id?: string
+          is_public?: boolean
           lottery_id?: string
           name?: string
           notes?: string | null
           owner_id?: string
           payment_deadline?: string | null
+          public_token?: string | null
           quota_value?: number
+          reopened_at?: string | null
           status?: Database["public"]["Enums"]["pool_status"]
           total_quotas?: number
           updated_at?: string
@@ -1284,6 +1489,15 @@ export type Database = {
       }
       is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
       is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
+      log_pool_event: {
+        Args: {
+          _description: string
+          _event_type: string
+          _metadata?: Json
+          _pool_id: string
+        }
+        Returns: undefined
+      }
       lottery_number_statistics: {
         Args: { _lottery_slug: string; _max_contest?: number; _window?: number }
         Returns: Json
@@ -1300,6 +1514,63 @@ export type Database = {
         }
         Returns: string
       }
+      pool_attach_game: {
+        Args: { _game_id: string; _pool_id: string }
+        Returns: string
+      }
+      pool_calculate_distribution: {
+        Args: { _pool_id: string }
+        Returns: string
+      }
+      pool_cancel_participant: {
+        Args: { _participant_id: string; _reason: string }
+        Returns: undefined
+      }
+      pool_cancel_payment: {
+        Args: { _payment_id: string; _reason?: string }
+        Returns: undefined
+      }
+      pool_confirm_distribution: {
+        Args: { _distribution_id: string }
+        Returns: undefined
+      }
+      pool_detach_game: {
+        Args: { _game_id: string; _pool_id: string }
+        Returns: undefined
+      }
+      pool_prize_total: { Args: { _pool_id: string }; Returns: number }
+      pool_public_summary: { Args: { _token: string }; Returns: Json }
+      pool_register_payment: {
+        Args: {
+          _allow_overpay?: boolean
+          _amount: number
+          _method?: string
+          _notes?: string
+          _paid_at?: string
+          _participant_id: string
+        }
+        Returns: string
+      }
+      pool_set_participant_eligibility: {
+        Args: { _eligible: boolean; _participant_id: string; _reason?: string }
+        Returns: undefined
+      }
+      pool_set_public: {
+        Args: { _enabled: boolean; _pool_id: string }
+        Returns: string
+      }
+      pool_set_status: {
+        Args: {
+          _pool_id: string
+          _reason?: string
+          _status: Database["public"]["Enums"]["pool_status"]
+        }
+        Returns: Database["public"]["Enums"]["pool_status"]
+      }
+      recalc_participant_payment: {
+        Args: { _participant_id: string }
+        Returns: undefined
+      }
       set_manual_game_status: {
         Args: {
           _game_id: string
@@ -1310,6 +1581,7 @@ export type Database = {
     }
     Enums: {
       app_role: "USER" | "ADMIN"
+      distribution_status: "CALCULATED" | "CONFIRMED" | "OUTDATED"
       feature_status: "ACTIVE" | "BETA" | "MAINTENANCE" | "DISABLED"
       game_status:
         | "PLANNED"
@@ -1320,15 +1592,18 @@ export type Database = {
         | "CHECKED"
         | "PRIZED"
         | "NOT_PRIZED"
-      payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE"
+      participant_status: "ACTIVE" | "CANCELLED"
+      payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED"
       pool_status:
         | "FORMING"
         | "OPEN"
         | "CLOSED"
         | "AWAITING_DRAW"
+        | "AWAITING_CHECK"
         | "CHECKED"
         | "PRIZED"
         | "FINISHED"
+        | "CANCELLED"
       sync_job_status:
         | "pending"
         | "running"
@@ -1464,6 +1739,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["USER", "ADMIN"],
+      distribution_status: ["CALCULATED", "CONFIRMED", "OUTDATED"],
       feature_status: ["ACTIVE", "BETA", "MAINTENANCE", "DISABLED"],
       game_status: [
         "PLANNED",
@@ -1475,15 +1751,18 @@ export const Constants = {
         "PRIZED",
         "NOT_PRIZED",
       ],
-      payment_status: ["PENDING", "PARTIAL", "PAID", "OVERDUE"],
+      participant_status: ["ACTIVE", "CANCELLED"],
+      payment_status: ["PENDING", "PARTIAL", "PAID", "OVERDUE", "CANCELLED"],
       pool_status: [
         "FORMING",
         "OPEN",
         "CLOSED",
         "AWAITING_DRAW",
+        "AWAITING_CHECK",
         "CHECKED",
         "PRIZED",
         "FINISHED",
+        "CANCELLED",
       ],
       sync_job_status: [
         "pending",
