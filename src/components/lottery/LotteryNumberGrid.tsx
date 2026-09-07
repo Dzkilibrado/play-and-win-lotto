@@ -17,6 +17,10 @@ export function LotteryNumberGrid({
   picked = [],
   onSelect,
   readOnly = false,
+  /** Dezenas visíveis, porém bloqueadas para seleção neste quadro. */
+  locked = [],
+  /** Dezenas que não devem aparecer neste quadro. */
+  hidden = [],
   className,
 }: {
   rules: LotteryRules;
@@ -25,11 +29,15 @@ export function LotteryNumberGrid({
   picked?: number[];
   onSelect?: (value: number) => void;
   readOnly?: boolean;
+  locked?: number[];
+  hidden?: number[];
   className?: string;
 }) {
   const fixedSet = new Set(fixed);
   const excludedSet = new Set(excluded);
   const pickedSet = new Set(picked);
+  const lockedSet = new Set(locked);
+  const hiddenSet = new Set(hidden);
 
   const stateOf = (value: number): NumberState => {
     if (fixedSet.has(value)) return "fixed";
@@ -52,7 +60,10 @@ export function LotteryNumberGrid({
       role="group"
       aria-label={`Volante da ${rules.name}`}
     >
-      {universeNumbers(rules).map((value) => {
+      {universeNumbers(rules)
+        .filter((value) => !hiddenSet.has(value))
+        .map((value) => {
+
         const state = stateOf(value);
         const content = (
           <>
