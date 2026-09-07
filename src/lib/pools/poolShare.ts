@@ -5,6 +5,7 @@
  */
 import { formatDate } from "@/lib/format";
 import { remainingQuotas } from "@/lib/pools/poolMath";
+import { isPubliclyVisibleGame } from "@/lib/pools/publicPool";
 import type { PoolRow } from "@/lib/services/poolService";
 
 export interface PoolShareStats {
@@ -25,7 +26,9 @@ export function poolShareStats(pool: PoolRow): PoolShareStats {
     paidQuotas: paid.reduce((sum, p) => sum + p.quotas, 0),
     totalQuotas: pool.total_quotas,
     availableQuotas: remainingQuotas(pool.total_quotas, quotasTaken),
-    games: pool.pool_games?.length ?? 0,
+    games: (pool.pool_games ?? []).filter(
+      (link) => link.generated_games && isPubliclyVisibleGame(link.generated_games.status),
+    ).length,
   };
 }
 

@@ -5,6 +5,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import type {
+  GameStatus,
   PaymentStatus,
   PoolStatus,
   ParticipantStatus,
@@ -12,7 +13,7 @@ import type {
 } from "@/types/domain";
 
 const POOL_SELECT =
-  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id)";
+  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
 
 export interface PoolLotteryRef {
   slug: string;
@@ -66,7 +67,7 @@ export interface PoolRow {
     PoolParticipantRow,
     "id" | "quotas" | "amount_due" | "total_paid" | "payment_status" | "status" | "eligible_for_prize_share"
   >[];
-  pool_games: { id: string }[];
+  pool_games: { id: string; generated_games: { status: GameStatus } | null }[];
 }
 
 export interface PoolFilters {
