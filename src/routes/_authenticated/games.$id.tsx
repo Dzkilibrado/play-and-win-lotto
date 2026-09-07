@@ -227,6 +227,10 @@ function GameDetailPage() {
             </section>
           ) : null}
 
+          {game.image_path ? (
+            <GameDocumentSection imagePath={game.image_path} source={game.source} />
+          ) : null}
+
 
           <section className="surface-card space-y-2 p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">Excluir jogo</h2>
