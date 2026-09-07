@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PaymentMethodField, validatePaymentMethod } from "@/components/pool/PaymentMethodField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { poolNotices } from "@/config/pools.config";
+import { poolNotices, type PaymentMethod } from "@/config/pools.config";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow } from "@/lib/services/poolService";
 
@@ -28,7 +29,8 @@ export function PaymentDialog({
 }) {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("");
+  const [method, setMethod] = useState<PaymentMethod>("PIX");
+  const [methodDescription, setMethodDescription] = useState("");
   const [paidAt, setPaidAt] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [confirmOverpay, setConfirmOverpay] = useState(false);
@@ -41,7 +43,8 @@ export function PaymentDialog({
     if (participant) {
       setAmount(falta > 0 ? String(falta) : "");
       setConfirmOverpay(false);
-      setMethod("");
+      setMethod("PIX");
+      setMethodDescription("");
       setNotes("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,7 +56,8 @@ export function PaymentDialog({
         participantId: participant!.id,
         amount: Number(amount),
         paidAt: new Date(`${paidAt}T12:00:00`).toISOString(),
-        method: method.trim() || null,
+        method,
+        methodDescription: method === "OTHER" ? methodDescription.trim() : null,
         notes: notes.trim() || null,
         allowOverpay,
       }),
@@ -80,12 +84,17 @@ export function PaymentDialog({
       toast.error("Informe um valor maior que zero.");
       return;
     }
+    const methodError = validatePaymentMethod(method, methodDescription);
+    if (methodError) {
+      toast.error(methodError);
+      return;
+    }
     mutation.mutate(confirmOverpay);
   };
 
   return (
     <Dialog open={participant !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar pagamento</DialogTitle>
           <DialogDescription>
@@ -118,26 +127,21 @@ export function PaymentDialog({
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="payment-method">Forma (opcional)</Label>
-              <Input
-                id="payment-method"
-                value={method}
-                onChange={(event) => setMethod(event.target.value)}
-                className="h-11"
-                placeholder="Pix, dinheiro…"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="payment-notes">Observação</Label>
-              <Input
-                id="payment-notes"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                className="h-11"
-              />
-            </div>
+          <PaymentMethodField
+            idPrefix="payment"
+            method={method}
+            description={methodDescription}
+            onMethodChange={setMethod}
+            onDescriptionChange={setMethodDescription}
+          />
+          <div className="space-y-1.5">
+            <Label htmlFor="payment-notes">Observação</Label>
+            <Input
+              id="payment-notes"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="h-11"
+            />
           </div>
           {confirmOverpay ? (
             <p className="rounded-lg bg-warning-soft p-3 text-xs text-warning">{poolNotices.overpay}</p>
@@ -156,3 +160,4 @@ export function PaymentDialog({
     </Dialog>
   );
 }
+

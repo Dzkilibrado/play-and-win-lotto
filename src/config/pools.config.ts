@@ -55,6 +55,32 @@ export const paymentStatusOrder: PaymentStatus[] = [
   "CANCELLED",
 ];
 
+/**
+ * Formas de pagamento aceitas. Os valores canônicos são os únicos gravados
+ * no banco (restrição + validação nas funções `pool_register_payment`
+ * e `pool_add_participant`). "OTHER" exige descrição complementar.
+ */
+export const paymentMethods = ["PIX", "CASH", "CARD", "OTHER"] as const;
+export type PaymentMethod = (typeof paymentMethods)[number];
+
+export const paymentMethodLabel: Record<PaymentMethod, string> = {
+  PIX: "Pix",
+  CASH: "Dinheiro",
+  CARD: "Cartão",
+  OTHER: "Outro",
+};
+
+/** Rótulo seguro para exibir a forma gravada em um pagamento. */
+export function describePaymentMethod(
+  method: string | null,
+  description?: string | null,
+): string | null {
+  if (!method) return null;
+  const label = paymentMethodLabel[method as PaymentMethod] ?? method;
+  return method === "OTHER" && description ? `${label}: ${description}` : label;
+}
+
+
 export const distributionStatusLabel = {
   CALCULATED: "Calculado",
   CONFIRMED: "Confirmado",

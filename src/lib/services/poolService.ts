@@ -3,6 +3,7 @@
  * Sempre pelo cliente autenticado (RLS). Regras críticas — situação, rateio,
  * pagamentos e vínculo de jogos — passam por funções protegidas no banco.
  */
+import type { PaymentMethod } from "@/config/pools.config";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   GameStatus,
@@ -11,6 +12,7 @@ import type {
   ParticipantStatus,
   DistributionStatus,
 } from "@/types/domain";
+
 
 const POOL_SELECT =
   "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
@@ -245,6 +247,11 @@ export const poolService = {
     return (data ?? []) as unknown as PoolParticipantRow[];
   },
 
+  /**
+   * Cadastro do participante e, quando informado, o pagamento inicial na
+   * mesma transação do banco (`pool_add_participant`): ou grava os dois,
+   * ou não grava nada.
+   */
   async addParticipant(input: {
     poolId: string;
     name: string;
@@ -253,27 +260,47 @@ export const poolService = {
     adjustment: number;
     adjustmentReason: string | null;
     notes: string | null;
+    paymentMode: "PENDING" | "FULL" | "PARTIAL";
+    paymentAmount?: number | null;
+    method?: PaymentMethod | null;
+    methodDescription?: string | null;
   }) {
-    const { error } = await supabase.from("pool_participants").insert({
-      pool_id: input.poolId,
-      name: input.name,
-      phone: input.phone,
-      quotas: input.quotas,
-      amount_adjustment: input.adjustment,
-      adjustment_reason: input.adjustmentReason,
-      notes: input.notes,
-      amount_due: 0,
+    const { error } = await supabase.rpc("pool_add_participant", {
+      _pool_id: input.poolId,
+      _name: input.name,
+      _quotas: input.quotas,
+      _adjustment: input.adjustment,
+      _payment_mode: input.paymentMode,
+      ...(input.phone ? { _phone: input.phone } : {}),
+      ...(input.adjustmentReason ? { _adjustment_reason: input.adjustmentReason } : {}),
+      ...(input.notes ? { _notes: input.notes } : {}),
+      ...(input.paymentAmount != null ? { _payment_amount: input.paymentAmount } : {}),
+      ...(input.method ? { _method: input.method } : {}),
+      ...(input.methodDescription ? { _method_description: input.methodDescription } : {}),
+    });
+
+    if (error) throw error;
+  },
+
+  /** Edição do participante — sempre pela função do banco (só organizador). */
+  async updateParticipant(
+    id: string,
+    patch: {
+      name?: string;
+      phone?: string | null;
+      quotas?: number;
+      adjustment?: number;
+      adjustment_reason?: string | null;
+      notes?: string | null;
+    },
+  ) {
+    const { error } = await supabase.rpc("pool_update_participant", {
+      _participant_id: id,
+      _patch: patch as never,
     });
     if (error) throw error;
   },
 
-  async updateParticipant(
-    id: string,
-    patch: { name?: string; phone?: string | null; quotas?: number; amount_adjustment?: number; adjustment_reason?: string | null; notes?: string | null },
-  ) {
-    const { error } = await supabase.from("pool_participants").update(patch).eq("id", id);
-    if (error) throw error;
-  },
 
   async cancelParticipant(id: string, reason: string) {
     const { error } = await supabase.rpc("pool_cancel_participant", {
@@ -308,7 +335,8 @@ export const poolService = {
     participantId: string;
     amount: number;
     paidAt: string;
-    method: string | null;
+    method: PaymentMethod | null;
+    methodDescription?: string | null;
     notes: string | null;
     allowOverpay?: boolean;
   }) {
@@ -317,11 +345,13 @@ export const poolService = {
       _amount: input.amount,
       _paid_at: input.paidAt,
       ...(input.method ? { _method: input.method } : {}),
+      ...(input.methodDescription ? { _method_description: input.methodDescription } : {}),
       ...(input.notes ? { _notes: input.notes } : {}),
       _allow_overpay: input.allowOverpay ?? false,
     });
     if (error) throw error;
   },
+
 
   async cancelPayment(paymentId: string, reason: string) {
     const { error } = await supabase.rpc("pool_cancel_payment", {
