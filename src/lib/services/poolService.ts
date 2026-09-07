@@ -87,10 +87,24 @@ export interface CreatePoolInput {
   contestNumber: number | null;
   drawDate: string | null;
   quotaValue: number;
-  totalQuotas: number;
+  /** `null` = bolão sem limite de cotas definido. */
+  totalQuotas: number | null;
   paymentDeadline: string | null;
   notes: string | null;
 }
+
+/** Campos que o organizador pode corrigir depois da criação. */
+export interface UpdatePoolInput {
+  name?: string;
+  lotteryId?: string;
+  contestNumber?: number | null;
+  drawDate?: string | null;
+  quotaValue?: number;
+  totalQuotas?: number | null;
+  paymentDeadline?: string | null;
+  notes?: string | null;
+}
+
 
 export interface DistributionRow {
   id: string;
