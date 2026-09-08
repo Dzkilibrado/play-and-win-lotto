@@ -148,7 +148,15 @@ try {
       "B não lê o bolão de A",
       (await read(TOKEN_B, `pools?id=eq.${pool.id}&select=id`)).length === 0,
     );
-    check("B não altera participante de A", (await patch({ name: "invadido" }, TOKEN_B)).status !== 200);
+    // Com RLS, o PATCH de B simplesmente não encontra a linha: o que importa
+    // é que nada mudou no cadastro de A.
+    const attempt = await patch({ name: "invadido" }, TOKEN_B);
+    const stillA = (await read(TOKEN_A, `pool_participants?id=eq.${pid}&select=name`))[0];
+    check(
+      "B não altera participante de A",
+      JSON.parse(attempt.body || "[]").length === 0 && stillA.name !== "invadido",
+      stillA.name,
+    );
     check(
       "B não usa a RPC no bolão de A",
       (await rpc(TOKEN_B, "pool_update_participant", { _participant_id: pid, _patch: { quotas: 9 } })).status >=
