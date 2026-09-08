@@ -1582,7 +1582,7 @@ export type Database = {
         Returns: string
       }
       pool_cancel_participant: {
-        Args: { _participant_id: string; _reason: string }
+        Args: { _participant_id: string; _reason?: string }
         Returns: undefined
       }
       pool_cancel_payment: {
@@ -1598,7 +1598,7 @@ export type Database = {
         Returns: undefined
       }
       pool_outdate_distributions: {
-        Args: { _pool_id: string }
+        Args: { _pool_id: string; _reason?: string }
         Returns: undefined
       }
       pool_prize_total: { Args: { _pool_id: string }; Returns: number }

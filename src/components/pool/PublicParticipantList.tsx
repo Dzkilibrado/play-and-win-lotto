@@ -73,11 +73,12 @@ export function PublicParticipantList({
             <span className="text-right">Pagamento</span>
           </div>
           <ul className="divide-y divide-border">
-            {visible.map((participant, index) => (
+            {visible.map((participant) => (
               <li
-                // A identidade da linha é a posição na lista devolvida pelo banco,
-                // nunca o texto do nome: homônimos continuam sendo pessoas distintas.
-                key={index}
+                // Identidade pública estável vinda do banco — nunca o texto do
+                // nome (homônimos são pessoas distintas) nem a posição visível
+                // (que muda com busca e filtro), nem o identificador interno.
+                key={participant.ordinal}
                 className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4"
               >
                 <span className="min-w-0 max-w-full truncate text-sm font-medium text-text-primary">
