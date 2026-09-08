@@ -9,6 +9,13 @@
 import type { GameStatus, PoolStatus } from "@/types/domain";
 
 export interface PublicParticipant {
+  /**
+   * Identidade pública estável da linha, atribuída pelo banco na ordem oficial
+   * da lista. Não é o identificador interno do participante e não permite
+   * localizar o cadastro: serve só para manter a mesma linha estável durante
+   * busca, filtro e nova renderização.
+   */
+  ordinal: number;
   name: string;
   quotas: number;
 }
