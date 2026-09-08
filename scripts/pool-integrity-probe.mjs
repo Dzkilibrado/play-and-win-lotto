@@ -34,7 +34,7 @@ const headers = (token) => ({
 const call = async (token, path, init = {}) => {
   const res = await fetch(`${URL}/rest/v1/${path}`, { ...init, headers: headers(token) });
   const text = await res.text();
-  return { status: res.status, body: text.slice(0, 200) };
+  return { status: res.status, body: text };
 };
 const rpc = (token, fn, args) =>
   call(token, `rpc/${fn}`, { method: "POST", body: JSON.stringify(args) });
