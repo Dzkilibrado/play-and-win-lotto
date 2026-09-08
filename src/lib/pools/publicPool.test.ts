@@ -98,3 +98,31 @@ describe("contador de seção", () => {
     expect(formatCount(1000)).toBe("999+");
   });
 });
+
+describe("identidade pública estável", () => {
+  const people: PublicParticipant[] = [
+    { ordinal: 1, name: "Ana", quotas: 1 },
+    { ordinal: 2, name: "Bruno", quotas: 2 },
+    { ordinal: 3, name: "Carla", quotas: 1 },
+  ];
+
+  it("a busca preserva a identidade original de cada linha", () => {
+    expect(filterParticipants(people, "carla").map((p) => p.ordinal)).toEqual([3]);
+    expect(filterParticipants(people, "bruno").map((p) => p.ordinal)).toEqual([2]);
+  });
+
+  it("a identidade não depende da posição visível após filtrar", () => {
+    const [first] = filterParticipants(people, "carla");
+    expect(first?.ordinal).toBe(3);
+  });
+
+  it("as identidades são únicas dentro da lista", () => {
+    expect(new Set(people.map((p) => p.ordinal)).size).toBe(people.length);
+  });
+
+  it("o conteúdo público não carrega identificador interno", () => {
+    for (const participant of people) {
+      expect(Object.keys(participant).sort()).toEqual(["name", "ordinal", "quotas"]);
+    }
+  });
+});
