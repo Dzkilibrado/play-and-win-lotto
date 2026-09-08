@@ -31,14 +31,14 @@ describe("jogos públicos", () => {
 
 describe("participantes públicos", () => {
   const people: PublicParticipant[] = [
-    { name: "Carlos", quotas: 2 },
-    { name: "Maria", quotas: 2 },
-    { name: "Antônio", quotas: 1 },
+    { ordinal: 1, name: "Carlos", quotas: 2 },
+    { ordinal: 2, name: "Maria", quotas: 2 },
+    { ordinal: 3, name: "Antônio", quotas: 1 },
   ];
 
   it("busca sem diferenciar acento ou caixa", () => {
-    expect(filterParticipants(people, "antonio")).toEqual([{ name: "Antônio", quotas: 1 }]);
-    expect(filterParticipants(people, "MAR")).toEqual([{ name: "Maria", quotas: 2 }]);
+    expect(filterParticipants(people, "antonio")).toEqual([{ ordinal: 3, name: "Antônio", quotas: 1 }]);
+    expect(filterParticipants(people, "MAR")).toEqual([{ ordinal: 2, name: "Maria", quotas: 2 }]);
   });
 
   it("sem busca devolve todos", () => {
@@ -67,14 +67,14 @@ describe("integridade do nome público", () => {
   ];
 
   it("preserva o valor exato de cada nome cadastrado", () => {
-    const people: PublicParticipant[] = nomes.map((name) => ({ name, quotas: 1 }));
+    const people: PublicParticipant[] = nomes.map((name, index) => ({ ordinal: index + 1, name, quotas: 1 }));
     expect(filterParticipants(people, "").map((p) => p.name)).toEqual(nomes);
   });
 
   it("mantém nomes parecidos como pessoas distintas", () => {
     const people: PublicParticipant[] = [
-      { name: "Gilber", quotas: 1 },
-      { name: "Gilberto", quotas: 1 },
+      { ordinal: 1, name: "Gilber", quotas: 1 },
+      { ordinal: 2, name: "Gilberto", quotas: 1 },
     ];
     const found = filterParticipants(people, "gilber");
     expect(found).toHaveLength(2);
@@ -82,7 +82,7 @@ describe("integridade do nome público", () => {
   });
 
   it("a busca não altera o nome devolvido", () => {
-    const people: PublicParticipant[] = [{ name: "João da Silva", quotas: 2 }];
+    const people: PublicParticipant[] = [{ ordinal: 1, name: "João da Silva", quotas: 2 }];
     expect(filterParticipants(people, "joao")[0]?.name).toBe("João da Silva");
   });
 });

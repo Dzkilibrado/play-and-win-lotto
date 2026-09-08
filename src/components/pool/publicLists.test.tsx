@@ -12,6 +12,7 @@ import { publicPreviewSize, type PublicGame, type PublicParticipant } from "@/li
 
 const people = (count: number): PublicParticipant[] =>
   Array.from({ length: count }, (_, index) => ({
+    ordinal: index + 1,
     name: `Participante ${index + 1}`,
     quotas: (index % 3) + 1,
   }));
@@ -40,13 +41,13 @@ describe("lista pública de participantes", () => {
   });
 
   it("usa COTA/COTAS em caixa alta e o selo PAGO", () => {
-    render(<PublicParticipantList participants={[{ name: "Gilber", quotas: 1 }]} />);
+    render(<PublicParticipantList participants={[{ ordinal: 1, name: "Gilber", quotas: 1 }]} />);
     expect(screen.getByText("1 COTA")).toBeTruthy();
     expect(screen.getByText("Pago").className).toContain("uppercase");
   });
 
   it("busca por nome, sem diferenciar acentos", () => {
-    render(<PublicParticipantList participants={[...people(20), { name: "Íris", quotas: 2 }]} />);
+    render(<PublicParticipantList participants={[...people(20), { ordinal: 21, name: "Íris", quotas: 2 }]} />);
     fireEvent.change(screen.getByLabelText("Buscar participante"), { target: { value: "iris" } });
     expect(screen.getByText("Íris")).toBeTruthy();
     expect(screen.queryByText("Participante 1")).toBeNull();
