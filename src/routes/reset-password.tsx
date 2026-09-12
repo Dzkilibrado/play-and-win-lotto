@@ -1,0 +1,18 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { appConfig } from "@/config/app.config";
+import { supabase } from "@/integrations/supabase/client";
+import { passwordSchema } from "@/lib/auth/identity";
+
+export const Route = createFileRoute("/reset-password")({ ssr: false, head: () => ({ meta: [{ title: `Nova senha | ${appConfig.name}` }, { name: "description", content: "Defina uma nova senha para sua conta." }, { property: "og:title", content: `Nova senha | ${appConfig.name}` }, { property: "og:description", content: "Redefinição segura de senha." }, { property: "og:type", content: "website" }, { name: "robots", content: "noindex" }, { name: "twitter:card", content: "summary" }] }), component: ResetPasswordPage });
+
+function ResetPasswordPage() {
+  const navigate = useNavigate(); const [valid, setValid] = useState<boolean | null>(null); const [password, setPassword] = useState(""); const [confirmation, setConfirmation] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  useEffect(() => { const recovery = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery" || new URLSearchParams(window.location.search).get("type") === "recovery"; supabase.auth.getSession().then(({ data }) => setValid(Boolean(data.session) && recovery)); const { data } = supabase.auth.onAuthStateChange((event, session) => { if (event === "PASSWORD_RECOVERY" && session) setValid(true); }); return () => data.subscription.unsubscribe(); }, []);
+  async function submit(event: React.FormEvent) { event.preventDefault(); const parsed = passwordSchema.safeParse({ password, confirmation }); if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Confira a nova senha"); return; } setLoading(true); const { error: updateError } = await supabase.auth.updateUser({ password }); setLoading(false); if (updateError) { setError("Este link expirou ou já foi utilizado. Solicite uma nova recuperação."); return; } navigate({ to: "/login", replace: true }); }
+  return <AuthLayout title="Criar nova senha" description="Use uma senha exclusiva, com pelo menos 8 caracteres.">{valid === null ? <p className="text-sm text-text-secondary">Validando link…</p> : !valid ? <div className="space-y-4"><p className="surface-card p-4 text-sm text-text-secondary">Este link expirou, é inválido ou já foi utilizado.</p><Button asChild className="w-full"><Link to="/forgot-password">Solicitar novo link</Link></Button></div> : <form onSubmit={submit} className="space-y-4"><div className="space-y-1.5"><Label htmlFor="new-password">Nova senha</Label><Input id="new-password" type="password" autoComplete="new-password" minLength={8} maxLength={72} required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" /></div><div className="space-y-1.5"><Label htmlFor="confirm-password">Confirmar nova senha</Label><Input id="confirm-password" type="password" autoComplete="new-password" minLength={8} maxLength={72} required value={confirmation} onChange={(e) => setConfirmation(e.target.value)} className="h-11" /></div>{error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}<Button className="h-11 w-full" disabled={loading}>{loading ? "Atualizando…" : "Atualizar senha"}</Button></form>}</AuthLayout>;
+}

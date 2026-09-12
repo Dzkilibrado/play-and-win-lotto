@@ -26,21 +26,22 @@ export function ThemeSelector({ variant = "icon" }: { variant?: "icon" | "list" 
           const Icon = option.icon;
           const active = theme === option.value;
           return (
-            <button
+            <Button
               key={option.value}
               type="button"
               role="radio"
               aria-checked={active}
               onClick={() => setTheme(option.value)}
+              variant="outline"
               className={
                 active
-                  ? "flex touch-target items-center gap-2 rounded-lg border border-primary bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
-                  : "flex touch-target items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:bg-surface-secondary"
+                  ? "touch-target justify-start border-primary bg-accent text-accent-foreground"
+                  : "touch-target justify-start text-text-secondary"
               }
             >
               <Icon className="size-4" aria-hidden />
               {option.label}
-            </button>
+            </Button>
           );
         })}
       </div>

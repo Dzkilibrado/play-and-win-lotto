@@ -3,6 +3,7 @@ import { LogOut, Menu } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ThemeSelector } from "@/components/layout/ThemeSelector";
+import { Brand } from "@/components/brand/Brand";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,19 +21,6 @@ import {
   type NavItem,
 } from "@/config/navigation";
 import { cn } from "@/lib/utils";
-
-function Brand({ className }: { className?: string }) {
-  return (
-    <Link to="/dashboard" className={cn("flex items-center gap-2", className)}>
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">
-        {appConfig.logo.monogram}
-      </span>
-      <span className="font-display text-base font-semibold text-text-primary">
-        {appConfig.name}
-      </span>
-    </Link>
-  );
-}
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void) | undefined }) {
   const Icon = item.icon;
@@ -79,7 +67,7 @@ export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined 
           <SheetContent side="left" className="w-72 p-0">
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="text-left">
-                <Brand />
+                 <Brand to="/dashboard" />
               </SheetTitle>
             </SheetHeader>
             <div className="p-3">
@@ -88,7 +76,7 @@ export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined 
           </SheetContent>
         </Sheet>
 
-        <Brand className="lg:hidden" />
+        <Brand to="/dashboard" className="lg:hidden" />
         <div className="ml-auto flex items-center gap-1">
           <ThemeSelector />
           {onSignOut ? (
@@ -146,7 +134,7 @@ export function AppShell({
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="border-b border-sidebar-border p-4">
-          <Brand />
+          <Brand to="/dashboard" />
         </div>
         <div className="flex-1 overflow-y-auto p-3">
           <SidebarNav />
