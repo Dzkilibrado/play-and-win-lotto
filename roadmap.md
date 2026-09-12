@@ -17,3 +17,14 @@
 - [x] Impedir situações exclusivas da conferência e validar ownership/transições.
 - [x] Reproduzir o cenário real dos 19 jogos antes e depois da alteração.
 - [x] Rodar testes, typecheck e validação responsiva.
+
+## Correção funcional e UX de homologação
+
+- [ ] Cancelar o bolão antigo pelo fluxo oficial e preservar todo o histórico.
+- [ ] Unificar a classificação de vínculo dos jogos pela relação real em `pool_games`.
+- [ ] Impedir seleção de jogos já vinculados ou incompatíveis antes do envio.
+- [ ] Alinhar consultas, contadores e invalidações das telas privada e pública.
+- [ ] Reorganizar o compartilhamento com prévia e mensagens baseadas em dados reais.
+- [ ] Refinar os três tipos de página pública sem ampliar o payload.
+- [ ] Validar cenário real, usuário A/B, seis resoluções, testes, tipos e build.
+- [ ] Entregar relatório final de 28 itens e aguardar homologação.
