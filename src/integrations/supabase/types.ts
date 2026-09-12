@@ -1874,6 +1874,17 @@ export type Database = {
           title: string
         }[]
       }
+      pool_public_documents: {
+        Args: { _token: string }
+        Returns: {
+          description: string
+          file_size: number
+          id: string
+          mime_type: string
+          sort_order: number
+          title: string
+        }[]
+      }
       pool_public_summary: { Args: { _token: string }; Returns: Json }
       pool_register_payment:
         | {
