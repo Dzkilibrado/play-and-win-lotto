@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatBrazilianPhone, maximumBirthDate, signupSchema } from "@/lib/auth/identity";
 
 type LegalVersion = { id: string; document_type: string; version: string };
-export const Route = createFileRoute("/signup")({ ssr: false, head: () => ({ meta: [{ title: `Criar conta | ${appConfig.name}` }, { name: "description", content: "Crie sua conta no Gestor da Sorte." }, { property: "og:title", content: `Criar conta | ${appConfig.name}` }, { property: "og:description", content: "Organize jogos e bolões em uma conta segura." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }], links: [{ rel: "canonical", href: `${appConfig.canonicalOrigin}/signup` }] }), component: SignupPage });
+export const Route = createFileRoute("/signup")({ ssr: false, head: () => ({ meta: [{ title: `Criar conta | ${appConfig.name}` }, { name: "description", content: "Crie sua conta no Gestor da Sorte." }, { property: "og:title", content: `Criar conta | ${appConfig.name}` }, { property: "og:description", content: "Organize jogos e bolões em uma conta segura." }, { property: "og:type", content: "website" }, { property: "og:url", content: `${appConfig.canonicalOrigin}/signup` }, { name: "twitter:card", content: "summary_large_image" }], links: [{ rel: "canonical", href: `${appConfig.canonicalOrigin}/signup` }] }), component: SignupPage });
 
 function SignupPage() {
   const navigate = useNavigate();

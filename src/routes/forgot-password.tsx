@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/forgot-password")({ ssr: false, head: () => ({ meta: [{ title: `Recuperar acesso | ${appConfig.name}` }, { name: "description", content: "Receba por e-mail as instruções seguras para recuperar seu acesso." }, { property: "og:title", content: `Recuperar acesso | ${appConfig.name}` }, { property: "og:description", content: "Recuperação segura de acesso por e-mail." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${appConfig.canonicalOrigin}/forgot-password` }] }), component: ForgotPasswordPage });
+export const Route = createFileRoute("/forgot-password")({ ssr: false, head: () => ({ meta: [{ title: `Recuperar acesso | ${appConfig.name}` }, { name: "description", content: "Receba por e-mail as instruções seguras para recuperar seu acesso." }, { property: "og:title", content: `Recuperar acesso | ${appConfig.name}` }, { property: "og:description", content: "Recuperação segura de acesso por e-mail." }, { property: "og:type", content: "website" }, { property: "og:url", content: `${appConfig.canonicalOrigin}/forgot-password` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${appConfig.canonicalOrigin}/forgot-password` }] }), component: ForgotPasswordPage });
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState(""); const [sent, setSent] = useState(false); const [loading, setLoading] = useState(false);
