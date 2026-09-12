@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   filterParticipants,
   filterGames,
+  isConfirmedBet,
   isPubliclyVisibleGame,
   publicGameName,
   publicGameStatuses,
@@ -14,14 +15,17 @@ import { formatCount } from "@/components/common/CountBadge";
 import { gameStatusOrder } from "@/lib/games/gameStatus";
 
 describe("jogos públicos", () => {
-  it("exclui jogos apenas planejados", () => {
-    expect(isPubliclyVisibleGame("PLANNED")).toBe(false);
+  it("inclui jogos planejados com a situação real", () => {
+    expect(isPubliclyVisibleGame("PLANNED")).toBe(true);
+    expect(isConfirmedBet("PLANNED")).toBe(false);
   });
 
-  it("inclui toda situação que representa aposta efetiva", () => {
-    const expected = gameStatusOrder.filter((status) => status !== "PLANNED");
-    expect(publicGameStatuses).toEqual(expected);
-    for (const status of expected) expect(isPubliclyVisibleGame(status)).toBe(true);
+  it("inclui todas as situações e conta como confirmadas apenas as não planejadas", () => {
+    expect(publicGameStatuses).toEqual(gameStatusOrder);
+    for (const status of gameStatusOrder) expect(isPubliclyVisibleGame(status)).toBe(true);
+    for (const status of gameStatusOrder.filter((item) => item !== "PLANNED")) {
+      expect(isConfirmedBet(status)).toBe(true);
+    }
   });
 
   it("nomeia o jogo com dois dígitos", () => {

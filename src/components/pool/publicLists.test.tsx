@@ -59,15 +59,22 @@ describe("lista pública de jogos", () => {
   afterEach(cleanup);
 
   it.each([19, 50, 100])("mostra a prévia e permite ver todos com %i jogos", (total) => {
-    render(<PublicGameList games={games(total)} drawnNumbers={[]} linkedGames={total} />);
+    render(<PublicGameList games={games(total)} drawnNumbers={[]} linkedGames={total} confirmedBets={total} />);
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(publicPreviewSize.games);
     fireEvent.click(screen.getByRole("button", { name: /Ver todos/ }));
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(total);
   });
 
   it("mostra um jogo sem expansão", () => {
-    render(<PublicGameList games={games(1)} drawnNumbers={[]} linkedGames={1} />);
+    render(<PublicGameList games={games(1)} drawnNumbers={[]} linkedGames={1} confirmedBets={1} />);
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /Ver todos/ })).toBeNull();
+  });
+
+  it("mostra jogos planejados com aviso transparente", () => {
+    const planned = games(19).map((game) => ({ ...game, status: "PLANNED" as const }));
+    render(<PublicGameList games={planned} drawnNumbers={[]} linkedGames={19} confirmedBets={0} />);
+    expect(screen.getByText(/ainda não foram marcados como apostas realizadas/i)).toBeTruthy();
+    expect(screen.getAllByText("Planejado")).toHaveLength(publicPreviewSize.games);
   });
 });

@@ -2,7 +2,7 @@
  * Contrato da consulta pública do bolão (`pool_public_summary`).
  *
  * O que chega aqui é exatamente o que o link público pode mostrar: nome e
- * cotas de quem já pagou, jogos efetivamente apostados e o resultado oficial.
+ * cotas de quem já pagou, jogos vinculados com sua situação real e o resultado oficial.
  * Telefones, valores individuais, pagamentos, rateio, documentos e
  * identificadores internos nunca fazem parte da resposta.
  */
@@ -58,6 +58,7 @@ export interface PublicPoolSummary {
   confirmedParticipants?: number;
   availableQuotas?: number | null;
   linkedGames?: number;
+  confirmedBets?: number;
   games?: number;
   participants?: PublicParticipant[];
   gameList?: PublicGame[];
@@ -65,10 +66,11 @@ export interface PublicPoolSummary {
 }
 
 /**
- * Jogos que representam aposta efetiva e podem ser exibidos publicamente.
- * "Planejado" fica de fora: é rascunho interno do organizador.
+ * Todos os jogos vinculados podem ser exibidos publicamente. A situação real
+ * diferencia claramente um planejamento de uma aposta já realizada.
  */
 export const publicGameStatuses: GameStatus[] = [
+  "PLANNED",
   "BET",
   "RECEIPTED",
   "AWAITING_DRAW",
@@ -80,6 +82,10 @@ export const publicGameStatuses: GameStatus[] = [
 
 export function isPubliclyVisibleGame(status: GameStatus): boolean {
   return publicGameStatuses.includes(status);
+}
+
+export function isConfirmedBet(status: GameStatus): boolean {
+  return status !== "PLANNED";
 }
 
 /** Nome estável do jogo dentro do bolão (nunca deriva de identificador). */
