@@ -60,16 +60,20 @@ export function PoolShareDialog({
 
   // Ação explícita do organizador já é intenção suficiente: o link é criado
   // automaticamente ao abrir o compartilhamento, sem confirmação extra.
-  const requested = useRef(false);
+  const requested = useRef<PoolShareScope | null>(null);
   useEffect(() => {
     if (!open) {
-      requested.current = false;
+      requested.current = null;
       return;
     }
-    if (url || !canManage || requested.current || enableLink.isPending) return;
-    requested.current = true;
+    if (url) {
+      requested.current = null;
+      return;
+    }
+    if (!canManage || requested.current === scope || enableLink.isPending) return;
+    requested.current = scope;
     enableLink.mutate({ enabled: true });
-  }, [open, url, canManage, enableLink]);
+  }, [open, url, scope, canManage, enableLink]);
 
   const share = async () => {
     const result = await nativeShare({ title: poolShareTitle(pool), text: message, url });
