@@ -63,3 +63,13 @@
 - [x] Manter URLs temporárias restritas à visualização e acesso público somente por links Jogos/Completo válidos.
 - [x] Validar PNG, JPG, PDF, publicação, edição, substituição, exclusão e relatório completo.
 - [ ] Validar renovação real de uma sessão próxima da expiração (bloqueado: sessões de teste não fornecem refresh token reutilizável).
+
+## Identidade, landing e acesso
+
+- [ ] Aplicar identidade Gestor da Sorte, temas, tipografia, SEO e PWA.
+- [ ] Criar landing pública com conteúdo institucional e próximos sorteios reais.
+- [ ] Redesenhar login e criar cadastro seguro, conclusão de perfil e perfil editável.
+- [ ] Implementar recuperação por e-mail e redefinição de senha.
+- [ ] Publicar Termos e Privacidade preliminares, versionar e registrar aceite.
+- [ ] Validar autenticação, segurança, temas e seis resoluções sem overflow.
+- [ ] Rodar testes, tipos e build; documentar limitações e aguardar homologação.
