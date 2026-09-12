@@ -71,5 +71,5 @@
 - [x] Redesenhar login e criar cadastro seguro, conclusão de perfil e perfil editável.
 - [x] Implementar recuperação por e-mail e redefinição de senha.
 - [x] Publicar Termos e Privacidade preliminares, versionar e registrar aceite.
-- [ ] Validar autenticação, segurança, temas e seis resoluções sem overflow.
+- [x] Validar autenticação, segurança, temas e seis resoluções sem overflow.
 - [ ] Rodar testes, tipos e build; documentar limitações e aguardar homologação.
