@@ -70,6 +70,7 @@ describe("relatório PDF do bolão", () => {
   ])("calcula saldo recebido %i menos custo %i", (received, cost, expectedBalance, hasShortfall) => {
     const adjustedParticipants = participants.map((participant, index) => ({
       ...participant,
+      amount_due: index === 0 ? received : 0,
       total_paid: index === 0 ? received : 0,
       payment_status: (index === 0 ? "PAID" : "PENDING") as PoolParticipantRow["payment_status"],
     }));
