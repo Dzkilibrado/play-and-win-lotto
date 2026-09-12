@@ -1,4 +1,4 @@
-import type { TDocumentDefinitions } from "pdfmake/interfaces";
+import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 
 import { appConfig } from "@/config/app.config";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -92,6 +92,17 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
     ];
   });
   const checked = [...data.checks.values()];
+  const balanceNotice: Content[] = poolBalance < 0
+    ? [{ text: `Valor ainda necessário para cobrir os jogos: ${formatCurrency(Math.abs(poolBalance))}`, margin: [0, 6, 0, 0], fontSize: 8, color: "#66736b" }]
+    : [];
+  const resultSection: Content[] = checked.length > 0 ? [
+    { text: "Resultado oficial", style: "section" },
+    { columns: [
+      { text: `Jogos conferidos\n${checked.length}`, bold: true },
+      { text: `Jogos premiados\n${checked.filter((item) => item.is_prized).length}`, bold: true },
+      { text: `Premiação oficial\n${formatCurrency(data.officialPrizeTotal)}`, bold: true },
+    ], columnGap: 16 },
+  ] : [];
 
   return {
     info: { title: `Relatório completo — ${data.pool.name}`, author: appConfig.name, subject: "Relatório administrativo de bolão" },
@@ -114,7 +125,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { text: `${data.pool.lotteries?.name ?? "Loteria"} · ${contest ? `Concurso ${contest}` : "Concurso a definir"} · ${poolStatusLabel[data.pool.status]}`, style: "subtitle" },
       { text: "Informações do bolão", style: "section" },
       { table: { widths: ["*", "auto", "*", "auto"], body: summaryRows }, layout: "lightHorizontalLines" },
-      ...(poolBalance < 0 ? [{ text: `Valor ainda necessário para cobrir os jogos: ${formatCurrency(Math.abs(poolBalance))}`, margin: [0, 6, 0, 0], fontSize: 8, color: "#66736b" }] : []),
+      ...balanceNotice,
       { text: `Sorteio: ${drawDate ? formatDate(drawDate) : "A definir"}`, margin: [0, 8, 0, 0] },
       { text: "Participantes ativos", style: "section" },
       participantRows.length > 0
@@ -124,14 +135,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       gameRows.length > 0
         ? { table: { headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum jogo no bolão.", color: "#66736b" },
-      ...(checked.length > 0 ? [
-        { text: "Resultado oficial", style: "section" },
-        { columns: [
-          { text: `Jogos conferidos\n${checked.length}`, bold: true },
-          { text: `Jogos premiados\n${checked.filter((item) => item.is_prized).length}`, bold: true },
-          { text: `Premiação oficial\n${formatCurrency(data.officialPrizeTotal)}`, bold: true },
-        ], columnGap: 16 },
-      ] : []),
+      ...resultSection,
       { text: "Relatório administrativo. Dados pessoais sensíveis, documentos, observações e identificadores internos não são incluídos.", margin: [0, 18, 0, 0], fontSize: 8, color: "#66736b" },
     ],
   };
