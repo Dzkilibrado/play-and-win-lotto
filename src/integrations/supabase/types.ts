@@ -538,6 +538,74 @@ export type Database = {
           },
         ]
       }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          created_at: string
+          document_version_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          created_at?: string
+          document_version_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          created_at?: string
+          document_version_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_document_versions: {
+        Row: {
+          created_at: string
+          document_type: string
+          id: string
+          is_active: boolean
+          is_preliminary: boolean
+          published_at: string
+          requires_reacceptance: boolean
+          title: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          id?: string
+          is_active?: boolean
+          is_preliminary?: boolean
+          published_at?: string
+          requires_reacceptance?: boolean
+          title: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          id?: string
+          is_active?: boolean
+          is_preliminary?: boolean
+          published_at?: string
+          requires_reacceptance?: boolean
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       lotteries: {
         Row: {
           base_selectable: number
@@ -1511,6 +1579,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -1520,6 +1589,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           display_name?: string | null
           id: string
@@ -1529,6 +1599,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1619,6 +1690,30 @@ export type Database = {
           lottery_id: string
           resumed: boolean
         }[]
+      }
+      complete_profile_onboarding: {
+        Args: {
+          _accepted_document_ids: string[]
+          _birth_date: string
+          _display_name: string
+          _phone: string
+        }
+        Returns: {
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          theme_preference: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       complete_sync_job_batch: {
         Args: {
@@ -1955,6 +2050,7 @@ export type Database = {
         Args: { _participant_id: string; _patch: Json }
         Returns: undefined
       }
+      profile_onboarding_status: { Args: never; Returns: Json }
       recalc_participant_payment: {
         Args: { _participant_id: string }
         Returns: undefined
