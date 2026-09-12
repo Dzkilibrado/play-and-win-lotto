@@ -6,5 +6,5 @@
 - [x] Criar links públicos independentes para Participantes, Jogos e Visão completa.
 - [x] Restringir o payload público no banco conforme o escopo do token.
 - [x] Atualizar gestão, mensagens e página pública para cada visão.
-- [ ] Cobrir 1/19/50/100 jogos, cenário real, segurança e responsividade.
-- [ ] Rodar testes, typecheck, build e sonda de integridade; documentar limitações.
+- [x] Cobrir 1/19/50/100 jogos, cenário real, segurança e responsividade.
+- [x] Rodar testes, typecheck, build e sonda de integridade; documentar limitações.
