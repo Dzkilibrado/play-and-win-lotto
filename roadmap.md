@@ -82,3 +82,11 @@
 - [x] Manter papéis e responsável sem escrita disponível ao cliente.
 - [x] Registrar promoção e designação no histórico administrativo.
 - [x] Validar login real, acesso administrativo e bloqueio de usuário comum.
+
+## Fechamento automático do menu mobile
+
+- [x] Centralizar o estado do menu hambúrguer no cabeçalho compartilhado.
+- [x] Fechar após qualquer destino final, inclusive a página atual.
+- [x] Fechar também após mudanças de rota externas ao menu.
+- [ ] Validar seleção, toque externo e Escape nos quatro tamanhos solicitados.
+- [ ] Rodar testes, tipos e build sem regressões de navegação.
