@@ -61,7 +61,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
   const gameCost = data.games.reduce((sum, game) => sum + game.cost, 0);
   const generatedAt = data.generatedAt ?? new Date();
   const generatedLabel = new Intl.DateTimeFormat(appConfig.locale, {
-    dateStyle: "short", timeStyle: "short", timeZone: appConfig.timezone,
+    dateStyle: "short", timeStyle: "short", timeZone: appConfig.timeZone,
   }).format(generatedAt);
   const summaryRows = [
     ["Participantes ativos", String(active.length), "Cotas atribuídas", String(finance.quotasTaken)],
