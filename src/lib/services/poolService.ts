@@ -5,8 +5,8 @@
  */
 import type { PaymentMethod } from "@/config/pools.config";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import type {
-  Database,
   GameStatus,
   PaymentStatus,
   PoolStatus,
