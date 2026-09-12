@@ -1,0 +1,1 @@
+ALTER FUNCTION public.pool_set_games_status(uuid, uuid[], public.game_status) SECURITY INVOKER;

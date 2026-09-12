@@ -422,6 +422,16 @@ export const poolService = {
     return Number(data ?? 0);
   },
 
+  async setGamesStatus(poolId: string, gameIds: string[], status: GameStatus) {
+    const { data, error } = await supabase.rpc("pool_set_games_status", {
+      _pool_id: poolId,
+      _game_ids: gameIds,
+      _status: status,
+    });
+    if (error) throw error;
+    return Number(data ?? 0);
+  },
+
   async detachGame(poolId: string, gameId: string) {
     const { error } = await supabase.rpc("pool_detach_game", { _pool_id: poolId, _game_id: gameId });
     if (error) throw error;

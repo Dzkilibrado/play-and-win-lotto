@@ -17,10 +17,12 @@ export function PublicGameList({
   games,
   drawnNumbers,
   linkedGames,
+  confirmedBets,
 }: {
   games: PublicGame[];
   drawnNumbers: number[];
   linkedGames: number;
+  confirmedBets: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
@@ -28,19 +30,16 @@ export function PublicGameList({
   const visible = expanded || query ? filtered : filtered.slice(0, publicPreviewSize.games);
   const hidden = filtered.length - visible.length;
   const drawn = new Set(drawnNumbers);
+  const plannedGames = linkedGames - confirmedBets;
 
   if (games.length === 0) {
     return (
       <div className="rounded-lg bg-surface-secondary px-3 py-4 text-sm">
         <p className="font-medium text-text-primary">
-          {linkedGames > 0
-            ? `${linkedGames} ${linkedGames === 1 ? "jogo vinculado" : "jogos vinculados"}`
-            : "Nenhum jogo vinculado"}
+          Nenhum jogo vinculado
         </p>
         <p className="mt-0.5 text-text-secondary">
-          {linkedGames > 0
-            ? "Aguardando confirmação da aposta para disponibilização aos participantes."
-            : "Os jogos aparecerão aqui quando forem vinculados e confirmados como aposta."}
+          Os jogos aparecerão aqui quando forem vinculados ao bolão.
         </p>
       </div>
     );
@@ -48,6 +47,13 @@ export function PublicGameList({
 
   return (
     <div className="space-y-2">
+      {plannedGames > 0 ? (
+        <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
+          {plannedGames === linkedGames
+            ? "Estes jogos estão vinculados ao bolão, mas ainda não foram marcados como apostas realizadas."
+            : `${plannedGames} ${plannedGames === 1 ? "jogo está vinculado" : "jogos estão vinculados"}, mas ${plannedGames === 1 ? "ainda não foi marcado" : "ainda não foram marcados"} como ${plannedGames === 1 ? "aposta realizada" : "apostas realizadas"}.`}
+        </p>
+      ) : null}
       {games.length > 19 ? (
         <SearchInput
           value={query}

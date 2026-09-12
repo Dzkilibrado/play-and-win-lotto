@@ -156,11 +156,12 @@ function PublicPoolPage() {
             label={semLimite ? "Limite de cotas" : "Cotas disponíveis"}
             value={semLimite ? noQuotaLimitLabel : String(pool.availableQuotas ?? 0)}
           />
-          {showGames ? <SummaryItem label="Jogos" value={String(pool.games ?? 0)} /> : null}
+          {showGames ? <SummaryItem label="Jogos vinculados" value={String(pool.linkedGames ?? 0)} /> : null}
+          {showGames ? <SummaryItem label="Apostas confirmadas" value={String(pool.confirmedBets ?? 0)} /> : null}
         </dl> : showGames ? (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
             <SummaryItem label="Jogos vinculados" value={String(pool.linkedGames ?? 0)} />
-            <SummaryItem label="Jogos disponíveis" value={String(pool.games ?? 0)} />
+            <SummaryItem label="Apostas confirmadas" value={String(pool.confirmedBets ?? 0)} />
           </dl>
         ) : null}
 
@@ -194,10 +195,15 @@ function PublicPoolPage() {
 
         {showGames ? <AccordionItem value="games" className="border-0">
           <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
-            <SectionTitleWithCount title="Jogos do bolão" count={games.length} />
+             <SectionTitleWithCount title="Jogos vinculados" count={games.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
-            <PublicGameList games={games} drawnNumbers={drawn} linkedGames={pool.linkedGames ?? 0} />
+            <PublicGameList
+              games={games}
+              drawnNumbers={drawn}
+              linkedGames={pool.linkedGames ?? 0}
+              confirmedBets={pool.confirmedBets ?? 0}
+            />
           </AccordionContent>
         </AccordionItem> : null}
 
@@ -235,8 +241,8 @@ function PublicPoolPage() {
         {pool.scope === "PARTICIPANTS"
           ? "Esta página mostra somente participantes confirmados, cotas e situação de pagamento."
           : pool.scope === "GAMES"
-            ? "Esta página mostra somente os jogos liberados para acompanhamento e seus resultados."
-            : "Esta página reúne participantes confirmados e jogos liberados para acompanhamento."}
+             ? "Esta página mostra os jogos vinculados, sua situação real e seus resultados."
+             : "Esta página reúne participantes confirmados e jogos vinculados com sua situação real."}
         {" "}Telefones, valores individuais, observações, documentos e comprovantes não são exibidos.
       </p>
 
