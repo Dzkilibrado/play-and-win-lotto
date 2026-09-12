@@ -2051,6 +2051,17 @@ export type Database = {
         Returns: undefined
       }
       profile_onboarding_status: { Args: never; Returns: Json }
+      public_next_draws: {
+        Args: never
+        Returns: {
+          color_key: string
+          estimated_next_prize: number
+          lottery_name: string
+          lottery_slug: string
+          next_contest_number: number
+          next_draw_date: string
+        }[]
+      }
       recalc_participant_payment: {
         Args: { _participant_id: string }
         Returns: undefined
