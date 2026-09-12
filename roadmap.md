@@ -53,4 +53,4 @@
 - [x] Implementar exclusão definitiva com confirmação forte, auditoria e preservação dos jogos.
 - [x] Exibir comprovantes publicados nas visões públicas Jogos e Completo.
 - [x] Incorporar imagens e todas as páginas dos PDFs publicados ao relatório completo.
-- [ ] Validar testes, segurança, responsividade e PDF real.
+- [x] Validar testes, segurança, responsividade e PDF real.
