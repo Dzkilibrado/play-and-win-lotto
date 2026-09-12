@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   filterParticipants,
+  filterGames,
   isPubliclyVisibleGame,
   publicGameName,
   publicGameStatuses,
@@ -31,9 +32,9 @@ describe("jogos públicos", () => {
 
 describe("participantes públicos", () => {
   const people: PublicParticipant[] = [
-    { ordinal: 1, name: "Carlos", quotas: 2 },
-    { ordinal: 2, name: "Maria", quotas: 2 },
-    { ordinal: 3, name: "Antônio", quotas: 1 },
+    { ordinal: 1, name: "Carlos", quotas: 2, paymentStatus: "PAID" },
+    { ordinal: 2, name: "Maria", quotas: 2, paymentStatus: "PAID" },
+    { ordinal: 3, name: "Antônio", quotas: 1, paymentStatus: "PAID" },
   ];
 
   it("busca sem diferenciar acento ou caixa", () => {
@@ -67,14 +68,14 @@ describe("integridade do nome público", () => {
   ];
 
   it("preserva o valor exato de cada nome cadastrado", () => {
-    const people: PublicParticipant[] = nomes.map((name, index) => ({ ordinal: index + 1, name, quotas: 1 }));
+    const people: PublicParticipant[] = nomes.map((name, index) => ({ ordinal: index + 1, name, quotas: 1, paymentStatus: "PAID" }));
     expect(filterParticipants(people, "").map((p) => p.name)).toEqual(nomes);
   });
 
   it("mantém nomes parecidos como pessoas distintas", () => {
     const people: PublicParticipant[] = [
-      { ordinal: 1, name: "Gilber", quotas: 1 },
-      { ordinal: 2, name: "Gilberto", quotas: 1 },
+      { ordinal: 1, name: "Gilber", quotas: 1, paymentStatus: "PAID" },
+      { ordinal: 2, name: "Gilberto", quotas: 1, paymentStatus: "PAID" },
     ];
     const found = filterParticipants(people, "gilber");
     expect(found).toHaveLength(2);
@@ -82,7 +83,7 @@ describe("integridade do nome público", () => {
   });
 
   it("a busca não altera o nome devolvido", () => {
-    const people: PublicParticipant[] = [{ ordinal: 1, name: "João da Silva", quotas: 2 }];
+    const people: PublicParticipant[] = [{ ordinal: 1, name: "João da Silva", quotas: 2, paymentStatus: "PAID" }];
     expect(filterParticipants(people, "joao")[0]?.name).toBe("João da Silva");
   });
 });
@@ -101,9 +102,9 @@ describe("contador de seção", () => {
 
 describe("identidade pública estável", () => {
   const people: PublicParticipant[] = [
-    { ordinal: 1, name: "Ana", quotas: 1 },
-    { ordinal: 2, name: "Bruno", quotas: 2 },
-    { ordinal: 3, name: "Carla", quotas: 1 },
+    { ordinal: 1, name: "Ana", quotas: 1, paymentStatus: "PAID" },
+    { ordinal: 2, name: "Bruno", quotas: 2, paymentStatus: "PAID" },
+    { ordinal: 3, name: "Carla", quotas: 1, paymentStatus: "PAID" },
   ];
 
   it("a busca preserva a identidade original de cada linha", () => {
@@ -122,7 +123,24 @@ describe("identidade pública estável", () => {
 
   it("o conteúdo público não carrega identificador interno", () => {
     for (const participant of people) {
-      expect(Object.keys(participant).sort()).toEqual(["name", "ordinal", "quotas"]);
+      expect(Object.keys(participant).sort()).toEqual(["name", "ordinal", "paymentStatus", "quotas"]);
     }
+  });
+});
+
+describe("busca pública de jogos", () => {
+  const games = [1, 19, 50, 100].map((ordinal) => ({
+    ordinal,
+    numbers: [1, 2, 3, 4, 5, 6],
+    status: "BET" as const,
+    hits: null,
+    isPrized: null,
+    prizeLabel: null,
+    prizeAmount: null,
+  }));
+
+  it("localiza pelo número exibido do jogo", () => {
+    expect(filterGames(games, "Jogo 19").map((game) => game.ordinal)).toEqual([19]);
+    expect(filterGames(games, "100").map((game) => game.ordinal)).toEqual([100]);
   });
 });

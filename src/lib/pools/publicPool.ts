@@ -18,6 +18,7 @@ export interface PublicParticipant {
   ordinal: number;
   name: string;
   quotas: number;
+  paymentStatus: "PAID";
 }
 
 export interface PublicGame {
@@ -39,7 +40,10 @@ export interface PublicResult {
   totalPrize: number | null;
 }
 
+export type PublicShareScope = "PARTICIPANTS" | "GAMES" | "FULL";
+
 export interface PublicPoolSummary {
+  scope: PublicShareScope;
   name: string;
   lottery: string;
   lotterySlug: string;
@@ -47,15 +51,17 @@ export interface PublicPoolSummary {
   drawDate: string | null;
   drawDatePlanned: boolean;
   status: PoolStatus;
-  totalQuotas: number | null;
-  assignedQuotas: number;
-  paidQuotas: number;
-  confirmedParticipants: number;
-  availableQuotas: number | null;
-  games: number;
-  participants: PublicParticipant[];
-  gameList: PublicGame[];
-  result: PublicResult | null;
+  quotaValue?: number;
+  totalQuotas?: number | null;
+  assignedQuotas?: number;
+  paidQuotas?: number;
+  confirmedParticipants?: number;
+  availableQuotas?: number | null;
+  linkedGames?: number;
+  games?: number;
+  participants?: PublicParticipant[];
+  gameList?: PublicGame[];
+  result?: PublicResult | null;
 }
 
 /**
@@ -100,6 +106,13 @@ export function filterParticipants(
   const term = normalizeName(query);
   if (!term) return participants;
   return participants.filter((participant) => normalizeName(participant.name).includes(term));
+}
+
+export function filterGames(games: PublicGame[], query: string): PublicGame[] {
+  const normalized = query.trim().replace(/\D/g, "");
+  if (!normalized) return games;
+  const number = Number(normalized);
+  return games.filter((game) => game.ordinal === number);
 }
 
 export function quotaText(quotas: number): string {

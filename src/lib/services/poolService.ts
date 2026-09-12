@@ -6,6 +6,7 @@
 import type { PaymentMethod } from "@/config/pools.config";
 import { supabase } from "@/integrations/supabase/client";
 import type {
+  Database,
   GameStatus,
   PaymentStatus,
   PoolStatus,
@@ -15,7 +16,16 @@ import type {
 
 
 const POOL_SELECT =
-  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, user_id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status))";
+  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, user_id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status)), pool_share_links(id, scope, token, revoked_at)";
+
+export type PoolShareScope = Database["public"]["Enums"]["pool_share_scope"];
+
+export interface PoolShareLinkRow {
+  id: string;
+  scope: PoolShareScope;
+  token: string;
+  revoked_at: string | null;
+}
 
 export interface PoolLotteryRef {
   slug: string;
@@ -77,6 +87,7 @@ export interface PoolRow {
     | "eligible_for_prize_share"
   >[];
   pool_games: { id: string; generated_games: { status: GameStatus } | null }[];
+  pool_share_links: PoolShareLinkRow[];
 }
 
 export interface PoolFilters {
@@ -242,6 +253,22 @@ export const poolService = {
     return (data ?? null) as string | null;
   },
 
+  async setShareLink(
+    poolId: string,
+    scope: PoolShareScope,
+    enabled: boolean,
+    regenerate = false,
+  ) {
+    const { data, error } = await supabase.rpc("pool_set_share_link", {
+      _pool_id: poolId,
+      _scope: scope,
+      _enabled: enabled,
+      _regenerate: regenerate,
+    });
+    if (error) throw error;
+    return (data ?? null) as string | null;
+  },
+
   /* ---------------- participantes ---------------- */
 
   async participants(poolId: string) {
@@ -384,6 +411,15 @@ export const poolService = {
   async attachGame(poolId: string, gameId: string) {
     const { error } = await supabase.rpc("pool_attach_game", { _pool_id: poolId, _game_id: gameId });
     if (error) throw error;
+  },
+
+  async attachGames(poolId: string, gameIds: string[]) {
+    const { data, error } = await supabase.rpc("pool_attach_games", {
+      _pool_id: poolId,
+      _game_ids: gameIds,
+    });
+    if (error) throw error;
+    return Number(data ?? 0);
   },
 
   async detachGame(poolId: string, gameId: string) {
