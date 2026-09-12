@@ -94,7 +94,7 @@ export function PublicParticipantList({
                   ·
                 </span>
                 <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-success sm:text-right">
-                  Pago
+                  {participant.paymentStatus === "PAID" ? "Pago" : participant.paymentStatus}
                 </span>
               </li>
             ))}

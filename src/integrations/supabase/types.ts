@@ -1279,6 +1279,44 @@ export type Database = {
           },
         ]
       }
+      pool_share_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          pool_id: string
+          revoked_at: string | null
+          scope: Database["public"]["Enums"]["pool_share_scope"]
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pool_id: string
+          revoked_at?: string | null
+          scope: Database["public"]["Enums"]["pool_share_scope"]
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pool_id?: string
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["pool_share_scope"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_share_links_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pools: {
         Row: {
           cancel_reason: string | null
@@ -1577,6 +1615,10 @@ export type Database = {
         Args: { _game_id: string; _pool_id: string }
         Returns: string
       }
+      pool_attach_games: {
+        Args: { _game_ids: string[]; _pool_id: string }
+        Returns: number
+      }
       pool_calculate_distribution: {
         Args: { _pool_id: string }
         Returns: string
@@ -1633,6 +1675,15 @@ export type Database = {
       }
       pool_set_public: {
         Args: { _enabled: boolean; _pool_id: string }
+        Returns: string
+      }
+      pool_set_share_link: {
+        Args: {
+          _enabled: boolean
+          _pool_id: string
+          _regenerate?: boolean
+          _scope: Database["public"]["Enums"]["pool_share_scope"]
+        }
         Returns: string
       }
       pool_set_status: {
@@ -1692,6 +1743,7 @@ export type Database = {
         | "NOT_PRIZED"
       participant_status: "ACTIVE" | "CANCELLED"
       payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED"
+      pool_share_scope: "PARTICIPANTS" | "GAMES" | "FULL"
       pool_status:
         | "FORMING"
         | "OPEN"
@@ -1851,6 +1903,7 @@ export const Constants = {
       ],
       participant_status: ["ACTIVE", "CANCELLED"],
       payment_status: ["PENDING", "PARTIAL", "PAID", "OVERDUE", "CANCELLED"],
+      pool_share_scope: ["PARTICIPANTS", "GAMES", "FULL"],
       pool_status: [
         "FORMING",
         "OPEN",

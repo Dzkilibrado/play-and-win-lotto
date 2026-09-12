@@ -3,41 +3,31 @@
  * Toda ação de compartilhar (nativo, WhatsApp, copiar) usa estas funções —
  * nenhum botão deve montar mensagem ou URL por conta própria.
  */
-import { formatDate } from "@/lib/format";
-import { remainingQuotas } from "@/lib/pools/poolMath";
-import { isPubliclyVisibleGame } from "@/lib/pools/publicPool";
-import type { PoolRow } from "@/lib/services/poolService";
+import type { PoolRow, PoolShareScope } from "@/lib/services/poolService";
 
-export interface PoolShareStats {
-  confirmedParticipants: number;
-  paidQuotas: number;
-  totalQuotas: number | null;
-  availableQuotas: number | null;
-  games: number;
-}
+export const poolShareScopeLabel: Record<PoolShareScope, string> = {
+  PARTICIPANTS: "Participantes e pagamentos",
+  GAMES: "Jogos do bolão",
+  FULL: "Visão completa",
+};
 
-/** Resumo agregado usado na mensagem, calculado a partir dos participantes. */
-export function poolShareStats(pool: PoolRow): PoolShareStats {
-  const active = pool.pool_participants.filter((p) => p.status === "ACTIVE");
-  const paid = active.filter((p) => p.payment_status === "PAID");
-  const quotasTaken = active.reduce((sum, p) => sum + p.quotas, 0);
-  return {
-    confirmedParticipants: paid.length,
-    paidQuotas: paid.reduce((sum, p) => sum + p.quotas, 0),
-    totalQuotas: pool.total_quotas,
-    availableQuotas: remainingQuotas(pool.total_quotas, quotasTaken),
-    games: (pool.pool_games ?? []).filter(
-      (link) => link.generated_games && isPubliclyVisibleGame(link.generated_games.status),
-    ).length,
-  };
-}
+export const poolShareScopeDescription: Record<PoolShareScope, string> = {
+  PARTICIPANTS: "Lista de participantes, cotas e situação de pagamento.",
+  GAMES: "Jogos liberados para conferência e acompanhamento.",
+  FULL: "Resumo do bolão, participantes e jogos.",
+};
 
-/** Link público atual do bolão, ou `null` quando o link não está ativo. */
-export function poolPublicUrl(pool: PoolRow, origin?: string): string | null {
-  if (!pool.is_public || !pool.public_token) return null;
+/** Link público ativo para um escopo, ou `null` quando ainda não foi criado. */
+export function poolPublicUrl(
+  pool: PoolRow,
+  scope: PoolShareScope,
+  origin?: string,
+): string | null {
+  const link = pool.pool_share_links?.find((item) => item.scope === scope && !item.revoked_at);
+  if (!link) return null;
   const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
   if (!base) return null;
-  return `${base}/b/${pool.public_token}`;
+  return `${base}/b/${link.token}`;
 }
 
 export function poolShareTitle(pool: PoolRow) {
@@ -45,28 +35,14 @@ export function poolShareTitle(pool: PoolRow) {
 }
 
 /** Mensagem padrão de acompanhamento (com e sem limite de cotas). */
-export function poolShareMessage(pool: PoolRow, url: string | null): string {
-  const stats = poolShareStats(pool);
+export function poolShareMessage(pool: PoolRow, scope: PoolShareScope, url: string | null): string {
   const contest = pool.contest_number ?? pool.contest_number_planned;
-  const drawDate = pool.draw_date ?? pool.draw_date_planned;
-
-  const lines = [
-    `🎯 Bolão: ${pool.name}`,
-    `🎟 ${pool.lotteries?.name ?? "Loteria"}`,
-    `🔢 Concurso: ${contest ?? "a definir"}`,
-    `📅 Sorteio: ${drawDate ? formatDate(drawDate) : "a definir"}`,
-    `👥 Participantes confirmados: ${stats.confirmedParticipants}`,
-  ];
-
-  if (stats.totalQuotas === null) {
-    lines.push(`🎫 Cotas pagas: ${stats.paidQuotas}`);
-    lines.push("♾️ Sem limite de cotas definido");
-  } else {
-    lines.push(`🎫 Cotas pagas: ${stats.paidQuotas}/${stats.totalQuotas}`);
-    lines.push(`🎟 Cotas disponíveis: ${stats.availableQuotas ?? 0}`);
-  }
-
-  lines.push(`🎲 Jogos: ${stats.games}`);
+  const intro = scope === "PARTICIPANTS"
+    ? `Acompanhe os participantes, cotas e pagamentos do bolão ${pool.name}.`
+    : scope === "GAMES"
+      ? `Confira os jogos do bolão ${pool.name} para o concurso ${contest ?? "a definir"}.`
+      : `Acompanhe todas as informações do bolão ${pool.name}, incluindo participantes e jogos.`;
+  const lines = [intro];
 
   if (url) {
     lines.push("", "Acompanhe o bolão:", url);

@@ -15,6 +15,7 @@ const people = (count: number): PublicParticipant[] =>
     ordinal: index + 1,
     name: `Participante ${index + 1}`,
     quotas: (index % 3) + 1,
+    paymentStatus: "PAID" as const,
   }));
 
 const games = (count: number): PublicGame[] =>
@@ -41,13 +42,13 @@ describe("lista pública de participantes", () => {
   });
 
   it("usa COTA/COTAS em caixa alta e o selo PAGO", () => {
-    render(<PublicParticipantList participants={[{ ordinal: 1, name: "Gilber", quotas: 1 }]} />);
+    render(<PublicParticipantList participants={[{ ordinal: 1, name: "Gilber", quotas: 1, paymentStatus: "PAID" }]} />);
     expect(screen.getByText("1 COTA")).toBeTruthy();
     expect(screen.getByText("Pago").className).toContain("uppercase");
   });
 
   it("busca por nome, sem diferenciar acentos", () => {
-    render(<PublicParticipantList participants={[...people(20), { ordinal: 21, name: "Íris", quotas: 2 }]} />);
+    render(<PublicParticipantList participants={[...people(20), { ordinal: 21, name: "Íris", quotas: 2, paymentStatus: "PAID" }]} />);
     fireEvent.change(screen.getByLabelText("Buscar participante"), { target: { value: "iris" } });
     expect(screen.getByText("Íris")).toBeTruthy();
     expect(screen.queryByText("Participante 1")).toBeNull();
@@ -57,10 +58,16 @@ describe("lista pública de participantes", () => {
 describe("lista pública de jogos", () => {
   afterEach(cleanup);
 
-  it.each([30, 50, 100])("mostra a prévia e permite ver todos com %i jogos", (total) => {
-    render(<PublicGameList games={games(total)} drawnNumbers={[]} />);
+  it.each([19, 50, 100])("mostra a prévia e permite ver todos com %i jogos", (total) => {
+    render(<PublicGameList games={games(total)} drawnNumbers={[]} linkedGames={total} />);
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(publicPreviewSize.games);
     fireEvent.click(screen.getByRole("button", { name: /Ver todos/ }));
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(total);
+  });
+
+  it("mostra um jogo sem expansão", () => {
+    render(<PublicGameList games={games(1)} drawnNumbers={[]} linkedGames={1} />);
+    expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Ver todos/ })).toBeNull();
   });
 });
