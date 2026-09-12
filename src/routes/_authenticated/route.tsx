@@ -13,10 +13,16 @@ export const Route = createFileRoute("/_authenticated")({
      * antes, toda troca de tela esperava uma ida e volta à rede.
      */
     const { data: local } = await supabase.auth.getSession();
-    if (local.session?.user) return { user: local.session.user };
+    if (local.session?.user) {
+      const { data: status } = await supabase.rpc("profile_onboarding_status");
+      if (!(status && typeof status === "object" && !Array.isArray(status) && status["complete"] === true)) throw redirect({ to: "/complete-profile" });
+      return { user: local.session.user };
+    }
 
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/login" });
+    const { data: status } = await supabase.rpc("profile_onboarding_status");
+    if (!(status && typeof status === "object" && !Array.isArray(status) && status["complete"] === true)) throw redirect({ to: "/complete-profile" });
     return { user: data.user };
   },
   component: AuthenticatedLayout,

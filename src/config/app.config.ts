@@ -4,23 +4,25 @@
  */
 
 export const appConfig = {
-  /** Nome provisório do produto. Trocar aqui reflete em toda a aplicação. */
-  name: "Gestor de Loterias",
-  shortName: "Loterias",
-  tagline: "Jogos, bolões e resultados em um só lugar",
+  technicalName: "GestordaSorte",
+  name: "Gestor da Sorte",
+  shortName: "Gestor da Sorte",
+  domain: "gestordasorte.com.br",
+  canonicalOrigin: "https://gestordasorte.com.br",
+  tagline: "Organize seus jogos. Gerencie seus bolões. Acompanhe os resultados.",
+  supportingLine: "Seus jogos e bolões em um só lugar.",
   description:
-    "Organize seus jogos de loteria, acompanhe concursos e gerencie bolões com participantes, cotas e pagamentos.",
-  /** Marca visual textual (substituível por logo futuramente). */
+    "Organize seus jogos, gerencie bolões, acompanhe concursos e resultados e explore estatísticas históricas em um só lugar.",
+  /** Wordmark tipográfico substituível pelo logotipo definitivo. */
   logo: {
-    kind: "monogram" as const,
-    monogram: "GL",
+    kind: "wordmark" as const,
   },
   locale: "pt-BR",
   currency: "BRL",
   timeZone: "America/Sao_Paulo",
   support: {
     responsibleGamingNotice:
-      "Estatísticas históricas não garantem nem aumentam a probabilidade de um número ser sorteado. Cada sorteio é independente.",
+      "Os recursos de geração e análise não aumentam a probabilidade matemática de premiação. Os sorteios são independentes.",
   },
 } as const;
 
