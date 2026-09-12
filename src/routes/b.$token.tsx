@@ -101,8 +101,12 @@ function PublicPoolPage() {
   }
 
   const config = getLotteryConfig(pool.lotterySlug);
-  const semLimite = pool.totalQuotas === null;
-  const progress = quotaProgress(pool.totalQuotas, pool.paidQuotas);
+  const showParticipants = pool.scope === "PARTICIPANTS" || pool.scope === "FULL";
+  const showGames = pool.scope === "GAMES" || pool.scope === "FULL";
+  const totalQuotas = pool.totalQuotas ?? null;
+  const paidQuotas = pool.paidQuotas ?? 0;
+  const semLimite = totalQuotas === null;
+  const progress = quotaProgress(totalQuotas, paidQuotas);
   const countdown = countdownText(pool.drawDate);
   const participants = pool.participants ?? [];
   const games = pool.gameList ?? [];
@@ -142,20 +146,25 @@ function PublicPoolPage() {
           ) : null}
         </div>
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {showParticipants ? <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
           <SummaryItem label="Participantes confirmados" value={String(pool.confirmedParticipants)} />
           <SummaryItem
             label="Cotas pagas"
-            value={semLimite ? String(pool.paidQuotas) : `${pool.paidQuotas} de ${pool.totalQuotas}`}
+            value={semLimite ? String(paidQuotas) : `${paidQuotas} de ${totalQuotas}`}
           />
           <SummaryItem
             label={semLimite ? "Limite de cotas" : "Cotas disponíveis"}
             value={semLimite ? noQuotaLimitLabel : String(pool.availableQuotas ?? 0)}
           />
-          <SummaryItem label="Jogos" value={String(pool.games)} />
-        </dl>
+          {showGames ? <SummaryItem label="Jogos" value={String(pool.games ?? 0)} /> : null}
+        </dl> : showGames ? (
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <SummaryItem label="Jogos vinculados" value={String(pool.linkedGames ?? 0)} />
+            <SummaryItem label="Jogos disponíveis" value={String(pool.games ?? 0)} />
+          </dl>
+        ) : null}
 
-        {semLimite ? null : (
+        {!showParticipants || semLimite ? null : (
           <div
             className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
             role="progressbar"
@@ -171,28 +180,28 @@ function PublicPoolPage() {
 
       <Accordion
         type="multiple"
-        defaultValue={["participants"]}
+        defaultValue={[showParticipants ? "participants" : "games"]}
         className="surface-card divide-y divide-border px-4"
       >
-        <AccordionItem value="participants" className="border-0">
+        {showParticipants ? <AccordionItem value="participants" className="border-0">
           <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
             <SectionTitleWithCount title="Participantes confirmados" count={participants.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
             <PublicParticipantList participants={participants} />
           </AccordionContent>
-        </AccordionItem>
+        </AccordionItem> : null}
 
-        <AccordionItem value="games" className="border-0">
+        {showGames ? <AccordionItem value="games" className="border-0">
           <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
             <SectionTitleWithCount title="Jogos do bolão" count={games.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
-            <PublicGameList games={games} drawnNumbers={drawn} />
+            <PublicGameList games={games} drawnNumbers={drawn} linkedGames={pool.linkedGames ?? 0} />
           </AccordionContent>
-        </AccordionItem>
+        </AccordionItem> : null}
 
-        {result ? (
+        {showGames && result ? (
           <AccordionItem value="result" className="border-0">
             <AccordionTrigger className="py-3 text-sm font-semibold">
               Resultado do bolão
@@ -223,8 +232,12 @@ function PublicPoolPage() {
       </Accordion>
 
       <p className="px-1 text-xs text-text-secondary">
-        Esta página mostra apenas o acompanhamento geral do bolão e o nome de quem já pagou.
-        Telefones, valores individuais, pagamentos e documentos não são exibidos.
+        {pool.scope === "PARTICIPANTS"
+          ? "Esta página mostra somente participantes confirmados, cotas e situação de pagamento."
+          : pool.scope === "GAMES"
+            ? "Esta página mostra somente os jogos liberados para acompanhamento e seus resultados."
+            : "Esta página reúne participantes confirmados e jogos liberados para acompanhamento."}
+        {" "}Telefones, valores individuais, observações, documentos e comprovantes não são exibidos.
       </p>
 
       <Button asChild variant="outline" className="h-11 w-full">
