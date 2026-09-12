@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Clock, Trophy, Users, Wallet } from "lucide-react";
+import { Archive, Clock, Trophy, Users, Wallet } from "lucide-react";
 
 import { StatCard } from "@/components/common/Cards";
 import { ActiveFilterChip, FilterBar } from "@/components/common/Filters";
@@ -70,6 +70,8 @@ function chipLabel(key: keyof ListSearch, value: string, lotteryName: (slug: str
       return value === "owner" ? "Organizados por mim" : "Dos quais participo";
     case "sort":
       return `Ordem: ${poolSortLabel(value)}`;
+    case "archived":
+      return "Arquivados";
     default:
       return `${key}: ${value}`;
   }
@@ -126,6 +128,7 @@ function PoolsPage() {
     scope: search.scope,
     sort: search.sort,
     userId: user?.id ?? null,
+    archived: search.archived,
   });
 
   const page = search.page ?? 1;
@@ -151,6 +154,7 @@ function PoolsPage() {
     "prize",
     "scope",
     "sort",
+    "archived",
   ];
   const chips = chipKeys
     .filter((key) => Boolean(search[key]))
@@ -176,7 +180,7 @@ function PoolsPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
           label="Abertos"
           value={countByStatus("OPEN")}
@@ -184,6 +188,7 @@ function PoolsPage() {
           to="/pools"
           search={{ status: "OPEN" }}
         />
+        <StatCard label="Arquivados" value={all.filter((pool) => pool.archived_at).length} icon={Archive} to="/pools" search={{ archived: "yes" }} />
         <StatCard
           label="Aguardando sorteio"
           value={countByStatus("AWAITING_DRAW")}
@@ -350,6 +355,7 @@ function PoolsPage() {
                 />
                 Somente com pagamentos pendentes
               </label>
+              <label className="flex items-center gap-2 text-sm text-text-primary"><input type="checkbox" className="size-5" checked={search.archived === "yes"} onChange={(event) => setFilter({ archived: event.target.checked ? "yes" : undefined })} />Somente arquivados</label>
               <label className="flex items-center gap-2 text-sm text-text-primary">
                 <input
                   type="checkbox"

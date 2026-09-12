@@ -48,6 +48,7 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
           </p>
         </div>
         <StatusBadge label={poolStatusLabel[pool.status]} tone={poolStatusTone[pool.status]} />
+        {pool.archived_at ? <StatusBadge label="Arquivado" tone="neutral" /> : null}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { PDFDocument } from "pdf-lib";
 
-import { buildPoolReportDefinition, poolReportFileName, type PoolReportData } from "./poolReportPdf";
+import { buildPoolReportDefinition, createPoolReportPdf, poolReportFileName, type PoolReportData } from "./poolReportPdf";
 import type { PoolParticipantRow, PoolRow } from "@/lib/services/poolService";
 
 const pool = {
@@ -35,6 +36,20 @@ const data: PoolReportData = {
 };
 
 describe("relatório PDF do bolão", () => {
+  it("anexa todas as páginas de um comprovante PDF", async () => {
+    const attachment = await PDFDocument.create();
+    attachment.addPage();
+    attachment.addPage();
+    const attachmentBytes = await attachment.save();
+    const baseBlob = await createPoolReportPdf(data);
+    const base = await PDFDocument.load(await baseBlob.arrayBuffer());
+    const bytes = new Uint8Array(attachmentBytes.byteLength);
+    bytes.set(attachmentBytes);
+    const mergedBlob = await createPoolReportPdf({ ...data, documents: [{ title: "Comprovante", mimeType: "application/pdf", bytes: bytes.buffer }] });
+    const merged = await PDFDocument.load(await mergedBlob.arrayBuffer());
+    expect(merged.getPageCount()).toBe(base.getPageCount() + 2);
+  });
+
   it("cria nome amigável sem identificador técnico", () => {
     expect(poolReportFileName(pool)).toBe("relatorio-bolao-galera-gmill-concurso-3780.pdf");
   });

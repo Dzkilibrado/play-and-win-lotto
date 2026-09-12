@@ -23,7 +23,10 @@ export interface PoolReportData {
   checks: Map<string, CheckResultRow>;
   officialPrizeTotal: number;
   generatedAt?: Date;
+  documents?: PoolReportDocument[];
 }
+
+export interface PoolReportDocument { title: string; mimeType: "image/jpeg" | "image/png" | "application/pdf"; bytes: ArrayBuffer; }
 
 const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
@@ -148,7 +151,35 @@ export async function createPoolReportPdf(data: PoolReportData) {
   ]);
   const pdfMake = pdfMakeModule.default;
   pdfMake.addVirtualFileSystem(fontsModule.default);
-  return pdfMake.createPdf(buildPoolReportDefinition(data)).getBlob();
+  const report = await pdfMake.createPdf(buildPoolReportDefinition(data)).getBlob();
+  if (!data.documents?.length) return report;
+
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const merged = await PDFDocument.load(await report.arrayBuffer());
+  const font = await merged.embedFont(StandardFonts.HelveticaBold);
+  for (const document of data.documents) {
+    if (document.mimeType === "application/pdf") {
+      const attachment = await PDFDocument.load(document.bytes);
+      const pages = await merged.copyPages(attachment, attachment.getPageIndices());
+      pages.forEach((page) => merged.addPage(page));
+      continue;
+    }
+    const image = document.mimeType === "image/png" ? await merged.embedPng(document.bytes) : await merged.embedJpg(document.bytes);
+    const page = merged.addPage([595.28, 841.89]);
+    const margin = 36;
+    const titleHeight = 34;
+    const availableWidth = page.getWidth() - margin * 2;
+    const availableHeight = page.getHeight() - margin * 2 - titleHeight;
+    const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    page.drawText(document.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
+    page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
+  }
+  const saved = await merged.save();
+  const bytes = new Uint8Array(saved.byteLength);
+  bytes.set(saved);
+  return new Blob([bytes.buffer], { type: "application/pdf" });
 }
 
 export function canSharePdfFile(file: File) {

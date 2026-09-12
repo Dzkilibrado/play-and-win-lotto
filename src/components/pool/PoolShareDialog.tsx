@@ -126,14 +126,21 @@ export function PoolShareDialog({
     if (pdfBlob) return pdfBlob;
     setPdfLoading(true);
     try {
-      const [participants, rawGames, officialPrizeTotal] = await Promise.all([
+      const [participants, rawGames, officialPrizeTotal, documentRows] = await Promise.all([
         poolService.participants(pool.id),
         poolService.games(pool.id),
         poolService.prizeTotal(pool.id),
+        poolService.activeDocuments(pool.id),
       ]);
       const games = mapPoolReportGames(rawGames);
       const checks = await checkService.getChecksForGames(games.map((game) => game.gameId));
-      const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal });
+      const documents = await Promise.all(documentRows.filter((document) => document.is_published).map(async (document) => {
+        const url = await poolService.documentUrl(document.storage_path);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Não foi possível carregar ${document.title}.`);
+        return { title: document.title, mimeType: document.mime_type as "image/jpeg" | "image/png" | "application/pdf", bytes: await response.arrayBuffer() };
+      }));
+      const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents });
       setPdfBlob(blob);
       toast.success("PDF completo preparado");
       return blob;
@@ -274,7 +281,7 @@ export function PoolShareDialog({
                       <Button variant="outline" className="h-11" onClick={() => void downloadPdf()}><Download className="size-4" aria-hidden /> Salvar</Button>
                     </div>
                   )}
-                  <p className="text-xs text-text-secondary">Relatório administrativo com participantes ativos, resumo financeiro e jogos. Criado somente neste dispositivo.</p>
+                  <p className="text-xs text-text-secondary">Relatório administrativo com participantes ativos, resumo financeiro, jogos e comprovantes publicados. Criado somente neste dispositivo.</p>
                 </div>
               ) : null}
               {canManage ? (

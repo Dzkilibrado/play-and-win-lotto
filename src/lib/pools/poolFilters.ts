@@ -68,6 +68,7 @@ export interface PoolViewOptions {
   sort?: string | undefined;
   /** Usuário atual, necessário para "organizados por mim"/"dos quais participo". */
   userId?: string | null | undefined;
+  archived?: string | undefined;
 }
 
 const activeParticipants = (pool: PoolRow) =>
@@ -100,6 +101,8 @@ export function filterPools(rows: PoolRow[], options: PoolViewOptions): PoolRow[
   const groupStatuses = statusesForGroup(group);
 
   return rows.filter((pool) => {
+    if (options.archived === "yes" && !pool.archived_at) return false;
+    if (options.archived !== "yes" && pool.archived_at) return false;
     if (groupStatuses && !groupStatuses.includes(pool.status)) return false;
     if (options.status && pool.status !== options.status) return false;
     if (options.payment === "PENDING" && !poolHasPendingPayment(pool)) return false;

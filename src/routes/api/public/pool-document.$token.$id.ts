@@ -5,11 +5,10 @@ export const Route = createFileRoute("/api/public/pool-document/$token/$id")({
     handlers: {
       GET: async ({ params }) => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.rpc("pool_public_document_path", {
-          _token: params.token,
-          _document_id: params.id,
-        });
-        const document = data?.[0];
+        const { data: links, error: linkError } = await supabaseAdmin.from("pool_share_links").select("pool_id, scope").eq("token", params.token).is("revoked_at", null).in("scope", ["GAMES", "FULL"]).limit(1);
+        const link = links?.[0];
+        if (linkError || !link) return new Response("Não encontrado", { status: 404 });
+        const { data: document, error } = await supabaseAdmin.from("pool_documents").select("storage_path, mime_type, title").eq("id", params.id).eq("pool_id", link.pool_id).eq("is_published", true).is("deleted_at", null).maybeSingle();
         if (error || !document) return new Response("Não encontrado", { status: 404 });
 
         const { data: file, error: downloadError } = await supabaseAdmin.storage

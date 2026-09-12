@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { poolNotices } from "@/config/pools.config";
-import { useSession } from "@/hooks/useAuth";
+import { useIsAdmin, useSession } from "@/hooks/useAuth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   noQuotaLimitLabel,
@@ -41,7 +41,7 @@ const sections = [
   { value: "games", label: "Jogos" },
   { value: "finance", label: "Financeiro" },
   { value: "result", label: "Resultado" },
-  { value: "documents", label: "Documentos" },
+  { value: "documents", label: "Comprovantes" },
   { value: "history", label: "Histórico" },
 ];
 
@@ -63,6 +63,7 @@ function PoolDetailPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = useSession();
+  const admin = useIsAdmin(user);
   const [payTarget, setPayTarget] = useState<PoolParticipantRow | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -91,7 +92,8 @@ function PoolDetailPage() {
   const data = pool.data;
   const rows = participants.data ?? [];
   const config = getLotteryConfig(data.lotteries?.slug);
-  const canManage = user?.id === data.owner_id;
+  const canManage = user?.id === data.owner_id || admin.data === true;
+  const readOnly = data.archived_at !== null;
   const contest = data.contest_number ?? data.contest_number_planned;
   const drawDate = data.draw_date ?? data.draw_date_planned;
   const planned = data.draw_date === null && data.draw_date_planned !== null;
@@ -119,7 +121,7 @@ function PoolDetailPage() {
         description={`${data.lotteries?.name ?? "—"} · ${contest ? `Concurso ${contest}` : "Concurso a definir"}`}
         actions={
           <>
-            {canManage ? (
+            {canManage && !readOnly ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -141,6 +143,7 @@ function PoolDetailPage() {
       <div className="surface-card space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge label={poolStatusLabel[data.status]} tone={poolStatusTone[data.status]} />
+          {readOnly ? <StatusBadge label="Arquivado" tone="neutral" /> : null}
           <span className="text-xs text-text-secondary">
             {drawDate ? `${planned ? "Sorteio previsto: " : "Sorteio: "}${formatDate(drawDate)}` : "Sorteio a definir"}
           </span>
@@ -187,6 +190,8 @@ function PoolDetailPage() {
         ) : null}
       </div>
 
+      {readOnly ? <p className="rounded-lg border border-border bg-surface-secondary p-3 text-sm text-text-secondary">Este bolão está arquivado e disponível somente para consulta. Restaure-o para fazer alterações.</p> : null}
+
       <PoolSectionNav sections={sections} value={section} onChange={setSection} />
 
       <div className="min-w-0">
@@ -226,25 +231,25 @@ function PoolDetailPage() {
             <ParticipantsPanel
               pool={data}
               participants={rows}
-              canManage={canManage}
+              canManage={canManage && !readOnly}
               onPay={setPayTarget}
             />
           )
         ) : null}
 
-        {section === "games" ? <GamesPanel pool={data} canManage={canManage} /> : null}
+        {section === "games" ? <GamesPanel pool={data} canManage={canManage && !readOnly} /> : null}
         {section === "finance" ? (
-          <FinancePanel pool={data} participants={rows} canManage={canManage} />
+          <FinancePanel pool={data} participants={rows} canManage={canManage && !readOnly} />
         ) : null}
         {section === "result" ? (
-          <DistributionPanel pool={data} participants={rows} canManage={canManage} />
+          <DistributionPanel pool={data} participants={rows} canManage={canManage && !readOnly} />
         ) : null}
-        {section === "documents" ? <DocumentsPanel poolId={data.id} /> : null}
+        {section === "documents" ? <DocumentsPanel poolId={data.id} canManage={canManage} readOnly={readOnly} /> : null}
         {section === "history" ? <HistoryPanel poolId={data.id} /> : null}
       </div>
 
       <PaymentDialog poolId={data.id} participant={payTarget} onClose={() => setPayTarget(null)} />
-      {canManage ? (
+      {canManage && !readOnly ? (
         <PoolEditDialog pool={data} open={editing} onOpenChange={setEditing} />
       ) : null}
     </div>
