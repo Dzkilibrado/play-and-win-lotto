@@ -1,55 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { LoadingState } from "@/components/common/StateViews";
-import { PageHeader, NotImplementedNotice } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
+import { supabase } from "@/integrations/supabase/client";
 import { useProfile, useSession } from "@/hooks/useAuth";
+import { formatBrazilianPhone, maximumBirthDate, profileSchema } from "@/lib/auth/identity";
+import { completeProfile } from "@/lib/auth/profile.functions";
 
-export const Route = createFileRoute("/_authenticated/profile")({
-  head: () => ({
-    meta: [
-      { title: `Perfil — ${appConfig.name}` },
-      { name: "description", content: "Seus dados de conta." },
-      { property: "og:title", content: `Perfil — ${appConfig.name}` },
-      { property: "og:description", content: "Seus dados de conta." },
-    ],
-  }),
-  component: ProfilePage,
-});
+export const Route = createFileRoute("/_authenticated/profile")({ head: () => ({ meta: [{ title: `Perfil | ${appConfig.name}` }, { name: "description", content: "Consulte e atualize seus dados de conta." }, { property: "og:title", content: `Perfil | ${appConfig.name}` }, { property: "og:description", content: "Consulte e atualize seus dados de conta." }, { property: "og:type", content: "website" }, { name: "robots", content: "noindex" }, { name: "twitter:card", content: "summary" }] }), component: ProfilePage });
 
 function ProfilePage() {
-  const { user } = useSession();
-  const profile = useProfile(user);
-
-  return (
-    <div className="space-y-4">
-      <PageHeader title="Perfil" description="Dados da sua conta." />
-      {profile.isLoading ? (
-        <LoadingState rows={1} />
-      ) : (
-        <dl className="surface-card grid gap-3 p-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-xs text-text-secondary">Nome</dt>
-            <dd className="font-medium text-text-primary">
-              {profile.data?.display_name ?? "Não informado"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-text-secondary">E-mail</dt>
-            <dd className="font-medium text-text-primary">{user?.email ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-text-secondary">Telefone</dt>
-            <dd className="font-medium text-text-primary">
-              {profile.data?.phone ?? "Não informado"}
-            </dd>
-          </div>
-        </dl>
-      )}
-      <NotImplementedNotice
-        title="Edição de perfil em preparação"
-        description="A alteração de nome, telefone e avatar será liberada em seguida."
-      />
-    </div>
-  );
+  const { user } = useSession(); const profile = useProfile(user); const save = useServerFn(completeProfile);
+  const [name, setName] = useState(""); const [birthDate, setBirthDate] = useState(""); const [phone, setPhone] = useState(""); const [saving, setSaving] = useState(false);
+  useEffect(() => { if (!profile.data) return; setName(profile.data.display_name ?? ""); setBirthDate(profile.data.birth_date ?? ""); setPhone(formatBrazilianPhone(profile.data.phone ?? "")); }, [profile.data]);
+  async function submit(event: React.FormEvent) { event.preventDefault(); const { data: documents, error: documentsError } = await supabase.from("legal_document_versions").select("id").eq("is_active", true); if (documentsError) { toast.error("Não foi possível validar os documentos vigentes"); return; } const parsed = profileSchema.safeParse({ name, birthDate, phone, acceptedDocumentIds: (documents ?? []).map((item) => item.id) }); if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Confira seus dados"); return; } setSaving(true); try { await save({ data: { ...parsed.data, phone: parsed.data.phone ?? "" } }); await profile.refetch(); toast.success("Perfil atualizado"); } catch { toast.error("Não foi possível atualizar o perfil"); } finally { setSaving(false); } }
+  return <div className="space-y-4"><PageHeader title="Perfil" description="Mantenha seus dados de conta atualizados." />{profile.isLoading ? <LoadingState rows={1} /> : <form onSubmit={submit} className="surface-card grid gap-4 p-4 sm:grid-cols-2"><div className="space-y-1.5 sm:col-span-2"><Label htmlFor="profile-email">E-mail</Label><Input id="profile-email" value={user?.email ?? ""} disabled className="h-11" /></div><div className="space-y-1.5 sm:col-span-2"><Label htmlFor="profile-name">Nome completo</Label><Input id="profile-name" required maxLength={120} value={name} onChange={(event)=>setName(event.target.value)} className="h-11" /></div><div className="space-y-1.5"><Label htmlFor="profile-birth">Data de nascimento</Label><Input id="profile-birth" type="date" required max={maximumBirthDate()} value={birthDate} onChange={(event)=>setBirthDate(event.target.value)} className="h-11" /></div><div className="space-y-1.5"><Label htmlFor="profile-phone">Telefone</Label><Input id="profile-phone" type="tel" required value={phone} onChange={(event)=>setPhone(formatBrazilianPhone(event.target.value))} className="h-11" /></div><div className="sm:col-span-2"><Button disabled={saving}>{saving ? "Salvando…" : "Salvar alterações"}</Button></div></form>}</div>;
 }
