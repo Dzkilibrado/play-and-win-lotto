@@ -36,3 +36,10 @@
 - [x] Gerar PDF administrativo completo somente sob demanda e sem armazenamento.
 - [x] Validar privacidade, cenário real, seis resoluções, PDF, testes, tipos e build.
 - [x] Entregar relatório final de 33 itens e aguardar homologação.
+
+## Paginação e saldo do relatório PDF
+
+- [x] Iniciar Jogos do bolão sempre em uma nova página.
+- [x] Repetir o cabeçalho e manter cada linha de jogo indivisível.
+- [x] Preservar Em aberto como valor a receber e adicionar Saldo do bolão.
+- [x] Validar PDF real, volumes, testes, tipos e build.

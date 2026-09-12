@@ -45,15 +45,75 @@ describe("relatório PDF do bolão", () => {
     expect(serialized).toContain("Bolão Galera Gmill");
     expect(serialized).toContain("Participantes ativos");
     expect(serialized).toContain("R$ 1.380,00");
+    expect(serialized).toContain("Saldo do bolão");
+    expect(serialized).toContain("R$ 1,00");
     expect(serialized).toContain("Apostado");
     expect(serialized).not.toContain("11999999999");
     expect(serialized).not.toContain("privado");
     expect(serialized).not.toContain("game-0");
   });
 
-  it.each([10, 23, 50, 100, 200])("aceita %i participantes sem cortar dados do documento", (count) => {
+  it("inicia jogos em nova página, repete o cabeçalho e mantém cada jogo indivisível", () => {
+    const definition = buildPoolReportDefinition(data);
+    const content = Array.isArray(definition.content) ? definition.content as unknown as Array<Record<string, unknown>> : [];
+    const gamesHeading = content.find((item) => item["text"] === "Jogos do bolão");
+    const gamesTable = content[content.indexOf(gamesHeading ?? {}) + 1] as { table?: { headerRows?: number; keepWithHeaderRows?: number; dontBreakRows?: boolean } };
+
+    expect(gamesHeading?.["pageBreak"]).toBe("before");
+    expect(gamesTable.table).toMatchObject({ headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true });
+    const footer = typeof definition.footer === "function" ? definition.footer(1, 2, { width: 595.28, height: 841.89, orientation: "portrait" }) : null;
+    expect(JSON.stringify(footer)).toContain("Gerado em 12/09/2026 16:52");
+    expect(JSON.stringify(footer)).toContain("Página 1 de 2");
+  });
+
+  it.each([
+    [1380, 1379, "R$ 1,00", false],
+    [1380, 1380, "R$ 0,00", false],
+    [1000, 1050, "-R$ 50,00", true],
+  ])("calcula saldo recebido %i menos custo %i", (received, cost, expectedBalance, hasShortfall) => {
+    const adjustedParticipants = participants.map((participant, index) => ({
+      ...participant,
+      amount_due: index === 0 ? received : 0,
+      total_paid: index === 0 ? received : 0,
+      payment_status: (index === 0 ? "PAID" : "PENDING") as PoolParticipantRow["payment_status"],
+    }));
+    const definition = buildPoolReportDefinition({
+      ...data,
+      participants: adjustedParticipants,
+      games: [{ gameId: "balance-game", sequence: 1, status: "BET", contestNumber: 3780, numbers: [1, 2, 3, 4, 5, 6], cost }],
+    });
+    const serialized = JSON.stringify(definition);
+
+    expect(serialized).toContain(expectedBalance);
+    expect(serialized.includes("Valor ainda necessário para cobrir os jogos: R$ 50,00")).toBe(hasShortfall);
+  });
+
+  it.each([5, 23, 50, 100, 200])("aceita %i participantes sem cortar dados do documento", (count) => {
     const definition = buildPoolReportDefinition({ ...data, participants: participants.slice(0, 1).flatMap((item) => Array.from({ length: count }, (_, index) => ({ ...item, id: String(index), name: `Pessoa ${index + 1}` }))) });
     expect(JSON.stringify(definition)).toContain(`Pessoa ${count}`);
+  });
+
+  it.each([
+    [5, 19],
+    [23, 19],
+    [50, 19],
+    [100, 50],
+  ])("mantém a separação entre %i participantes e %i jogos", (participantCount, gameCount) => {
+    const definition = buildPoolReportDefinition({
+      ...data,
+      participants: participants.slice(0, 1).flatMap((item) => Array.from({ length: participantCount }, (_, index) => ({ ...item, id: String(index), name: `Pessoa ${index + 1}` }))),
+      games: Array.from({ length: gameCount }, (_, index) => ({
+        gameId: `volume-${index}`, sequence: index + 1, status: "BET", contestNumber: 3780,
+        cost: 3.5, numbers: Array.from({ length: 15 }, (_, number) => number + 1),
+      })),
+    });
+    const content = Array.isArray(definition.content) ? definition.content as unknown as Array<Record<string, unknown>> : [];
+    const gamesHeading = content.find((item) => item["text"] === "Jogos do bolão");
+    const gamesTable = content[content.indexOf(gamesHeading ?? {}) + 1] as { table?: { body?: unknown[]; dontBreakRows?: boolean } };
+
+    expect(gamesHeading?.["pageBreak"]).toBe("before");
+    expect(gamesTable.table?.dontBreakRows).toBe(true);
+    expect(gamesTable.table?.body).toHaveLength(gameCount + 1);
   });
 
   it.each([
