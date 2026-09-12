@@ -2102,6 +2102,7 @@ export type Database = {
         Args: { _participant_id: string }
         Returns: undefined
       }
+      record_password_changed: { Args: never; Returns: undefined }
       search_draws: {
         Args: {
           _contest?: number
