@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 const DOCUMENT_BUCKET = "pool-documents";
 const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024;
@@ -35,12 +37,126 @@ function extensionFor(mimeType: string) {
 }
 
 async function assertCanManagePool(
-  supabase: Parameters<Parameters<typeof requireSupabaseAuth["options"]["server"]>[0]>[0]["context"]["supabase"],
+  supabase: SupabaseClient<Database>,
   poolId: string,
 ) {
   const { data, error } = await supabase.rpc("can_manage_pool", { _pool_id: poolId });
   if (error || data !== true) throw new Error("Sem permissão para alterar comprovantes deste bolão.");
 }
+
+export const uploadPoolDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(requireFormData)
+  .handler(async ({ data, context }) => {
+    const poolId = z.string().uuid().parse(requiredText(data, "poolId"));
+    const title = requiredText(data, "title");
+    const descriptionValue = data.get("description");
+    const description = typeof descriptionValue === "string" ? descriptionValue.trim() : "";
+    const sortOrder = z.coerce.number().int().min(0).parse(data.get("sortOrder"));
+    const file = requiredFile(data);
+    await assertCanManagePool(context.supabase, poolId);
+
+    const path = `${poolId}/${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(DOCUMENT_BUCKET)
+      .upload(path, bytes, { contentType: file.type, upsert: false });
+    if (uploadError) throw new Error("Não foi possível salvar o comprovante. Tente novamente.");
+
+    const { data: document, error } = await context.supabase.rpc("pool_document_create", {
+      _pool_id: poolId,
+      _storage_path: path,
+      _title: title,
+      _description: description,
+      _sort_order: sortOrder,
+      _mime_type: file.type,
+      _file_size: file.size,
+    });
+    if (error) {
+      const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
+      if (cleanupError) console.error("pool_document_upload_cleanup_failed", { path, message: cleanupError.message });
+      throw new Error("Não foi possível salvar o comprovante. Tente novamente.");
+    }
+    return document;
+  });
+
+export const replacePoolDocumentFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(requireFormData)
+  .handler(async ({ data, context }) => {
+    const documentId = z.string().uuid().parse(requiredText(data, "documentId"));
+    const file = requiredFile(data);
+    const { data: document, error: documentError } = await context.supabase
+      .from("pool_documents")
+      .select("id, pool_id, storage_path")
+      .eq("id", documentId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (documentError || !document) throw new Error("Comprovante não encontrado.");
+    await assertCanManagePool(context.supabase, document.pool_id);
+
+    const path = `${document.pool_id}/${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(DOCUMENT_BUCKET)
+      .upload(path, bytes, { contentType: file.type, upsert: false });
+    if (uploadError) throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
+
+    const { data: updated, error } = await context.supabase.rpc("pool_document_replace", {
+      _document_id: documentId,
+      _storage_path: path,
+      _mime_type: file.type,
+      _file_size: file.size,
+    });
+    if (error) {
+      const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
+      if (cleanupError) console.error("pool_document_replace_cleanup_failed", { path, message: cleanupError.message });
+      throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
+    }
+    const { error: oldFileError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([document.storage_path]);
+    if (oldFileError) console.error("pool_document_old_file_cleanup_failed", { path: document.storage_path, message: oldFileError.message });
+    return updated;
+  });
+
+export const deletePoolDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => documentActionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: document, error: documentError } = await context.supabase
+      .from("pool_documents")
+      .select("pool_id, storage_path")
+      .eq("id", data.documentId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (documentError || !document) throw new Error("Comprovante não encontrado.");
+    await assertCanManagePool(context.supabase, document.pool_id);
+    const { error } = await context.supabase.rpc("pool_document_delete", { _document_id: data.documentId });
+    if (error) throw new Error("Não foi possível excluir o comprovante. Tente novamente.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([document.storage_path]);
+    if (cleanupError) console.error("pool_document_delete_cleanup_failed", { path: document.storage_path, message: cleanupError.message });
+    return { ok: true };
+  });
+
+export const getPoolDocumentUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => documentActionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: document, error } = await context.supabase
+      .from("pool_documents")
+      .select("pool_id, storage_path")
+      .eq("id", data.documentId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (error || !document) throw new Error("Comprovante não encontrado.");
+    await assertCanManagePool(context.supabase, document.pool_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error: signedError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).createSignedUrl(document.storage_path, 300);
+    if (signedError) throw new Error("Não foi possível abrir o comprovante. Tente novamente.");
+    return signed.signedUrl;
+  });
 
 const deletePoolSchema = z.object({
   poolId: z.string().uuid(),
