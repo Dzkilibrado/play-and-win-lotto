@@ -9,7 +9,7 @@ export const completeProfile = createServerFn({ method: "POST" })
     const { data: profile, error } = await context.supabase.rpc("complete_profile_onboarding", {
       _display_name: data.name,
       _birth_date: data.birthDate,
-      _phone: data.phone,
+      _phone: data.phone ?? "",
       _accepted_document_ids: data.acceptedDocumentIds,
     });
     if (error) throw new Error(error.message);
