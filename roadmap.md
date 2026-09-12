@@ -81,4 +81,4 @@
 - [x] Modelar o responsável principal em configuração institucional separada.
 - [x] Manter papéis e responsável sem escrita disponível ao cliente.
 - [x] Registrar promoção e designação no histórico administrativo.
-- [ ] Validar login real, acesso administrativo e bloqueio de usuário comum.
+- [x] Validar login real, acesso administrativo e bloqueio de usuário comum.
