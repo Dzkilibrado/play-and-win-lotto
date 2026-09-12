@@ -103,6 +103,10 @@ export function PoolShareDialog({
       return;
     }
     if (result === "cancelled") return;
+    if (result === "unsupported") {
+      await copy(message, "Mensagem e link copiados");
+      return;
+    }
     if (result === "error") {
       toast.error("Não foi possível abrir o compartilhamento. Use o WhatsApp ou copie o link.");
     }
@@ -149,12 +153,11 @@ export function PoolShareDialog({
             </div>
             <div className="grid min-w-0 gap-2">
               <p className="text-xs font-semibold uppercase text-text-secondary">Compartilhar</p>
-              {canUseNativeShare() ? (
-                <Button className="h-11 justify-start" onClick={() => void share()}>
-                  <Share2 className="size-4 shrink-0" aria-hidden />
-                  Compartilhar
-                </Button>
-              ) : null}
+              <Button className="h-11 justify-start" onClick={() => void share()}>
+                <Share2 className="size-4 shrink-0" aria-hidden />
+                Compartilhar
+                {!canUseNativeShare() ? <span className="sr-only"> copiando mensagem e link neste dispositivo</span> : null}
+              </Button>
               <Button
                 variant="outline"
                 className="h-11 justify-start"
