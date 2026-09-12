@@ -60,6 +60,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
   const contest = data.pool.contest_number ?? data.pool.contest_number_planned ?? (gameContests.length === 1 ? gameContests[0] : null);
   const drawDate = data.pool.draw_date ?? data.pool.draw_date_planned;
   const gameCost = data.games.reduce((sum, game) => sum + game.cost, 0);
+  const poolBalance = finance.totalPaid - gameCost;
   const generatedAt = data.generatedAt ?? new Date();
   const generatedLabel = new Intl.DateTimeFormat(appConfig.locale, {
     dateStyle: "short", timeStyle: "short", timeZone: appConfig.timeZone,
@@ -69,6 +70,12 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
     ["Valor da cota", formatCurrency(data.pool.quota_value), "Limite de cotas", data.pool.total_quotas == null ? "Sem limite" : String(data.pool.total_quotas)],
     ["Total previsto", formatCurrency(finance.totalDue), "Total recebido", formatCurrency(finance.totalPaid)],
     ["Em aberto", formatCurrency(finance.totalOutstanding), "Custo dos jogos", formatCurrency(gameCost)],
+    [
+      { text: "Saldo do bolão", bold: true, fillColor: "#e9f2eb" },
+      { text: formatCurrency(poolBalance), bold: true, fillColor: "#e9f2eb" },
+      { text: "", fillColor: "#e9f2eb" },
+      { text: "", fillColor: "#e9f2eb" },
+    ],
   ];
   const participantRows = active.map((participant, index) => [
     String(index + 1), participant.name, String(participant.quotas), formatCurrency(participant.amount_due),
@@ -107,14 +114,15 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { text: `${data.pool.lotteries?.name ?? "Loteria"} · ${contest ? `Concurso ${contest}` : "Concurso a definir"} · ${poolStatusLabel[data.pool.status]}`, style: "subtitle" },
       { text: "Informações do bolão", style: "section" },
       { table: { widths: ["*", "auto", "*", "auto"], body: summaryRows }, layout: "lightHorizontalLines" },
+      ...(poolBalance < 0 ? [{ text: `Valor ainda necessário para cobrir os jogos: ${formatCurrency(Math.abs(poolBalance))}`, margin: [0, 6, 0, 0], fontSize: 8, color: "#66736b" }] : []),
       { text: `Sorteio: ${drawDate ? formatDate(drawDate) : "A definir"}`, margin: [0, 8, 0, 0] },
       { text: "Participantes ativos", style: "section" },
       participantRows.length > 0
         ? { table: { headerRows: 1, widths: [20, "*", 34, 58, 58, 48], body: [[{ text: "#", style: "tableHeader" }, { text: "Nome", style: "tableHeader" }, { text: "Cotas", style: "tableHeader" }, { text: "Devido", style: "tableHeader" }, { text: "Pago", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }], ...participantRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum participante ativo.", color: "#66736b" },
-      { text: "Jogos do bolão", style: "section", pageBreak: participantRows.length > 35 ? "before" : undefined },
+      { text: "Jogos do bolão", style: "section", pageBreak: "before" },
       gameRows.length > 0
-        ? { table: { headerRows: 1, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
+        ? { table: { headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum jogo no bolão.", color: "#66736b" },
       ...(checked.length > 0 ? [
         { text: "Resultado oficial", style: "section" },

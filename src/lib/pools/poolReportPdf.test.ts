@@ -45,13 +45,46 @@ describe("relatório PDF do bolão", () => {
     expect(serialized).toContain("Bolão Galera Gmill");
     expect(serialized).toContain("Participantes ativos");
     expect(serialized).toContain("R$ 1.380,00");
+    expect(serialized).toContain("Saldo do bolão");
+    expect(serialized).toContain("R$ 1,00");
     expect(serialized).toContain("Apostado");
     expect(serialized).not.toContain("11999999999");
     expect(serialized).not.toContain("privado");
     expect(serialized).not.toContain("game-0");
   });
 
-  it.each([10, 23, 50, 100, 200])("aceita %i participantes sem cortar dados do documento", (count) => {
+  it("inicia jogos em nova página, repete o cabeçalho e mantém cada jogo indivisível", () => {
+    const definition = buildPoolReportDefinition(data);
+    const content = definition.content as Array<Record<string, unknown>>;
+    const gamesHeading = content.find((item) => item.text === "Jogos do bolão");
+    const gamesTable = content[content.indexOf(gamesHeading ?? {}) + 1] as { table?: { headerRows?: number; keepWithHeaderRows?: number; dontBreakRows?: boolean } };
+
+    expect(gamesHeading?.pageBreak).toBe("before");
+    expect(gamesTable.table).toMatchObject({ headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true });
+  });
+
+  it.each([
+    [1380, 1379, "R$ 1,00", false],
+    [1380, 1380, "R$ 0,00", false],
+    [1000, 1050, "-R$ 50,00", true],
+  ])("calcula saldo recebido %i menos custo %i", (received, cost, expectedBalance, hasShortfall) => {
+    const adjustedParticipants = participants.map((participant, index) => ({
+      ...participant,
+      total_paid: index === 0 ? received : 0,
+      payment_status: (index === 0 ? "PAID" : "PENDING") as PoolParticipantRow["payment_status"],
+    }));
+    const definition = buildPoolReportDefinition({
+      ...data,
+      participants: adjustedParticipants,
+      games: [{ ...data.games[0], cost }],
+    });
+    const serialized = JSON.stringify(definition);
+
+    expect(serialized).toContain(expectedBalance);
+    expect(serialized.includes("Valor ainda necessário para cobrir os jogos: R$ 50,00")).toBe(hasShortfall);
+  });
+
+  it.each([5, 23, 50, 100, 200])("aceita %i participantes sem cortar dados do documento", (count) => {
     const definition = buildPoolReportDefinition({ ...data, participants: participants.slice(0, 1).flatMap((item) => Array.from({ length: count }, (_, index) => ({ ...item, id: String(index), name: `Pessoa ${index + 1}` }))) });
     expect(JSON.stringify(definition)).toContain(`Pessoa ${count}`);
   });
