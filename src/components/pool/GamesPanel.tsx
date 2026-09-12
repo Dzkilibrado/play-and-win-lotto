@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Link2, Ticket, Unlink } from "lucide-react";
+import { Link2, RefreshCw, Ticket, Unlink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/format";
+import { automaticStatuses, manualStatuses } from "@/lib/games/gameStatus";
 import { gameService } from "@/lib/services/gameService";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
@@ -26,6 +34,9 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   const queryClient = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedLinkedIds, setSelectedLinkedIds] = useState<Set<string>>(new Set());
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<GameStatus | "">("");
   const [query, setQuery] = useState("");
   const contest = pool.contest_number ?? pool.contest_number_planned;
 
@@ -67,6 +78,22 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const changeStatus = useMutation({
+    mutationFn: () => {
+      if (!targetStatus) throw new Error("Escolha a nova situação.");
+      return poolService.setGamesStatus(pool.id, [...selectedLinkedIds], targetStatus);
+    },
+    onSuccess: (count) => {
+      toast.success(`Situação alterada em ${count} ${count === 1 ? "jogo" : "jogos"}`);
+      setStatusOpen(false);
+      setSelectedLinkedIds(new Set());
+      setTargetStatus("");
+      void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const rows = games.data ?? [];
   const totalCost = rows.reduce((sum, row) => sum + Number(row.generated_games?.cost ?? 0), 0);
   const linkedIds = new Set(rows.map((row) => row.game_id));
@@ -79,9 +106,11 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       return sequence.includes(term) || game.status.toLocaleLowerCase("pt-BR").includes(term);
     });
   }, [available, query]);
-  const publicable = rows.filter((row) => row.generated_games?.status !== "PLANNED").length;
-  const hiddenFromPublic = rows.length - publicable;
+  const confirmedBets = rows.filter((row) => row.generated_games?.status !== "PLANNED").length;
+  const planned = rows.length - confirmedBets;
   const allFilteredSelected = filteredAvailable.length > 0 && filteredAvailable.every((game) => selectedIds.has(game.id));
+  const editableRows = rows.filter((row) => manualStatuses.includes(row.generated_games?.status as GameStatus));
+  const allEditableSelected = editableRows.length > 0 && editableRows.every((row) => selectedLinkedIds.has(row.game_id));
 
   const toggle = (gameId: string, checked: boolean) => {
     setSelectedIds((current) => {
@@ -111,9 +140,37 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
         ) : null}
       </div>
 
-      {hiddenFromPublic > 0 ? (
+      {canManage && editableRows.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+          <label className="flex min-h-9 cursor-pointer items-center gap-2 text-sm font-medium text-text-primary">
+            <Checkbox
+              checked={allEditableSelected}
+              onCheckedChange={(checked) => {
+                setSelectedLinkedIds(checked ? new Set(editableRows.map((row) => row.game_id)) : new Set());
+              }}
+            />
+            Selecionar todos
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-text-secondary">
+              {selectedLinkedIds.size} {selectedLinkedIds.size === 1 ? "jogo selecionado" : "jogos selecionados"}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={selectedLinkedIds.size === 0}
+              onClick={() => setStatusOpen(true)}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Alterar situação
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {planned > 0 ? (
         <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
-          {hiddenFromPublic} {hiddenFromPublic === 1 ? "jogo vinculado ainda não aparece" : "jogos vinculados ainda não aparecem"} no link público porque {hiddenFromPublic === 1 ? "está" : "estão"} como Planejado. Confirme a aposta na situação do jogo para liberar o acompanhamento.
+          {planned} {planned === 1 ? "jogo vinculado aparece" : "jogos vinculados aparecem"} no link público como {planned === 1 ? "Planejado" : "Planejados"}. {confirmedBets} {confirmedBets === 1 ? "aposta confirmada" : "apostas confirmadas"}.
         </p>
       ) : null}
 
@@ -131,7 +188,23 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
             return (
               <li key={row.id} className="surface-card space-y-2 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-start gap-3">
+                    {canManage && game?.status && !automaticStatuses.includes(game.status as GameStatus) ? (
+                      <Checkbox
+                        className="mt-0.5 size-5"
+                        aria-label={`Selecionar jogo ${game.sequence_number ?? ""}`}
+                        checked={selectedLinkedIds.has(row.game_id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedLinkedIds((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(row.game_id);
+                            else next.delete(row.game_id);
+                            return next;
+                          });
+                        }}
+                      />
+                    ) : null}
+                    <div className="min-w-0">
                     <p className="font-medium text-text-primary">
                       Jogo {game?.sequence_number ?? "—"} · {game?.numbers_count} dezenas
                     </p>
@@ -139,6 +212,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                       {game?.contest_number ? `Concurso ${game.contest_number}` : "Concurso a definir"}
                       {game?.cost ? ` · ${formatCurrency(Number(game.cost))}` : ""}
                     </p>
+                    </div>
                   </div>
                   {game?.status ? (
                     <StatusBadge
@@ -268,6 +342,39 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar situação</DialogTitle>
+            <DialogDescription>
+              A nova situação será aplicada aos {selectedLinkedIds.size} jogos ou nenhuma alteração será feita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select value={targetStatus} onValueChange={(value) => setTargetStatus(value as GameStatus)}>
+              <SelectTrigger className="h-11" aria-label="Nova situação dos jogos">
+                <SelectValue placeholder="Escolha a nova situação" />
+              </SelectTrigger>
+              <SelectContent>
+                {manualStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>{gameStatusLabel[status]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-text-secondary">
+              Conferido, Premiado e Não premiado são definidos exclusivamente pela conferência oficial.
+            </p>
+            <Button
+              className="h-11 w-full"
+              disabled={!targetStatus || changeStatus.isPending}
+              onClick={() => changeStatus.mutate()}
+            >
+              {changeStatus.isPending ? "Alterando…" : `Alterar ${selectedLinkedIds.size} ${selectedLinkedIds.size === 1 ? "jogo" : "jogos"}`}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
