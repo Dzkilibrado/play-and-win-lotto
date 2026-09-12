@@ -51,6 +51,6 @@
 - [x] Implementar arquivamento reversível e modo somente consulta.
 - [x] Adicionar filtro e indicador de bolões arquivados sem alterar a Home.
 - [x] Implementar exclusão definitiva com confirmação forte, auditoria e preservação dos jogos.
-- [ ] Exibir comprovantes publicados nas visões públicas Jogos e Completo.
-- [ ] Incorporar imagens e todas as páginas dos PDFs publicados ao relatório completo.
+- [x] Exibir comprovantes publicados nas visões públicas Jogos e Completo.
+- [x] Incorporar imagens e todas as páginas dos PDFs publicados ao relatório completo.
 - [ ] Validar testes, segurança, responsividade e PDF real.

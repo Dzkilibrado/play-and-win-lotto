@@ -41,7 +41,7 @@ const sections = [
   { value: "games", label: "Jogos" },
   { value: "finance", label: "Financeiro" },
   { value: "result", label: "Resultado" },
-  { value: "documents", label: "Documentos" },
+  { value: "documents", label: "Comprovantes" },
   { value: "history", label: "Histórico" },
 ];
 
