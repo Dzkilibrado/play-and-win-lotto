@@ -8,3 +8,12 @@
 - [x] Atualizar gestão, mensagens e página pública para cada visão.
 - [x] Cobrir 1/19/50/100 jogos, cenário real, segurança e responsividade.
 - [x] Rodar testes, typecheck, build e sonda de integridade; documentar limitações.
+
+## Ajuste final aprovado
+
+- [ ] Exibir PLANNED publicamente como Planejado nos escopos Jogos e Completo.
+- [ ] Separar jogos vinculados de apostas confirmadas nos resumos públicos.
+- [ ] Implementar alteração manual atômica de situação em massa.
+- [ ] Impedir situações exclusivas da conferência e validar ownership/transições.
+- [ ] Reproduzir o cenário real dos 19 jogos antes e depois da alteração.
+- [ ] Rodar testes, typecheck, build e validação responsiva.
