@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -30,14 +31,16 @@ export function SearchInput({
         className="h-11 pl-9 pr-9"
       />
       {value ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => onChange("")}
           aria-label="Limpar busca"
-          className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-text-secondary hover:bg-surface-secondary"
+          className="absolute right-2 top-1/2 size-7 -translate-y-1/2 text-text-secondary"
         >
           <X className="size-4" aria-hidden />
-        </button>
+        </Button>
       ) : null}
     </div>
   );

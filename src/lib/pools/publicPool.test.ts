@@ -38,8 +38,8 @@ describe("participantes públicos", () => {
   ];
 
   it("busca sem diferenciar acento ou caixa", () => {
-    expect(filterParticipants(people, "antonio")).toEqual([{ ordinal: 3, name: "Antônio", quotas: 1 }]);
-    expect(filterParticipants(people, "MAR")).toEqual([{ ordinal: 2, name: "Maria", quotas: 2 }]);
+    expect(filterParticipants(people, "antonio")).toEqual([{ ordinal: 3, name: "Antônio", quotas: 1, paymentStatus: "PAID" }]);
+    expect(filterParticipants(people, "MAR")).toEqual([{ ordinal: 2, name: "Maria", quotas: 2, paymentStatus: "PAID" }]);
   });
 
   it("sem busca devolve todos", () => {
