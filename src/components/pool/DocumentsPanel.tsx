@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { deletePoolDocument, getPoolDocumentUrl, replacePoolDocumentFile, uploadPoolDocument } from "@/lib/pools/poolManagement.functions";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { poolService, type PoolDocumentRow } from "@/lib/services/poolService";
@@ -18,6 +20,9 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string; canManage: boolean; readOnly: boolean }) {
   const queryClient = useQueryClient();
+  const replaceFile = useServerFn(replacePoolDocumentFile);
+  const deleteDocument = useServerFn(deletePoolDocument);
+  const getDocumentUrl = useServerFn(getPoolDocumentUrl);
   const [editing, setEditing] = useState<PoolDocumentRow | null>(null);
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<PoolDocumentRow | null>(null);
@@ -26,18 +31,23 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
   const documents = useQuery({ queryKey: ["pool-documents", poolId], queryFn: () => poolService.activeDocuments(poolId) });
   const invalidate = () => { void queryClient.invalidateQueries({ queryKey: ["pool-documents", poolId] }); void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] }); };
   const replace = useMutation({
-    mutationFn: ({ document, file }: { document: PoolDocumentRow; file: File }) => poolService.replaceDocument(document, file),
+    mutationFn: ({ document, file }: { document: PoolDocumentRow; file: File }) => {
+      const form = new FormData();
+      form.set("documentId", document.id);
+      form.set("file", file);
+      return replaceFile({ data: form });
+    },
     onSuccess: () => { toast.success("Arquivo substituído"); invalidate(); },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => toast.error("Não foi possível substituir o arquivo. Tente novamente."),
   });
   const remove = useMutation({
-    mutationFn: (document: PoolDocumentRow) => poolService.deleteDocument(document),
+    mutationFn: (document: PoolDocumentRow) => deleteDocument({ data: { documentId: document.id } }),
     onSuccess: () => { toast.success("Comprovante excluído"); setDeleting(null); invalidate(); },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => toast.error("Não foi possível excluir o comprovante. Tente novamente."),
   });
   const openDocument = async (document: PoolDocumentRow) => {
-    try { window.open(await poolService.documentUrl(document.storage_path), "_blank", "noopener,noreferrer"); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível abrir o comprovante"); }
+    try { window.open(await getDocumentUrl({ data: { documentId: document.id } }), "_blank", "noopener,noreferrer"); }
+    catch { toast.error("Não foi possível abrir o comprovante. Tente novamente."); }
   };
   const validFile = (file: File) => {
     if (!ACCEPT.split(",").includes(file.type)) { toast.error("Use um arquivo JPG, PNG ou PDF."); return false; }
@@ -72,11 +82,22 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
 }
 
 function DocumentForm({ open, poolId, document, nextOrder, onClose, onSaved }: { open: boolean; poolId: string; document: PoolDocumentRow | null; nextOrder: number; onClose: () => void; onSaved: () => void }) {
+  const uploadDocument = useServerFn(uploadPoolDocument);
   const [title, setTitle] = useState(""); const [description, setDescription] = useState(""); const [published, setPublished] = useState(false); const [file, setFile] = useState<File | null>(null);
   const mutation = useMutation({
-    mutationFn: async () => document ? poolService.updateDocument(document.id, { title, description, sortOrder: document.sort_order, isPublished: published }) : poolService.uploadDocument(poolId, file as File, title, description, nextOrder),
+    mutationFn: async () => {
+      if (document) return poolService.updateDocument(document.id, { title, description, sortOrder: document.sort_order, isPublished: published });
+      if (!file) throw new Error("Selecione um arquivo válido.");
+      const form = new FormData();
+      form.set("poolId", poolId);
+      form.set("title", title);
+      form.set("description", description);
+      form.set("sortOrder", String(nextOrder));
+      form.set("file", file);
+      return uploadDocument({ data: form });
+    },
     onSuccess: () => { toast.success(document ? "Comprovante atualizado" : "Comprovante anexado"); onSaved(); onClose(); },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => toast.error("Não foi possível salvar o comprovante. Tente novamente."),
   });
   useEffect(() => { if (open) { setTitle(document?.title ?? ""); setDescription(document?.description ?? ""); setPublished(document?.is_published ?? false); setFile(null); } }, [open, document]);
   return <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}><DialogContent><DialogHeader><DialogTitle>{document ? "Editar comprovante" : "Adicionar comprovante"}</DialogTitle><DialogDescription>{document ? "Altere a identificação e a visibilidade deste comprovante." : "JPG, PNG ou PDF, com no máximo 20 MB."}</DialogDescription></DialogHeader><div className="space-y-4"><div className="space-y-1.5"><Label htmlFor="document-title">Título</Label><Input id="document-title" value={title} maxLength={100} onChange={(event) => setTitle(event.target.value)} /></div><div className="space-y-1.5"><Label htmlFor="document-description">Descrição opcional</Label><Textarea id="document-description" value={description} maxLength={500} onChange={(event) => setDescription(event.target.value)} /></div>{!document ? <div className="space-y-1.5"><Label htmlFor="document-file">Arquivo</Label><Input id="document-file" type="file" accept={ACCEPT} onChange={(event) => { const selected = event.target.files?.[0] ?? null; if (selected && (selected.size > MAX_FILE_SIZE || !ACCEPT.split(",").includes(selected.type))) { toast.error("Use JPG, PNG ou PDF de até 20 MB."); event.target.value = ""; setFile(null); } else setFile(selected); }} /></div> : <div className="flex items-center justify-between gap-4"><div><Label htmlFor="document-published">Visível no compartilhamento</Label><p className="text-xs text-text-secondary">Aparece nas visões Jogos e Completo.</p></div><Switch id="document-published" checked={published} onCheckedChange={setPublished} /></div>}</div><DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button disabled={!title.trim() || (!document && !file) || mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? "Salvando…" : "Salvar"}</Button></DialogFooter></DialogContent></Dialog>;

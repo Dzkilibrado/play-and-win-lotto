@@ -530,43 +530,10 @@ export const poolService = {
     return data;
   },
 
-  async uploadDocument(poolId: string, file: File, title: string, description: string, sortOrder = 0) {
-    const extension = file.name.split(".").pop()?.toLowerCase() || (file.type === "application/pdf" ? "pdf" : "jpg");
-    const path = `${poolId}/${crypto.randomUUID()}.${extension}`;
-    const { error: uploadError } = await supabase.storage.from("pool-documents").upload(path, file, { contentType: file.type });
-    if (uploadError) throw uploadError;
-    const { data, error } = await supabase.rpc("pool_document_create", { _pool_id: poolId, _storage_path: path, _title: title, _description: description, _sort_order: sortOrder, _mime_type: file.type, _file_size: file.size });
-    if (error) { await supabase.storage.from("pool-documents").remove([path]); throw error; }
-    return data;
-  },
-
   async updateDocument(id: string, input: { title: string; description: string; sortOrder: number; isPublished: boolean }) {
     const { data, error } = await supabase.rpc("pool_document_update", { _document_id: id, _title: input.title, _description: input.description, _sort_order: input.sortOrder, _is_published: input.isPublished });
     if (error) throw error;
     return data;
-  },
-
-  async replaceDocument(document: PoolDocumentRow, file: File) {
-    const extension = file.name.split(".").pop()?.toLowerCase() || (file.type === "application/pdf" ? "pdf" : "jpg");
-    const path = `${document.pool_id}/${crypto.randomUUID()}.${extension}`;
-    const { error: uploadError } = await supabase.storage.from("pool-documents").upload(path, file, { contentType: file.type });
-    if (uploadError) throw uploadError;
-    const { data, error } = await supabase.rpc("pool_document_replace", { _document_id: document.id, _storage_path: path, _mime_type: file.type, _file_size: file.size });
-    if (error) { await supabase.storage.from("pool-documents").remove([path]); throw error; }
-    return data;
-  },
-
-  async deleteDocument(document: PoolDocumentRow) {
-    const { error } = await supabase.rpc("pool_document_delete", { _document_id: document.id });
-    if (error) throw error;
-    const { error: storageError } = await supabase.storage.from("pool-documents").remove([document.storage_path]);
-    if (storageError) throw storageError;
-  },
-
-  async documentUrl(path: string) {
-    const { data, error } = await supabase.storage.from("pool-documents").createSignedUrl(path, 300);
-    if (error) throw error;
-    return data.signedUrl;
   },
 
   async setArchived(poolId: string, archived: boolean) {
