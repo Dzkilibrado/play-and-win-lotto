@@ -74,7 +74,7 @@ describe("lista pública de jogos", () => {
   it("mostra jogos planejados com aviso transparente", () => {
     const planned = games(19).map((game) => ({ ...game, status: "PLANNED" as const }));
     render(<PublicGameList games={planned} drawnNumbers={[]} linkedGames={19} confirmedBets={0} />);
-    expect(screen.getByText(/ainda não foram marcados como apostas realizadas/i)).toBeTruthy();
+    expect(screen.getByText(/ainda não representam aposta confirmada/i)).toBeTruthy();
     expect(screen.getAllByText("Planejado")).toHaveLength(publicPreviewSize.games);
   });
 });

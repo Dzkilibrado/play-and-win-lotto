@@ -4,7 +4,7 @@
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Link2Off, MessageCircle, RefreshCw, Share2 } from "lucide-react";
+import { Copy, Link2Off, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ import {
   openWhatsApp,
   poolPublicUrl,
   poolShareMessage,
+  poolSharePreview,
   poolShareScopeDescription,
   poolShareScopeLabel,
   poolShareTitle,
@@ -45,6 +46,18 @@ export function PoolShareDialog({
   const [scope, setScope] = useState<PoolShareScope>("FULL");
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
+  const preview = poolSharePreview(pool, scope);
+
+  useEffect(() => {
+    if (!open || typeof sessionStorage === "undefined") return;
+    const saved = sessionStorage.getItem(`pool-share-scope:${pool.id}`);
+    if (saved === "PARTICIPANTS" || saved === "GAMES" || saved === "FULL") setScope(saved);
+  }, [open, pool.id]);
+
+  const chooseScope = (next: PoolShareScope) => {
+    setScope(next);
+    if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`pool-share-scope:${pool.id}`, next);
+  };
 
   const enableLink = useMutation({
     mutationFn: ({ enabled, regenerate = false }: { enabled: boolean; regenerate?: boolean }) =>
@@ -78,7 +91,7 @@ export function PoolShareDialog({
   const share = async () => {
     const result = await nativeShare({ title: poolShareTitle(pool), text: message, url });
     if (result === "shared") {
-      toast.success("Bolão compartilhado");
+      toast.success("Compartilhamento aberto");
       onOpenChange(false);
       return;
     }
@@ -96,42 +109,43 @@ export function PoolShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-[30rem] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-[34rem] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Compartilhar bolão</DialogTitle>
-          <DialogDescription>
-            {url
-              ? poolShareScopeDescription[scope]
-              : canManage
-                ? "Preparando o link público deste bolão…"
-                : "Somente o organizador pode ativar o link público deste bolão."}
-          </DialogDescription>
+          <DialogDescription>O que você quer compartilhar?</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Tipo de compartilhamento">
-          {(["PARTICIPANTS", "GAMES", "FULL"] as PoolShareScope[]).map((item) => (
+        <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Tipo de compartilhamento">
+          {(["PARTICIPANTS", "GAMES", "FULL"] as PoolShareScope[]).map((item) => {
+            const Icon = item === "PARTICIPANTS" ? Users : item === "GAMES" ? Ticket : LayoutList;
+            return (
             <Button
               key={item}
               type="button"
-              variant={scope === item ? "default" : "outline"}
-              className="h-auto min-h-11 whitespace-normal px-3 py-2 text-left"
-              onClick={() => setScope(item)}
+              role="radio"
+              aria-checked={scope === item}
+              variant="outline"
+              className={`h-auto min-h-14 justify-start whitespace-normal px-3 py-2 text-left ${scope === item ? "border-lottery bg-lottery-soft ring-1 ring-lottery" : ""}`}
+              onClick={() => chooseScope(item)}
             >
-              {poolShareScopeLabel[item]}
+              <Icon className="size-5 shrink-0 text-lottery" aria-hidden />
+              <span><span className="block font-semibold">{poolShareScopeLabel[item]}</span><span className="block text-xs font-normal text-text-secondary">{poolShareScopeDescription[item]}</span></span>
             </Button>
-          ))}
+          )})}
         </div>
 
         {url ? (
           <div className="space-y-3">
-            <pre className="max-h-48 max-w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-lg bg-surface-secondary p-3 text-xs text-text-secondary">
-              {message}
-            </pre>
+            <div className="rounded-lg bg-surface-secondary p-3">
+              <p className="text-xs font-semibold uppercase text-text-secondary">Será compartilhado</p>
+              <ul className="mt-1.5 space-y-1 text-sm text-text-primary">{preview.map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
             <div className="grid min-w-0 gap-2">
+              <p className="text-xs font-semibold uppercase text-text-secondary">Compartilhar</p>
               {canUseNativeShare() ? (
                 <Button className="h-11 justify-start" onClick={() => void share()}>
                   <Share2 className="size-4 shrink-0" aria-hidden />
-                  Compartilhar…
+                  Compartilhar
                 </Button>
               ) : null}
               <Button
@@ -143,7 +157,16 @@ export function PoolShareDialog({
                 }}
               >
                 <MessageCircle className="size-4 shrink-0" aria-hidden />
-                Compartilhar no WhatsApp
+                WhatsApp
+              </Button>
+              <p className="mt-1 text-xs font-semibold uppercase text-text-secondary">Copiar</p>
+              <Button
+                variant="default"
+                className="h-11 justify-start"
+                onClick={() => void copy(message, "Mensagem e link copiados")}
+              >
+                <Copy className="size-4 shrink-0" aria-hidden />
+                Copiar mensagem e link
               </Button>
               <Button
                 variant="outline"
@@ -151,15 +174,7 @@ export function PoolShareDialog({
                 onClick={() => void copy(url, "Link copiado")}
               >
                 <Copy className="size-4 shrink-0" aria-hidden />
-                Copiar link
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-11 justify-start"
-                onClick={() => void copy(message, "Mensagem copiada")}
-              >
-                <Copy className="size-4 shrink-0" aria-hidden />
-                Copiar mensagem e link
+                Copiar somente o link
               </Button>
               {canManage ? (
                 <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">

@@ -112,6 +112,11 @@ function PublicPoolPage() {
   const games = pool.gameList ?? [];
   const result = pool.result ?? null;
   const drawn = result?.drawnNumbers ?? [];
+  const viewLabel = pool.scope === "PARTICIPANTS"
+    ? "Visão de participantes"
+    : pool.scope === "GAMES"
+      ? "Visão dos jogos"
+      : "Acompanhamento completo";
 
   return (
     <main
@@ -119,6 +124,7 @@ function PublicPoolPage() {
       data-lottery={config?.colorKey}
     >
       <header className="surface-card space-y-3 p-4">
+        <p className="text-xs font-semibold uppercase text-lottery">Bolão · {viewLabel}</p>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
             <h1 className="font-display text-lg font-semibold leading-tight text-text-primary sm:text-xl">
@@ -179,6 +185,7 @@ function PublicPoolPage() {
         )}
       </header>
 
+      <p className="px-1 text-xs font-semibold uppercase text-text-secondary">Resumo</p>
       <Accordion
         type="multiple"
         defaultValue={[showParticipants ? "participants" : "games"]}
@@ -237,16 +244,9 @@ function PublicPoolPage() {
         ) : null}
       </Accordion>
 
-      <p className="px-1 text-xs text-text-secondary">
-        {pool.scope === "PARTICIPANTS"
-          ? "Esta página mostra somente participantes confirmados, cotas e situação de pagamento."
-          : pool.scope === "GAMES"
-             ? "Esta página mostra os jogos vinculados, sua situação real e seus resultados."
-             : "Esta página reúne participantes confirmados e jogos vinculados com sua situação real."}
-        {" "}Telefones, valores individuais, observações, documentos e comprovantes não são exibidos.
-      </p>
+      <p className="px-1 text-xs text-text-secondary">Por privacidade, apenas informações essenciais são exibidas.</p>
 
-      <Button asChild variant="outline" className="h-11 w-full">
+      <Button asChild variant="ghost" className="h-11 w-full text-text-secondary">
         <Link to="/">Conhecer o {appConfig.name}</Link>
       </Button>
     </main>
