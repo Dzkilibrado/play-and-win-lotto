@@ -1609,6 +1609,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          singleton: boolean
+          system_owner_user_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          singleton?: boolean
+          system_owner_user_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          singleton?: boolean
+          system_owner_user_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_system_owner_user_id_fkey"
+            columns: ["system_owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           created_at: string
