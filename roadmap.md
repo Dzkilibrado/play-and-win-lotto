@@ -88,5 +88,5 @@
 - [x] Centralizar o estado do menu hambúrguer no cabeçalho compartilhado.
 - [x] Fechar após qualquer destino final, inclusive a página atual.
 - [x] Fechar também após mudanças de rota externas ao menu.
-- [ ] Validar seleção, toque externo e Escape nos quatro tamanhos solicitados.
-- [ ] Rodar testes, tipos e build sem regressões de navegação.
+- [x] Validar seleção, toque externo e Escape nos quatro tamanhos solicitados.
+- [x] Rodar testes, tipos e build sem regressões de navegação.
