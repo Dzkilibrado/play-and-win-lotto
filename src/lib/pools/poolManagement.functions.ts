@@ -115,8 +115,6 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
       if (cleanupError) console.error("pool_document_replace_cleanup_failed", { path, message: cleanupError.message });
       throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
     }
-    const { error: oldFileError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([document.storage_path]);
-    if (oldFileError) console.error("pool_document_old_file_cleanup_failed", { path: document.storage_path, message: oldFileError.message });
     return updated;
   });
 
