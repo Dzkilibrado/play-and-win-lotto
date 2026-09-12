@@ -38,8 +38,9 @@ export function poolShareTitle(pool: PoolRow) {
 export interface PoolShareStats {
   participants: number;
   paidQuotas: number;
-  linkedGames: number;
+  games: number;
   confirmedBets: number;
+  plannedGames: number;
 }
 
 export function poolShareStats(pool: PoolRow): PoolShareStats {
@@ -48,9 +49,20 @@ export function poolShareStats(pool: PoolRow): PoolShareStats {
   return {
     participants: paid.length,
     paidQuotas: paid.reduce((sum, participant) => sum + participant.quotas, 0),
-    linkedGames: pool.pool_games.length,
+    games: pool.pool_games.length,
     confirmedBets: pool.pool_games.filter((item) => item.generated_games?.status !== "PLANNED").length,
+    plannedGames: pool.pool_games.filter((item) => item.generated_games?.status === "PLANNED").length,
   };
+}
+
+export function poolGamesSummary(stats: Pick<PoolShareStats, "games" | "confirmedBets" | "plannedGames">) {
+  const total = `${stats.games} ${stats.games === 1 ? "jogo" : "jogos"}`;
+  if (stats.games > 0 && stats.confirmedBets === stats.games) return `${total} · Todos apostados`;
+  if (stats.games > 0 && stats.plannedGames === stats.games) return `${total} · Todos planejados`;
+  if (stats.plannedGames > 0) {
+    return `${total} · ${stats.confirmedBets} apostados · ${stats.plannedGames} planejados`;
+  }
+  return total;
 }
 
 export function poolSharePreview(pool: PoolRow, scope: PoolShareScope): string[] {
@@ -63,14 +75,11 @@ export function poolSharePreview(pool: PoolRow, scope: PoolShareScope): string[]
     ];
   }
   if (scope === "GAMES") {
-    return [
-      `${stats.linkedGames} ${stats.linkedGames === 1 ? "jogo do bolão" : "jogos do bolão"}`,
-      `${stats.confirmedBets} ${stats.confirmedBets === 1 ? "aposta confirmada" : "apostas confirmadas"}`,
-    ];
+    return [poolGamesSummary(stats), "Dezenas e situação de cada jogo"];
   }
   return [
-    `Resumo + ${stats.participants} ${stats.participants === 1 ? "participante" : "participantes"}`,
-    `${stats.paidQuotas} ${stats.paidQuotas === 1 ? "cota" : "cotas"} + ${stats.linkedGames} ${stats.linkedGames === 1 ? "jogo" : "jogos"}`,
+    `${stats.participants} ${stats.participants === 1 ? "participante confirmado" : "participantes confirmados"} · ${stats.paidQuotas} ${stats.paidQuotas === 1 ? "cota paga" : "cotas pagas"}`,
+    poolGamesSummary(stats),
   ];
 }
 
@@ -94,8 +103,7 @@ export function poolShareMessage(pool: PoolRow, scope: PoolShareScope, url: stri
     );
   } else if (scope === "GAMES") {
     lines.push(
-      `${stats.linkedGames} ${stats.linkedGames === 1 ? "jogo vinculado" : "jogos vinculados"}`,
-      `${stats.confirmedBets} ${stats.confirmedBets === 1 ? "aposta confirmada" : "apostas confirmadas"}`,
+      poolGamesSummary(stats),
       "",
       "Confira os jogos do bolão:",
     );
@@ -103,7 +111,7 @@ export function poolShareMessage(pool: PoolRow, scope: PoolShareScope, url: stri
     lines.push(
       `${stats.participants} ${stats.participants === 1 ? "participante" : "participantes"}`,
       `${stats.paidQuotas} ${stats.paidQuotas === 1 ? "cota" : "cotas"}`,
-      `${stats.linkedGames} ${stats.linkedGames === 1 ? "jogo" : "jogos"}`,
+      poolGamesSummary(stats),
       "",
       "Acompanhe todas as informações do bolão:",
     );
@@ -120,7 +128,11 @@ export function whatsappShareUrl(message: string) {
 export type ShareResult = "shared" | "cancelled" | "unsupported" | "error";
 
 export function canUseNativeShare() {
-  return typeof navigator !== "undefined" && typeof navigator.share === "function";
+  return (
+    typeof window !== "undefined" &&
+    window.isSecureContext &&
+    typeof navigator.share === "function"
+  );
 }
 
 /** Compartilhamento nativo; distingue sucesso, cancelamento e erro real. */

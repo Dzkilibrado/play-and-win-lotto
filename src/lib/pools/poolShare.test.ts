@@ -22,20 +22,26 @@ const pool = {
 
 describe("mensagens reais de compartilhamento", () => {
   it("usa os números reais do bolão oficial", () => {
-    expect(poolShareStats(pool)).toEqual({ participants: 23, paidQuotas: 23, linkedGames: 19, confirmedBets: 19 });
-    expect(poolSharePreview(pool, "FULL")).toEqual(["Resumo + 23 participantes", "23 cotas + 19 jogos"]);
+    expect(poolShareStats(pool)).toEqual({ participants: 23, paidQuotas: 23, games: 19, confirmedBets: 19, plannedGames: 0 });
+    expect(poolSharePreview(pool, "FULL")).toEqual(["23 participantes confirmados · 23 cotas pagas", "19 jogos · Todos apostados"]);
   });
 
   it("organiza a mensagem de jogos e mantém o link em linha própria", () => {
     const message = poolShareMessage(pool, "GAMES", "https://example.test/b/token");
     expect(message).toContain("Bolão: Bolão Galera Gmill");
     expect(message).toContain("Lotofácil · Concurso 3780");
-    expect(message).toContain("19 jogos vinculados\n19 apostas confirmadas");
+    expect(message).toContain("19 jogos · Todos apostados");
+    expect(message).not.toContain("vinculad");
     expect(message.endsWith("https://example.test/b/token")).toBe(true);
   });
 
   it("não inventa concurso quando ele não existe", () => {
     const withoutContest = { ...pool, contest_number: null, contest_number_planned: null };
     expect(poolShareMessage(withoutContest, "PARTICIPANTS", null)).toContain("Concurso a definir");
+  });
+
+  it("distingue jogos apostados e planejados", () => {
+    const mixed = { ...pool, pool_games: pool.pool_games.map((item, index) => index < 4 ? { ...item, generated_games: { status: "PLANNED" as const } } : item) };
+    expect(poolSharePreview(mixed as PoolRow, "GAMES")[0]).toBe("19 jogos · 15 apostados · 4 planejados");
   });
 });
