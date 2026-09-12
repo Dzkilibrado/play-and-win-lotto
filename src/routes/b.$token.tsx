@@ -162,12 +162,12 @@ function PublicPoolPage() {
             label={semLimite ? "Limite de cotas" : "Cotas disponíveis"}
             value={semLimite ? noQuotaLimitLabel : String(pool.availableQuotas ?? 0)}
           />
-          {showGames ? <SummaryItem label="Jogos vinculados" value={String(pool.linkedGames ?? 0)} /> : null}
-          {showGames ? <SummaryItem label="Apostas confirmadas" value={String(pool.confirmedBets ?? 0)} /> : null}
+          {showGames ? <SummaryItem label="Jogos" value={String(pool.linkedGames ?? 0)} /> : null}
+          {showGames ? <SummaryItem label={(pool.linkedGames ?? 0) === (pool.confirmedBets ?? 0) ? "Situação dos jogos" : "Jogos apostados"} value={(pool.linkedGames ?? 0) === (pool.confirmedBets ?? 0) && (pool.linkedGames ?? 0) > 0 ? "Todos apostados" : String(pool.confirmedBets ?? 0)} /> : null}
         </dl> : showGames ? (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-            <SummaryItem label="Jogos vinculados" value={String(pool.linkedGames ?? 0)} />
-            <SummaryItem label="Apostas confirmadas" value={String(pool.confirmedBets ?? 0)} />
+            <SummaryItem label="Jogos" value={String(pool.linkedGames ?? 0)} />
+            <SummaryItem label={(pool.linkedGames ?? 0) === (pool.confirmedBets ?? 0) ? "Situação dos jogos" : "Jogos apostados"} value={(pool.linkedGames ?? 0) === (pool.confirmedBets ?? 0) && (pool.linkedGames ?? 0) > 0 ? "Todos apostados" : String(pool.confirmedBets ?? 0)} />
           </dl>
         ) : null}
 
@@ -202,7 +202,7 @@ function PublicPoolPage() {
 
         {showGames ? <AccordionItem value="games" className="border-0">
           <AccordionTrigger className="gap-3 py-3 text-sm font-semibold">
-             <SectionTitleWithCount title="Jogos vinculados" count={games.length} />
+             <SectionTitleWithCount title="Jogos do bolão" count={games.length} />
           </AccordionTrigger>
           <AccordionContent className="pb-3">
             <PublicGameList

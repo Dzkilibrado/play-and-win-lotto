@@ -4,7 +4,7 @@
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Link2Off, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
+import { Copy, Download, Eye, FileText, Link2Off, Loader2, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,6 +29,8 @@ import {
   poolShareScopeLabel,
   poolShareTitle,
 } from "@/lib/pools/poolShare";
+import { canSharePdfFile, createPoolReportPdf, mapPoolReportGames, poolReportFileName } from "@/lib/pools/poolReportPdf";
+import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
 
 export function PoolShareDialog({
@@ -45,6 +47,8 @@ export function PoolShareDialog({
   const queryClient = useQueryClient();
   const [scope, setScope] = useState<PoolShareScope>("FULL");
   const [scopeReady, setScopeReady] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
   const preview = poolSharePreview(pool, scope);
@@ -118,6 +122,70 @@ export function PoolShareDialog({
     else toast.error("Não foi possível copiar. Selecione o texto manualmente.");
   };
 
+  const generatePdf = async () => {
+    if (pdfBlob) return pdfBlob;
+    setPdfLoading(true);
+    try {
+      const [participants, rawGames, officialPrizeTotal] = await Promise.all([
+        poolService.participants(pool.id),
+        poolService.games(pool.id),
+        poolService.prizeTotal(pool.id),
+      ]);
+      const games = mapPoolReportGames(rawGames);
+      const checks = await checkService.getChecksForGames(games.map((game) => game.gameId));
+      const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal });
+      setPdfBlob(blob);
+      toast.success("PDF completo preparado");
+      return blob;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível gerar o PDF.");
+      return null;
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const downloadPdf = async () => {
+    const blob = await generatePdf();
+    if (!blob) return;
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = href;
+    anchor.download = poolReportFileName(pool);
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(href), 1_000);
+  };
+
+  const previewPdf = async () => {
+    const preview = window.open("", "_blank", "noopener,noreferrer");
+    const blob = await generatePdf();
+    if (!blob) {
+      preview?.close();
+      return;
+    }
+    const href = URL.createObjectURL(blob);
+    if (preview) preview.location.href = href;
+    else toast.error("Permita a abertura de uma nova janela para visualizar o PDF.");
+    setTimeout(() => URL.revokeObjectURL(href), 60_000);
+  };
+
+  const sharePdf = async () => {
+    const blob = await generatePdf();
+    if (!blob) return;
+    const file = new File([blob], poolReportFileName(pool), { type: "application/pdf" });
+    if (!canSharePdfFile(file)) {
+      await downloadPdf();
+      toast.info("O compartilhamento de arquivos não está disponível. O PDF foi salvo.");
+      return;
+    }
+    try {
+      await navigator.share({ title: poolShareTitle(pool), files: [file] });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast.error("Não foi possível compartilhar o PDF. Você ainda pode visualizá-lo ou salvá-lo.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-[34rem] overflow-y-auto p-4 sm:p-6">
@@ -153,11 +221,16 @@ export function PoolShareDialog({
             </div>
             <div className="grid min-w-0 gap-2">
               <p className="text-xs font-semibold uppercase text-text-secondary">Compartilhar</p>
-              <Button className="h-11 justify-start" onClick={() => void share()}>
-                <Share2 className="size-4 shrink-0" aria-hidden />
-                Compartilhar
-                {!canUseNativeShare() ? <span className="sr-only"> copiando mensagem e link neste dispositivo</span> : null}
-              </Button>
+              {canUseNativeShare() ? (
+                <Button className="h-11 justify-start" onClick={() => void share()}>
+                  <Share2 className="size-4 shrink-0" aria-hidden />
+                  Compartilhar
+                </Button>
+              ) : (
+                <p className="rounded-lg bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
+                  O compartilhamento direto não está disponível neste navegador. Use o WhatsApp ou copie a mensagem.
+                </p>
+              )}
               <Button
                 variant="outline"
                 className="h-11 justify-start"
@@ -186,6 +259,24 @@ export function PoolShareDialog({
                 <Copy className="size-4 shrink-0" aria-hidden />
                 Copiar somente o link
               </Button>
+              {canManage ? (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <p className="text-xs font-semibold uppercase text-text-secondary">Outras opções</p>
+                  {!pdfBlob ? (
+                    <Button variant="outline" className="h-11 w-full justify-start" disabled={pdfLoading} onClick={() => void generatePdf()}>
+                      {pdfLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileText className="size-4" aria-hidden />}
+                      {pdfLoading ? "Preparando PDF…" : "Gerar PDF completo"}
+                    </Button>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <Button variant="outline" className="h-11" onClick={() => void previewPdf()}><Eye className="size-4" aria-hidden /> Visualizar</Button>
+                      <Button variant="outline" className="h-11" onClick={() => void sharePdf()}><Share2 className="size-4" aria-hidden /> Compartilhar</Button>
+                      <Button variant="outline" className="h-11" onClick={() => void downloadPdf()}><Download className="size-4" aria-hidden /> Salvar</Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-text-secondary">Relatório administrativo com participantes ativos, resumo financeiro e jogos. Criado somente neste dispositivo.</p>
+                </div>
+              ) : null}
               {canManage ? (
                 <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
                   <Button variant="outline" className="h-11" onClick={() => enableLink.mutate({ enabled: true, regenerate: true })}>

@@ -36,10 +36,10 @@ export function PublicGameList({
     return (
       <div className="rounded-lg bg-surface-secondary px-3 py-4 text-sm">
         <p className="font-medium text-text-primary">
-          Nenhum jogo vinculado
+          Nenhum jogo disponível
         </p>
         <p className="mt-0.5 text-text-secondary">
-          Os jogos aparecerão aqui quando forem vinculados ao bolão.
+          Os jogos aparecerão aqui quando forem adicionados ao bolão.
         </p>
       </div>
     );
