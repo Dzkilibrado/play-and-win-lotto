@@ -61,6 +61,9 @@ describe("relatório PDF do bolão", () => {
 
     expect(gamesHeading?.["pageBreak"]).toBe("before");
     expect(gamesTable.table).toMatchObject({ headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true });
+    const footer = typeof definition.footer === "function" ? definition.footer(1, 2) : null;
+    expect(JSON.stringify(footer)).toContain("Gerado em 12/09/2026 16:52");
+    expect(JSON.stringify(footer)).toContain("Página 1 de 2");
   });
 
   it.each([

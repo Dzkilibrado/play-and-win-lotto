@@ -64,7 +64,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
   const generatedAt = data.generatedAt ?? new Date();
   const generatedLabel = new Intl.DateTimeFormat(appConfig.locale, {
     dateStyle: "short", timeStyle: "short", timeZone: appConfig.timeZone,
-  }).format(generatedAt);
+  }).format(generatedAt).replace(",", "");
   const summaryRows = [
     ["Participantes ativos", String(active.length), "Cotas atribuídas", String(finance.quotasTaken)],
     ["Valor da cota", formatCurrency(data.pool.quota_value), "Limite de cotas", data.pool.total_quotas == null ? "Sem limite" : String(data.pool.total_quotas)],
