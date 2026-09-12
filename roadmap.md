@@ -54,3 +54,12 @@
 - [x] Exibir comprovantes publicados nas visões públicas Jogos e Completo.
 - [x] Incorporar imagens e todas as páginas dos PDFs publicados ao relatório completo.
 - [x] Validar testes, segurança, responsividade e PDF real.
+
+## Correção da autenticação dos comprovantes
+
+- [x] Rastrear o erro `exp` até o upload direto no armazenamento, separado da visualização.
+- [x] Mover upload e substituição para operação autenticada no servidor, mantendo o armazenamento privado.
+- [x] Preservar autorização por organizador/admin e remover arquivos novos quando o registro falhar.
+- [x] Manter URLs temporárias restritas à visualização e acesso público somente por links Jogos/Completo válidos.
+- [x] Validar PNG, JPG, PDF, publicação, edição, substituição, exclusão e relatório completo.
+- [ ] Validar renovação real de uma sessão próxima da expiração (bloqueado: sessões de teste não fornecem refresh token reutilizável).
