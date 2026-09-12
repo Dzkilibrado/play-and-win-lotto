@@ -74,13 +74,13 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
     String(index + 1), participant.name, String(participant.quotas), formatCurrency(participant.amount_due),
     formatCurrency(participant.total_paid), paymentStatusLabel[participant.payment_status],
   ]);
-  const gameRows = data.games.map((game) => {
+  const gameRows = data.games.map((game, index) => {
     const check = data.checks.get(game.gameId);
     const result = check
       ? `${check.hits} acertos${check.prize_label ? ` · ${check.prize_label}` : ""}${check.total_prize !== null ? ` · ${formatCurrency(check.total_prize)}` : ""}`
       : "—";
     return [
-      String(game.sequence), game.numbers.map((number) => String(number).padStart(2, "0")).join("  "),
+      String(index + 1), game.numbers.map((number) => String(number).padStart(2, "0")).join("  "),
       gameStatusLabel[game.status], formatCurrency(game.cost), result,
     ];
   });
