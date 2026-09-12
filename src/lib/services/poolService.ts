@@ -27,6 +27,21 @@ export interface PoolShareLinkRow {
   revoked_at: string | null;
 }
 
+export type PoolGameEligibility =
+  | "AVAILABLE"
+  | "LINKED_HERE"
+  | "LINKED_OTHER"
+  | "INCOMPATIBLE_LOTTERY"
+  | "INCOMPATIBLE_CONTEST"
+  | "POOL_CLOSED"
+  | "INELIGIBLE";
+
+export interface PoolGameClassification {
+  game_id: string;
+  eligibility: PoolGameEligibility;
+  linked_pool_name: string | null;
+}
+
 export interface PoolLotteryRef {
   slug: string;
   name: string;
@@ -401,11 +416,21 @@ export const poolService = {
     const { data, error } = await supabase
       .from("pool_games")
       .select(
-        "id, game_id, generated_games!inner(id, sequence_number, numbers_count, status, contest_number, cost, game_numbers(number, position))",
+        "id, game_id, generated_games(id, sequence_number, numbers_count, status, contest_number, cost, game_numbers(number, position))",
       )
       .eq("pool_id", poolId);
     if (error) throw error;
     return data ?? [];
+  },
+
+  async classifyGames(poolId: string, gameIds: string[]) {
+    if (gameIds.length === 0) return [];
+    const { data, error } = await supabase.rpc("pool_classify_games", {
+      _pool_id: poolId,
+      _game_ids: gameIds,
+    });
+    if (error) throw error;
+    return (data ?? []) as PoolGameClassification[];
   },
 
   async attachGame(poolId: string, gameId: string) {

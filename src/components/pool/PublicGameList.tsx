@@ -50,8 +50,8 @@ export function PublicGameList({
       {plannedGames > 0 ? (
         <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">
           {plannedGames === linkedGames
-            ? "Estes jogos estão vinculados ao bolão, mas ainda não foram marcados como apostas realizadas."
-            : `${plannedGames} ${plannedGames === 1 ? "jogo está vinculado" : "jogos estão vinculados"}, mas ${plannedGames === 1 ? "ainda não foi marcado" : "ainda não foram marcados"} como ${plannedGames === 1 ? "aposta realizada" : "apostas realizadas"}.`}
+            ? "Jogos planejados ainda não representam aposta confirmada."
+            : `${plannedGames} ${plannedGames === 1 ? "jogo planejado ainda não representa" : "jogos planejados ainda não representam"} aposta confirmada.`}
         </p>
       ) : null}
       {games.length > 19 ? (

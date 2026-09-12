@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Link2, RefreshCw, Ticket, Unlink } from "lucide-react";
+import { AlertTriangle, Link2, RefreshCw, Ticket, Unlink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +28,7 @@ import { formatCurrency } from "@/lib/format";
 import { automaticStatuses, manualStatuses } from "@/lib/games/gameStatus";
 import { gameService } from "@/lib/services/gameService";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
+import type { PoolGameEligibility } from "@/lib/services/poolService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
 
 export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
@@ -46,13 +47,16 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   });
 
   const candidates = useQuery({
-    queryKey: ["pool-game-candidates", pool.lotteries?.slug, contest],
+    queryKey: ["pool-game-candidates", pool.id],
     enabled: pickerOpen,
-    queryFn: () =>
-      gameService.listGames({
-        lotterySlug: pool.lotteries?.slug ?? null,
-        contestNumber: contest ?? null,
-      }),
+    queryFn: () => gameService.listGames({}),
+  });
+
+  const candidateIds = (candidates.data?.rows ?? []).slice(0, 200).map((game) => game.id);
+  const classifications = useQuery({
+    queryKey: ["pool-game-eligibility", pool.id, candidateIds],
+    enabled: pickerOpen && candidateIds.length > 0,
+    queryFn: () => poolService.classifyGames(pool.id, candidateIds),
   });
 
   const attach = useMutation({
@@ -64,6 +68,9 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       setQuery("");
       void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pool-game-candidates", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -74,6 +81,9 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       toast.success("Jogo removido do bolão");
       void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pool-game-candidates", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -90,29 +100,33 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       setTargetStatus("");
       void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const rows = games.data ?? [];
   const totalCost = rows.reduce((sum, row) => sum + Number(row.generated_games?.cost ?? 0), 0);
-  const linkedIds = new Set(rows.map((row) => row.game_id));
-  const available = (candidates.data?.rows ?? []).filter((game) => !linkedIds.has(game.id));
-  const filteredAvailable = useMemo(() => {
+  const classificationById = new Map((classifications.data ?? []).map((item) => [item.game_id, item]));
+  const candidateRows = (candidates.data?.rows ?? []).slice(0, 200);
+  const eligible = candidateRows.filter((game) => classificationById.get(game.id)?.eligibility === "AVAILABLE");
+  const filteredCandidates = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("pt-BR");
-    if (!term) return available;
-    return available.filter((game) => {
+    if (!term) return candidateRows;
+    return candidateRows.filter((game) => {
       const sequence = String(game.sequence_number ?? "");
       return sequence.includes(term) || game.status.toLocaleLowerCase("pt-BR").includes(term);
     });
-  }, [available, query]);
+  }, [candidateRows, query]);
+  const filteredEligible = filteredCandidates.filter((game) => classificationById.get(game.id)?.eligibility === "AVAILABLE");
   const confirmedBets = rows.filter((row) => row.generated_games?.status !== "PLANNED").length;
   const planned = rows.length - confirmedBets;
-  const allFilteredSelected = filteredAvailable.length > 0 && filteredAvailable.every((game) => selectedIds.has(game.id));
+  const allFilteredSelected = filteredEligible.length > 0 && filteredEligible.every((game) => selectedIds.has(game.id));
   const editableRows = rows.filter((row) => manualStatuses.includes(row.generated_games?.status as GameStatus));
   const allEditableSelected = editableRows.length > 0 && editableRows.every((row) => selectedLinkedIds.has(row.game_id));
 
   const toggle = (gameId: string, checked: boolean) => {
+    if (classificationById.get(gameId)?.eligibility !== "AVAILABLE") return;
     setSelectedIds((current) => {
       const next = new Set(current);
       if (checked) next.add(gameId);
@@ -265,13 +279,17 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
               {contest ? ` no concurso ${contest}` : ""} podem entrar neste bolão.
             </DialogDescription>
           </DialogHeader>
-          {candidates.isLoading ? (
+          {candidates.isLoading || classifications.isLoading ? (
             <p className="text-sm text-text-secondary">Carregando seus jogos…</p>
-          ) : available.length === 0 ? (
+          ) : classifications.isError ? (
+            <div className="rounded-lg bg-danger-soft p-3 text-sm text-danger">
+              Não foi possível verificar os vínculos. Feche esta tela e tente novamente.
+            </div>
+          ) : candidateRows.length === 0 ? (
             <EmptyState
               icon={Ticket}
-              title="Nenhum jogo disponível para vincular"
-              description="Crie um jogo desta modalidade e concurso para adicioná-lo ao bolão."
+              title="Nenhum jogo encontrado"
+              description="Crie um jogo para verificar se ele pode entrar neste bolão."
             />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -287,7 +305,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                   onCheckedChange={(checked) => {
                     setSelectedIds((current) => {
                       const next = new Set(current);
-                      for (const game of filteredAvailable) {
+                      for (const game of filteredEligible) {
                         if (checked) next.add(game.id);
                         else next.delete(game.id);
                       }
@@ -299,13 +317,18 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
               </label>
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
                 <ul className="divide-y divide-border">
-                  {filteredAvailable.map((game) => {
+                  {filteredCandidates.map((game) => {
                     const numbers = [...game.game_numbers].sort((a, b) => a.position - b.position);
+                    const classification = classificationById.get(game.id);
+                    const eligibility = classification?.eligibility ?? "INELIGIBLE";
+                    const selectable = eligibility === "AVAILABLE";
+                    const reason = eligibilityLabel(eligibility, classification?.linked_pool_name ?? null);
                     return (
                       <li key={game.id}>
-                        <label className="flex min-w-0 cursor-pointer items-start gap-3 py-3">
+                        <label className={`flex min-w-0 items-start gap-3 py-3 ${selectable ? "cursor-pointer" : "cursor-not-allowed opacity-75"}`}>
                           <Checkbox
                             className="mt-0.5 size-5"
+                            disabled={!selectable}
                             checked={selectedIds.has(game.id)}
                             onCheckedChange={(checked) => toggle(game.id, checked === true)}
                           />
@@ -316,6 +339,9 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                               </span>
                               <StatusBadge label={gameStatusLabel[game.status]} tone={gameStatusTone[game.status]} />
                             </span>
+                            <span className={`mt-0.5 block text-xs ${selectable ? "text-success" : "text-text-secondary"}`}>
+                              {reason}
+                            </span>
                             <span className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-sm font-medium tabular-nums text-text-secondary">
                               {numbers.map((item) => <span key={item.number}>{String(item.number).padStart(2, "0")}</span>)}
                             </span>
@@ -325,6 +351,12 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                     );
                   })}
                 </ul>
+                {eligible.length === 0 ? (
+                  <p className="mt-3 flex items-start gap-2 rounded-lg bg-warning-soft p-3 text-sm text-warning">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    Nenhum dos jogos exibidos está disponível para este bolão.
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium text-text-primary">
@@ -379,4 +411,16 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       </Dialog>
     </div>
   );
+}
+
+function eligibilityLabel(eligibility: PoolGameEligibility, linkedPoolName: string | null) {
+  switch (eligibility) {
+    case "AVAILABLE": return "Disponível para vincular";
+    case "LINKED_HERE": return "Já vinculado a este bolão";
+    case "LINKED_OTHER": return linkedPoolName ? `Vinculado a outro bolão: ${linkedPoolName}` : "Vinculado a outro bolão";
+    case "INCOMPATIBLE_LOTTERY": return "Incompatível: outra modalidade";
+    case "INCOMPATIBLE_CONTEST": return "Incompatível: outro concurso";
+    case "POOL_CLOSED": return "Este bolão não aceita novos jogos";
+    default: return "Não elegível para vínculo";
+  }
 }

@@ -24,8 +24,10 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
+    void queryClient.invalidateQueries({ queryKey: ["pool", pool.id, "participants"] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
     void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
-    void queryClient.invalidateQueries({ queryKey: ["pools"] });
+    void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
   };
 
   const statusMutation = useMutation({
