@@ -73,3 +73,12 @@
 - [x] Publicar Termos e Privacidade preliminares, versionar e registrar aceite.
 - [x] Validar autenticação, segurança, temas e seis resoluções sem overflow.
 - [x] Rodar testes, tipos e build; documentar limitações e aguardar homologação.
+
+## Administrador principal e responsável do sistema
+
+- [x] Localizar a conta existente, o perfil e os papéis atuais.
+- [x] Preservar USER e atribuir ADMIN sem duplicidade.
+- [x] Modelar o responsável principal em configuração institucional separada.
+- [x] Manter papéis e responsável sem escrita disponível ao cliente.
+- [x] Registrar promoção e designação no histórico administrativo.
+- [ ] Validar login real, acesso administrativo e bloqueio de usuário comum.
