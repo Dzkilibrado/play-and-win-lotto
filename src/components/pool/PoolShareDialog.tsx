@@ -4,11 +4,13 @@
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Copy, Download, Eye, FileText, Link2Off, Loader2, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { getPoolDocumentUrl } from "@/lib/pools/poolManagement.functions";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,7 @@ export function PoolShareDialog({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const getDocumentUrl = useServerFn(getPoolDocumentUrl);
   const [scope, setScope] = useState<PoolShareScope>("FULL");
   const [scopeReady, setScopeReady] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
@@ -135,7 +138,7 @@ export function PoolShareDialog({
       const games = mapPoolReportGames(rawGames);
       const checks = await checkService.getChecksForGames(games.map((game) => game.gameId));
       const documents = await Promise.all(documentRows.filter((document) => document.is_published).map(async (document) => {
-        const url = await poolService.documentUrl(document.storage_path);
+        const url = await getDocumentUrl({ data: { documentId: document.id } });
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Não foi possível carregar ${document.title}.`);
         return { title: document.title, mimeType: document.mime_type as "image/jpeg" | "image/png" | "application/pdf", bytes: await response.arrayBuffer() };
