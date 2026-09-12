@@ -59,7 +59,7 @@ describe("lista pública de jogos", () => {
   afterEach(cleanup);
 
   it.each([19, 50, 100])("mostra a prévia e permite ver todos com %i jogos", (total) => {
-    render(<PublicGameList games={games(total)} drawnNumbers={[]} />);
+    render(<PublicGameList games={games(total)} drawnNumbers={[]} linkedGames={total} />);
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(publicPreviewSize.games);
     fireEvent.click(screen.getByRole("button", { name: /Ver todos/ }));
     expect(screen.getAllByText(/^Jogo \d+$/)).toHaveLength(total);

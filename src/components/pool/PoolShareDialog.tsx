@@ -4,8 +4,8 @@
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, MessageCircle, Share2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Copy, Link2Off, MessageCircle, RefreshCw, Share2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,11 @@ import {
   openWhatsApp,
   poolPublicUrl,
   poolShareMessage,
+  poolShareScopeDescription,
+  poolShareScopeLabel,
   poolShareTitle,
 } from "@/lib/pools/poolShare";
-import { poolService, type PoolRow } from "@/lib/services/poolService";
+import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
 
 export function PoolShareDialog({
   pool,
@@ -40,13 +42,15 @@ export function PoolShareDialog({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
-  const url = poolPublicUrl(pool);
-  const message = poolShareMessage(pool, url);
+  const [scope, setScope] = useState<PoolShareScope>("FULL");
+  const url = poolPublicUrl(pool, scope);
+  const message = poolShareMessage(pool, scope, url);
 
   const enableLink = useMutation({
-    mutationFn: () => poolService.setPublic(pool.id, true),
-    onSuccess: () => {
-      toast.success("Link público criado");
+    mutationFn: ({ enabled, regenerate = false }: { enabled: boolean; regenerate?: boolean }) =>
+      poolService.setShareLink(pool.id, scope, enabled, regenerate),
+    onSuccess: (_data, variables) => {
+      toast.success(variables.enabled ? (variables.regenerate ? "Novo link criado" : "Link público criado") : "Link revogado");
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools"] });
@@ -64,7 +68,7 @@ export function PoolShareDialog({
     }
     if (url || !canManage || requested.current || enableLink.isPending) return;
     requested.current = true;
-    enableLink.mutate();
+    enableLink.mutate({ enabled: true });
   }, [open, url, canManage, enableLink]);
 
   const share = async () => {
@@ -93,12 +97,26 @@ export function PoolShareDialog({
           <DialogTitle>Compartilhar bolão</DialogTitle>
           <DialogDescription>
             {url
-              ? "Quem receber o link vê apenas o acompanhamento geral do bolão."
+              ? poolShareScopeDescription[scope]
               : canManage
                 ? "Preparando o link público deste bolão…"
                 : "Somente o organizador pode ativar o link público deste bolão."}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Tipo de compartilhamento">
+          {(["PARTICIPANTS", "GAMES", "FULL"] as PoolShareScope[]).map((item) => (
+            <Button
+              key={item}
+              type="button"
+              variant={scope === item ? "default" : "outline"}
+              className="h-auto min-h-11 whitespace-normal px-3 py-2 text-left"
+              onClick={() => setScope(item)}
+            >
+              {poolShareScopeLabel[item]}
+            </Button>
+          ))}
+        </div>
 
         {url ? (
           <div className="space-y-3">
@@ -139,12 +157,22 @@ export function PoolShareDialog({
                 <Copy className="size-4 shrink-0" aria-hidden />
                 Copiar mensagem e link
               </Button>
+              {canManage ? (
+                <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+                  <Button variant="outline" className="h-11" onClick={() => enableLink.mutate({ enabled: true, regenerate: true })}>
+                    <RefreshCw className="size-4" aria-hidden /> Novo link
+                  </Button>
+                  <Button variant="outline" className="h-11" onClick={() => enableLink.mutate({ enabled: false })}>
+                    <Link2Off className="size-4" aria-hidden /> Revogar
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (
           <p className="rounded-lg bg-surface-secondary p-3 text-sm text-text-secondary">
             {canManage
-              ? "O link público mostra o acompanhamento do bolão: situação, cotas pagas, quem já confirmou e os jogos apostados. Telefones e valores individuais não aparecem."
+              ? `Preparando o link de ${poolShareScopeLabel[scope].toLocaleLowerCase("pt-BR")}…`
               : "Somente o organizador pode ativar o link público deste bolão."}
           </p>
         )}
