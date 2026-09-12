@@ -42,4 +42,4 @@
 - [x] Iniciar Jogos do bolão sempre em uma nova página.
 - [x] Repetir o cabeçalho e manter cada linha de jogo indivisível.
 - [x] Preservar Em aberto como valor a receber e adicionar Saldo do bolão.
-- [ ] Validar PDF real, volumes, testes, tipos e build.
+- [x] Validar PDF real, volumes, testes, tipos e build.

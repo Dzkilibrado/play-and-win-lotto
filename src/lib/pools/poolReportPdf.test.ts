@@ -91,6 +91,29 @@ describe("relatório PDF do bolão", () => {
   });
 
   it.each([
+    [5, 19],
+    [23, 19],
+    [50, 19],
+    [100, 50],
+  ])("mantém a separação entre %i participantes e %i jogos", (participantCount, gameCount) => {
+    const definition = buildPoolReportDefinition({
+      ...data,
+      participants: participants.slice(0, 1).flatMap((item) => Array.from({ length: participantCount }, (_, index) => ({ ...item, id: String(index), name: `Pessoa ${index + 1}` }))),
+      games: Array.from({ length: gameCount }, (_, index) => ({
+        gameId: `volume-${index}`, sequence: index + 1, status: "BET", contestNumber: 3780,
+        cost: 3.5, numbers: Array.from({ length: 15 }, (_, number) => number + 1),
+      })),
+    });
+    const content = Array.isArray(definition.content) ? definition.content as unknown as Array<Record<string, unknown>> : [];
+    const gamesHeading = content.find((item) => item["text"] === "Jogos do bolão");
+    const gamesTable = content[content.indexOf(gamesHeading ?? {}) + 1] as { table?: { body?: unknown[]; dontBreakRows?: boolean } };
+
+    expect(gamesHeading?.["pageBreak"]).toBe("before");
+    expect(gamesTable.table?.dontBreakRows).toBe(true);
+    expect(gamesTable.table?.body).toHaveLength(gameCount + 1);
+  });
+
+  it.each([
     ["Mega-Sena", 6, 10],
     ["Lotofácil", 15, 23],
     ["Quina", 5, 50],
