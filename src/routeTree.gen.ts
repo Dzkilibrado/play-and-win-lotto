@@ -32,6 +32,7 @@ import { Route as AuthenticatedPoolsIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPoolsIdRouteImport } from './routes/_authenticated/pools.$id'
 import { Route as AuthenticatedPoolsNewRouteImport } from './routes/_authenticated/pools.new'
 import { Route as ApiPublicSyncRunRouteImport } from './routes/api/public/sync/run'
+import { Route as ApiPublicPoolDocumentTokenIdRouteImport } from './routes/api/public/pool-document.$token.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -150,6 +151,12 @@ const ApiPublicSyncRunRoute = ApiPublicSyncRunRouteImport.update({
   path: '/api/public/sync/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPoolDocumentTokenIdRoute =
+  ApiPublicPoolDocumentTokenIdRouteImport.update({
+    id: '/api/public/pool-document/$token/$id',
+    path: '/api/public/pool-document/$token/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/games/': typeof AuthenticatedGamesIndexRoute
   '/pools/': typeof AuthenticatedPoolsIndexRoute
   '/api/public/sync/run': typeof ApiPublicSyncRunRoute
+  '/api/public/pool-document/$token/$id': typeof ApiPublicPoolDocumentTokenIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,6 +206,7 @@ export interface FileRoutesByTo {
   '/games': typeof AuthenticatedGamesIndexRoute
   '/pools': typeof AuthenticatedPoolsIndexRoute
   '/api/public/sync/run': typeof ApiPublicSyncRunRoute
+  '/api/public/pool-document/$token/$id': typeof ApiPublicPoolDocumentTokenIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +233,7 @@ export interface FileRoutesById {
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
   '/_authenticated/pools/': typeof AuthenticatedPoolsIndexRoute
   '/api/public/sync/run': typeof ApiPublicSyncRunRoute
+  '/api/public/pool-document/$token/$id': typeof ApiPublicPoolDocumentTokenIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/games/'
     | '/pools/'
     | '/api/public/sync/run'
+    | '/api/public/pool-document/$token/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/pools'
     | '/api/public/sync/run'
+    | '/api/public/pool-document/$token/$id'
   id:
     | '__root__'
     | '/'
@@ -299,6 +311,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/'
     | '/_authenticated/pools/'
     | '/api/public/sync/run'
+    | '/api/public/pool-document/$token/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -307,6 +320,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   BTokenRoute: typeof BTokenRoute
   ApiPublicSyncRunRoute: typeof ApiPublicSyncRunRoute
+  ApiPublicPoolDocumentTokenIdRoute: typeof ApiPublicPoolDocumentTokenIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -472,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pool-document/$token/$id': {
+      id: '/api/public/pool-document/$token/$id'
+      path: '/api/public/pool-document/$token/$id'
+      fullPath: '/api/public/pool-document/$token/$id'
+      preLoaderRoute: typeof ApiPublicPoolDocumentTokenIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -526,6 +547,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   BTokenRoute: BTokenRoute,
   ApiPublicSyncRunRoute: ApiPublicSyncRunRoute,
+  ApiPublicPoolDocumentTokenIdRoute: ApiPublicPoolDocumentTokenIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

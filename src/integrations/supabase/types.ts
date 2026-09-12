@@ -894,45 +894,107 @@ export type Database = {
         }
         Relationships: []
       }
+      pool_document_versions: {
+        Row: {
+          document_id: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          replaced_at: string
+          replaced_by: string | null
+          storage_path: string
+          version: number
+        }
+        Insert: {
+          document_id: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          replaced_at?: string
+          replaced_by?: string | null
+          storage_path: string
+          version: number
+        }
+        Update: {
+          document_id?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          replaced_at?: string
+          replaced_by?: string | null
+          storage_path?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "pool_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pool_documents: {
         Row: {
           created_at: string
+          deleted_at: string | null
+          description: string | null
           file_size: number | null
           game_id: string | null
           id: string
+          is_published: boolean
           kind: string
           mime_type: string | null
           notes: string | null
           participant_id: string | null
           pool_id: string
+          sort_order: number
           storage_path: string
+          title: string
+          updated_at: string
           uploaded_by: string | null
+          version: number
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
+          description?: string | null
           file_size?: number | null
           game_id?: string | null
           id?: string
+          is_published?: boolean
           kind?: string
           mime_type?: string | null
           notes?: string | null
           participant_id?: string | null
           pool_id: string
+          sort_order?: number
           storage_path: string
+          title: string
+          updated_at?: string
           uploaded_by?: string | null
+          version?: number
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
+          description?: string | null
           file_size?: number | null
           game_id?: string | null
           id?: string
+          is_published?: boolean
           kind?: string
           mime_type?: string | null
           notes?: string | null
           participant_id?: string | null
           pool_id?: string
+          sort_order?: number
           storage_path?: string
+          title?: string
+          updated_at?: string
           uploaded_by?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -1317,8 +1379,45 @@ export type Database = {
           },
         ]
       }
+      pool_storage_cleanup_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          pool_id: string
+          requested_by: string
+          status: string
+          storage_paths: string[]
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          pool_id: string
+          requested_by: string
+          status?: string
+          storage_paths?: string[]
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          pool_id?: string
+          requested_by?: string
+          status?: string
+          storage_paths?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pools: {
         Row: {
+          archived_at: string | null
           cancel_reason: string | null
           cancelled_at: string | null
           closed_at: string | null
@@ -1343,6 +1442,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           closed_at?: string | null
@@ -1367,6 +1467,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           closed_at?: string | null
@@ -1502,6 +1603,7 @@ export type Database = {
         Args: { _draw_id: string; _game_id: string; _payload: Json }
         Returns: string
       }
+      can_manage_pool: { Args: { _pool_id: string }; Returns: boolean }
       can_read_game: { Args: { _game_id: string }; Returns: boolean }
       claim_check_job: {
         Args: { _job_id: string; _stale_after?: string }
@@ -1643,15 +1745,146 @@ export type Database = {
         Args: { _distribution_id: string }
         Returns: undefined
       }
+      pool_delete_permanently: {
+        Args: { _confirmation: string; _pool_id: string }
+        Returns: Json
+      }
+      pool_delete_summary: { Args: { _pool_id: string }; Returns: Json }
       pool_detach_game: {
         Args: { _game_id: string; _pool_id: string }
         Returns: undefined
+      }
+      pool_document_create: {
+        Args: {
+          _description: string
+          _file_size: number
+          _mime_type: string
+          _pool_id: string
+          _sort_order: number
+          _storage_path: string
+          _title: string
+        }
+        Returns: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          file_size: number | null
+          game_id: string | null
+          id: string
+          is_published: boolean
+          kind: string
+          mime_type: string | null
+          notes: string | null
+          participant_id: string | null
+          pool_id: string
+          sort_order: number
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pool_documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      pool_document_delete: { Args: { _document_id: string }; Returns: string }
+      pool_document_replace: {
+        Args: {
+          _document_id: string
+          _file_size: number
+          _mime_type: string
+          _storage_path: string
+        }
+        Returns: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          file_size: number | null
+          game_id: string | null
+          id: string
+          is_published: boolean
+          kind: string
+          mime_type: string | null
+          notes: string | null
+          participant_id: string | null
+          pool_id: string
+          sort_order: number
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pool_documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      pool_document_update: {
+        Args: {
+          _description: string
+          _document_id: string
+          _is_published: boolean
+          _sort_order: number
+          _title: string
+        }
+        Returns: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          file_size: number | null
+          game_id: string | null
+          id: string
+          is_published: boolean
+          kind: string
+          mime_type: string | null
+          notes: string | null
+          participant_id: string | null
+          pool_id: string
+          sort_order: number
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pool_documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       pool_outdate_distributions: {
         Args: { _pool_id: string; _reason?: string }
         Returns: undefined
       }
       pool_prize_total: { Args: { _pool_id: string }; Returns: number }
+      pool_public_document_path: {
+        Args: { _document_id: string; _token: string }
+        Returns: {
+          mime_type: string
+          storage_path: string
+          title: string
+        }[]
+      }
+      pool_public_documents: {
+        Args: { _token: string }
+        Returns: {
+          description: string
+          file_size: number
+          id: string
+          mime_type: string
+          sort_order: number
+          title: string
+        }[]
+      }
       pool_public_summary: { Args: { _token: string }; Returns: Json }
       pool_register_payment:
         | {
@@ -1677,6 +1910,10 @@ export type Database = {
             }
             Returns: string
           }
+      pool_set_archived: {
+        Args: { _archived: boolean; _pool_id: string }
+        Returns: string
+      }
       pool_set_games_status: {
         Args: {
           _game_ids: string[]

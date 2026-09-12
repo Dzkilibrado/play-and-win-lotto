@@ -89,6 +89,7 @@ export interface PoolRow {
   cancel_reason: string | null;
   closed_at: string | null;
   created_at: string;
+  archived_at: string | null;
   lotteries: PoolLotteryRef | null;
   pool_participants: Pick<
     PoolParticipantRow,
@@ -104,6 +105,11 @@ export interface PoolRow {
   pool_games: { id: string; generated_games: { status: GameStatus } | null }[];
   pool_share_links: PoolShareLinkRow[];
 }
+
+export type PoolDocumentRow = Database["public"]["Tables"]["pool_documents"]["Row"];
+export type PoolDeleteSummary = {
+  participants: number; games: number; payments: number; documents: number; distributions: number; results: number;
+};
 
 export interface PoolFilters {
   query?: string | null;
@@ -516,5 +522,62 @@ export const poolService = {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
+  },
+
+  async activeDocuments(poolId: string): Promise<PoolDocumentRow[]> {
+    const { data, error } = await supabase.from("pool_documents").select("*").eq("pool_id", poolId).is("deleted_at", null).order("sort_order").order("created_at");
+    if (error) throw error;
+    return data;
+  },
+
+  async uploadDocument(poolId: string, file: File, title: string, description: string, sortOrder = 0) {
+    const extension = file.name.split(".").pop()?.toLowerCase() || (file.type === "application/pdf" ? "pdf" : "jpg");
+    const path = `${poolId}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("pool-documents").upload(path, file, { contentType: file.type });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabase.rpc("pool_document_create", { _pool_id: poolId, _storage_path: path, _title: title, _description: description, _sort_order: sortOrder, _mime_type: file.type, _file_size: file.size });
+    if (error) { await supabase.storage.from("pool-documents").remove([path]); throw error; }
+    return data;
+  },
+
+  async updateDocument(id: string, input: { title: string; description: string; sortOrder: number; isPublished: boolean }) {
+    const { data, error } = await supabase.rpc("pool_document_update", { _document_id: id, _title: input.title, _description: input.description, _sort_order: input.sortOrder, _is_published: input.isPublished });
+    if (error) throw error;
+    return data;
+  },
+
+  async replaceDocument(document: PoolDocumentRow, file: File) {
+    const extension = file.name.split(".").pop()?.toLowerCase() || (file.type === "application/pdf" ? "pdf" : "jpg");
+    const path = `${document.pool_id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("pool-documents").upload(path, file, { contentType: file.type });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabase.rpc("pool_document_replace", { _document_id: document.id, _storage_path: path, _mime_type: file.type, _file_size: file.size });
+    if (error) { await supabase.storage.from("pool-documents").remove([path]); throw error; }
+    return data;
+  },
+
+  async deleteDocument(document: PoolDocumentRow) {
+    const { error } = await supabase.rpc("pool_document_delete", { _document_id: document.id });
+    if (error) throw error;
+    const { error: storageError } = await supabase.storage.from("pool-documents").remove([document.storage_path]);
+    if (storageError) throw storageError;
+  },
+
+  async documentUrl(path: string) {
+    const { data, error } = await supabase.storage.from("pool-documents").createSignedUrl(path, 300);
+    if (error) throw error;
+    return data.signedUrl;
+  },
+
+  async setArchived(poolId: string, archived: boolean) {
+    const { data, error } = await supabase.rpc("pool_set_archived", { _pool_id: poolId, _archived: archived });
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteSummary(poolId: string): Promise<PoolDeleteSummary> {
+    const { data, error } = await supabase.rpc("pool_delete_summary", { _pool_id: poolId });
+    if (error) throw error;
+    return data as unknown as PoolDeleteSummary;
   },
 };
