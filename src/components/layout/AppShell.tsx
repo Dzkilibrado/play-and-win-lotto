@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Menu } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { ThemeSelector } from "@/components/layout/ThemeSelector";
 import { Brand } from "@/components/brand/Brand";
@@ -55,23 +55,44 @@ function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
 }
 
 export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur">
       <div className="flex h-14 items-center gap-2 px-4">
-        <Sheet>
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              aria-label="Abrir menu"
+              aria-controls="mobile-navigation"
+            >
               <Menu className="size-5" aria-hidden />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
+          <SheetContent
+            id="mobile-navigation"
+            side="left"
+            className="w-72 overflow-y-auto p-0"
+          >
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="text-left">
-                 <Brand to="/dashboard" />
+                <span onClick={closeMenu}>
+                  <Brand to="/dashboard" />
+                </span>
               </SheetTitle>
             </SheetHeader>
             <div className="p-3">
-              <SidebarNav />
+              <SidebarNav onNavigate={closeMenu} />
             </div>
           </SheetContent>
         </Sheet>
