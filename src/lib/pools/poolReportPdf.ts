@@ -176,7 +176,10 @@ export async function createPoolReportPdf(data: PoolReportData) {
     page.drawText(document.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
     page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
   }
-  return new Blob([await merged.save()], { type: "application/pdf" });
+  const saved = await merged.save();
+  const bytes = new Uint8Array(saved.byteLength);
+  bytes.set(saved);
+  return new Blob([bytes.buffer], { type: "application/pdf" });
 }
 
 export function canSharePdfFile(file: File) {

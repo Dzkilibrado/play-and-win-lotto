@@ -81,6 +81,13 @@ describe("grupos de situação", () => {
 });
 
 describe("filtros avançados", () => {
+  it("oculta arquivados por padrão e combina o arquivo com a situação real", () => {
+    const archived = pool({ archived_at: "2026-09-12T20:00:00Z", status: "FINISHED" });
+    const active = pool({ archived_at: null, status: "FINISHED" });
+    expect(filterPools([archived, active], {})).toEqual([active]);
+    expect(filterPools([archived, active], { archived: "yes", status: "FINISHED" })).toEqual([archived]);
+  });
+
   it("situação detalhada, jogos, premiados e pagamentos pendentes", () => {
     const pendente = pool({
       status: "OPEN",
