@@ -86,7 +86,7 @@ export function PoolShareDialog({
     if (!canManage || requested.current === scope || enableLink.isPending) return;
     requested.current = scope;
     enableLink.mutate({ enabled: true });
-  }, [open, url, scope, canManage, enableLink]);
+  }, [open, url, scope, canManage, enableLink.isPending]);
 
   const share = async () => {
     const result = await nativeShare({ title: poolShareTitle(pool), text: message, url });
