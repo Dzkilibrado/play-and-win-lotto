@@ -28,3 +28,11 @@
 - [x] Refinar os três tipos de página pública sem ampliar o payload.
 - [x] Validar cenário real, seis resoluções, testes e tipos; acesso cruzado permanece protegido pelas regras existentes.
 - [x] Entregar relatório final de 28 itens e aguardar homologação.
+
+## Refinamento do compartilhamento e relatório PDF
+
+- [ ] Corrigir textos e unificar resumos de Participantes, Jogos e Completo.
+- [ ] Separar cancelamento, indisponibilidade e falha do compartilhamento nativo.
+- [ ] Gerar PDF administrativo completo somente sob demanda e sem armazenamento.
+- [ ] Validar privacidade, cenário real, seis resoluções, PDF, testes, tipos e build.
+- [ ] Entregar relatório final de 33 itens e aguardar homologação.
