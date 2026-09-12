@@ -1669,6 +1669,14 @@ export type Database = {
             }
             Returns: string
           }
+      pool_set_games_status: {
+        Args: {
+          _game_ids: string[]
+          _pool_id: string
+          _status: Database["public"]["Enums"]["game_status"]
+        }
+        Returns: number
+      }
       pool_set_participant_eligibility: {
         Args: { _eligible: boolean; _participant_id: string; _reason?: string }
         Returns: undefined
