@@ -55,4 +55,28 @@ describe("relatório PDF do bolão", () => {
     const definition = buildPoolReportDefinition({ ...data, participants: participants.slice(0, 1).flatMap((item) => Array.from({ length: count }, (_, index) => ({ ...item, id: String(index), name: `Pessoa ${index + 1}` }))) });
     expect(JSON.stringify(definition)).toContain(`Pessoa ${count}`);
   });
+
+  it.each([
+    ["Mega-Sena", 6, 10],
+    ["Lotofácil", 15, 23],
+    ["Quina", 5, 50],
+    ["Mega-Sena", 6, 100],
+    ["Lotofácil", 15, 200],
+  ])("organiza %s com %i dezenas em %i jogos", (lottery, numbersCount, gamesCount) => {
+    const definition = buildPoolReportDefinition({
+      ...data,
+      pool: { ...pool, lotteries: { ...pool.lotteries, name: lottery } } as PoolRow,
+      games: Array.from({ length: gamesCount }, (_, index) => ({
+        gameId: `g-${index}`,
+        sequence: index + 1,
+        status: "BET" as const,
+        contestNumber: 3780,
+        cost: 3.5,
+        numbers: Array.from({ length: numbersCount }, (_, number) => number + 1),
+      })),
+    });
+    const serialized = JSON.stringify(definition);
+    expect(serialized).toContain(lottery);
+    expect(serialized).toContain(`\"${gamesCount}\"`);
+  });
 });

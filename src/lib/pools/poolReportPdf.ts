@@ -45,7 +45,7 @@ export function mapPoolReportGames(rows: Awaited<ReturnType<typeof import("@/lib
       cost: Number(game.cost ?? 0),
       numbers: [...(game.game_numbers ?? [])].sort((a, b) => a.position - b.position).map((item) => item.number),
     }];
-  });
+  }).sort((a, b) => a.sequence - b.sequence);
 }
 
 export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefinitions {
@@ -56,7 +56,8 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
     totalPaid: Number(participant.total_paid),
     paymentStatus: participant.payment_status,
   })));
-  const contest = data.pool.contest_number ?? data.pool.contest_number_planned;
+  const gameContests = [...new Set(data.games.map((game) => game.contestNumber).filter((value): value is number => value !== null))];
+  const contest = data.pool.contest_number ?? data.pool.contest_number_planned ?? (gameContests.length === 1 ? gameContests[0] : null);
   const drawDate = data.pool.draw_date ?? data.pool.draw_date_planned;
   const gameCost = data.games.reduce((sum, game) => sum + game.cost, 0);
   const generatedAt = data.generatedAt ?? new Date();
