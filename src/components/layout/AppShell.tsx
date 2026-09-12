@@ -79,7 +79,11 @@ export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined 
               <Menu className="size-5" aria-hidden />
             </Button>
           </SheetTrigger>
-          <SheetContent id="mobile-navigation" side="left" className="w-72 p-0">
+          <SheetContent
+            id="mobile-navigation"
+            side="left"
+            className="w-72 overflow-y-auto p-0"
+          >
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="text-left">
                 <span onClick={closeMenu}>

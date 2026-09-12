@@ -22,4 +22,8 @@ describe("menu móvel compartilhado", () => {
     expect(source).toContain('aria-controls="mobile-navigation"');
     expect(source).toContain('id="mobile-navigation"');
   });
+
+  it("mantém todos os destinos alcançáveis em telas baixas", () => {
+    expect(source).toContain('className="w-72 overflow-y-auto p-0"');
+  });
 });
