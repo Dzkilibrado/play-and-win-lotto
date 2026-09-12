@@ -90,3 +90,12 @@
 - [x] Fechar também após mudanças de rota externas ao menu.
 - [x] Validar seleção, toque externo e Escape nos quatro tamanhos solicitados.
 - [x] Rodar testes, tipos e build sem regressões de navegação.
+
+## Visualização estrutural de comprovantes
+
+- [ ] Auditar o arquivo real, metadados, bytes, autorização e todos os pontos de visualização.
+- [ ] Centralizar imagens, PDFs e fallback em um viewer reutilizável sem popups.
+- [ ] Endurecer validação de tipo, nome original e acesso privado/público temporário.
+- [ ] Corrigir incorporação de imagens, WEBP e PDFs multipágina no relatório completo.
+- [ ] Validar o cenário real, matriz de arquivos, temas, acessibilidade e resoluções solicitadas.
+- [ ] Rodar testes, tipos e build; documentar causas, resultados e limitações para homologação.
