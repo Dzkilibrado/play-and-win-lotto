@@ -73,13 +73,13 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
     String(index + 1), participant.name, String(participant.quotas), formatCurrency(participant.amount_due),
     formatCurrency(participant.total_paid), paymentStatusLabel[participant.payment_status],
   ]);
-  const gameRows = data.games.map((game, index) => {
+  const gameRows = data.games.map((game) => {
     const check = data.checks.get(game.gameId);
     const result = check
       ? `${check.hits} acertos${check.prize_label ? ` · ${check.prize_label}` : ""}${check.total_prize !== null ? ` · ${formatCurrency(check.total_prize)}` : ""}`
       : "—";
     return [
-      String(index + 1), game.numbers.map((number) => String(number).padStart(2, "0")).join("  "),
+      String(game.sequence), game.numbers.map((number) => String(number).padStart(2, "0")).join("  "),
       gameStatusLabel[game.status], formatCurrency(game.cost), result,
     ];
   });
@@ -109,11 +109,11 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { text: `Sorteio: ${drawDate ? formatDate(drawDate) : "A definir"}`, margin: [0, 8, 0, 0] },
       { text: "Participantes ativos", style: "section" },
       participantRows.length > 0
-        ? { table: { headerRows: 1, widths: [20, "*", 34, 58, 58, 48], body: [["#", "Nome", "Cotas", "Devido", "Pago", "Situação"], ...participantRows] }, layout: "lightHorizontalLines" }
+        ? { table: { headerRows: 1, widths: [20, "*", 34, 58, 58, 48], body: [[{ text: "#", style: "tableHeader" }, { text: "Nome", style: "tableHeader" }, { text: "Cotas", style: "tableHeader" }, { text: "Devido", style: "tableHeader" }, { text: "Pago", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }], ...participantRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum participante ativo.", color: "#66736b" },
       { text: "Jogos do bolão", style: "section", pageBreak: participantRows.length > 35 ? "before" : undefined },
       gameRows.length > 0
-        ? { table: { headerRows: 1, widths: [20, "*", 72, 55, 100], body: [["#", "Dezenas", "Situação", "Custo", "Resultado"], ...gameRows] }, layout: "lightHorizontalLines" }
+        ? { table: { headerRows: 1, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum jogo no bolão.", color: "#66736b" },
       ...(checked.length > 0 ? [
         { text: "Resultado oficial", style: "section" },
