@@ -1631,6 +1631,14 @@ export type Database = {
         Args: { _payment_id: string; _reason?: string }
         Returns: undefined
       }
+      pool_classify_games: {
+        Args: { _game_ids: string[]; _pool_id: string }
+        Returns: {
+          eligibility: string
+          game_id: string
+          linked_pool_name: string
+        }[]
+      }
       pool_confirm_distribution: {
         Args: { _distribution_id: string }
         Returns: undefined
