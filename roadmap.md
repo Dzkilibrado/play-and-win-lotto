@@ -20,11 +20,11 @@
 
 ## Correção funcional e UX de homologação
 
-- [ ] Cancelar o bolão antigo pelo fluxo oficial e preservar todo o histórico.
-- [ ] Unificar a classificação de vínculo dos jogos pela relação real em `pool_games`.
-- [ ] Impedir seleção de jogos já vinculados ou incompatíveis antes do envio.
-- [ ] Alinhar consultas, contadores e invalidações das telas privada e pública.
-- [ ] Reorganizar o compartilhamento com prévia e mensagens baseadas em dados reais.
-- [ ] Refinar os três tipos de página pública sem ampliar o payload.
-- [ ] Validar cenário real, usuário A/B, seis resoluções, testes, tipos e build.
-- [ ] Entregar relatório final de 28 itens e aguardar homologação.
+- [x] Cancelar o bolão antigo pelo fluxo oficial e preservar todo o histórico.
+- [x] Unificar a classificação de vínculo dos jogos pela relação real em `pool_games`.
+- [x] Impedir seleção de jogos já vinculados ou incompatíveis antes do envio.
+- [x] Alinhar consultas, contadores e invalidações das telas privada e pública.
+- [x] Reorganizar o compartilhamento com prévia e mensagens baseadas em dados reais.
+- [x] Refinar os três tipos de página pública sem ampliar o payload.
+- [x] Validar cenário real, seis resoluções, testes e tipos; acesso cruzado permanece protegido pelas regras existentes.
+- [x] Entregar relatório final de 28 itens e aguardar homologação.
