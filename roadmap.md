@@ -43,3 +43,14 @@
 - [x] Repetir o cabeçalho e manter cada linha de jogo indivisível.
 - [x] Preservar Em aberto como valor a receber e adicionar Saldo do bolão.
 - [x] Validar PDF real, volumes, testes, tipos e build.
+
+## Comprovantes, arquivamento e exclusão definitiva
+
+- [x] Criar armazenamento privado e metadados versionados para comprovantes.
+- [x] Implementar anexar, editar, publicar, substituir, visualizar e excluir comprovantes.
+- [x] Implementar arquivamento reversível e modo somente consulta.
+- [x] Adicionar filtro e indicador de bolões arquivados sem alterar a Home.
+- [x] Implementar exclusão definitiva com confirmação forte, auditoria e preservação dos jogos.
+- [ ] Exibir comprovantes publicados nas visões públicas Jogos e Completo.
+- [ ] Incorporar imagens e todas as páginas dos PDFs publicados ao relatório completo.
+- [ ] Validar testes, segurança, responsividade e PDF real.
