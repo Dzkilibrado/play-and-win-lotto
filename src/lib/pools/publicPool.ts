@@ -40,6 +40,8 @@ export interface PublicResult {
   totalPrize: number | null;
 }
 
+export interface PublicPoolDocument { id: string; title: string; description: string | null; mime_type: string | null; file_size: number | null; sort_order: number; url: string; }
+
 export type PublicShareScope = "PARTICIPANTS" | "GAMES" | "FULL";
 
 export interface PublicPoolSummary {
