@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, CheckCircle2, FileCheck2, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { BarChart3, CheckCircle2, FileCheck2, ShieldCheck, Sparkles, UsersRound, type LucideIcon } from "lucide-react";
 import { Brand } from "@/components/brand/Brand";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { ThemeSelector } from "@/components/layout/ThemeSelector";
@@ -52,14 +52,14 @@ function LandingPage() {
 
       <section className="border-b border-border bg-surface py-12" aria-labelledby="next-draws-title"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-semibold text-primary">Dados sincronizados</p><h2 id="next-draws-title" className="mt-1 font-display text-2xl font-semibold text-text-primary">Próximos sorteios</h2></div><Link to="/results" className="text-sm font-semibold text-primary hover:underline">Ver resultados</Link></div><NextDraws /></div></section>
 
-      <section className="py-16"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="max-w-2xl"><p className="text-sm font-semibold text-primary">Organização completa</p><h2 className="mt-2 font-display text-3xl font-semibold text-text-primary">Tudo o que importa, sem perder o controle</h2><p className="mt-3 text-text-secondary">Uma experiência clara para acompanhar apostas próprias e organizar grupos com transparência.</p></div><div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{[
+      <section className="py-16"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="max-w-2xl"><p className="text-sm font-semibold text-primary">Organização completa</p><h2 className="mt-2 font-display text-3xl font-semibold text-text-primary">Tudo o que importa, sem perder o controle</h2><p className="mt-3 text-text-secondary">Uma experiência clara para acompanhar apostas próprias e organizar grupos com transparência.</p></div><div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{([
         [Sparkles,"Organize seus jogos","Crie, salve e acompanhe combinações das modalidades disponíveis."],
         [UsersRound,"Gerencie bolões","Centralize participantes, cotas, jogos e informações de pagamento."],
         [FileCheck2,"Compartilhe com transparência","Disponibilize visões controladas e comprovantes para o seu grupo."],
         [CheckCircle2,"Acompanhe resultados","Consulte concursos sincronizados e confira seus jogos organizados."],
         [BarChart3,"Explore o histórico","Use dados históricos e estatísticas como apoio de organização, nunca como promessa."],
         [ShieldCheck,"Mantenha o acesso seguro","Proteja sua conta e seus documentos com controles de acesso."],
-      ].map(([Icon,title,body]) => { const FeatureIcon = Icon as typeof Sparkles; return <article key={title as string} className="surface-card p-5"><FeatureIcon className="size-6 text-primary" aria-hidden /><h3 className="mt-4 font-display text-lg font-semibold text-text-primary">{title}</h3><p className="mt-2 text-sm leading-6 text-text-secondary">{body}</p></article>; })}</div></div></section>
+      ] as [LucideIcon, string, string][]).map(([FeatureIcon,title,body]) => <article key={title} className="surface-card p-5"><FeatureIcon className="size-6 text-primary" aria-hidden /><h3 className="mt-4 font-display text-lg font-semibold text-text-primary">{title}</h3><p className="mt-2 text-sm leading-6 text-text-secondary">{body}</p></article>)}</div></div></section>
 
       <section className="border-y border-border bg-surface-secondary py-16"><div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center"><div><p className="text-sm font-semibold text-primary">Bolões organizados</p><h2 className="mt-2 font-display text-3xl font-semibold text-text-primary">Informação clara para quem organiza e participa</h2><p className="mt-4 leading-7 text-text-secondary">Registre participantes, cotas, jogos e comprovantes. Compartilhe somente a visão adequada com cada grupo e mantenha o histórico acessível.</p></div><ul className="grid gap-3 text-sm text-text-secondary">{["Participantes e cotas centralizados","Comprovantes em armazenamento privado","Links públicos controlados pelo organizador","Relatório completo gerado sob demanda"].map((item)=><li key={item} className="flex items-center gap-3"><CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />{item}</li>)}</ul></div></section>
 
@@ -73,6 +73,7 @@ function LandingPage() {
 function NextDraws() {
   const query = useQuery({ queryKey: ["public-next-draws"], queryFn: async () => { const { data, error } = await supabase.rpc("public_next_draws"); if (error) throw error; return data ?? []; }, staleTime: 5 * 60_000 });
   if (query.isLoading) return <div className="mt-6 grid gap-3 sm:grid-cols-3" aria-label="Carregando próximos sorteios">{activeLotteries.map((item)=><div key={item.slug} className="h-28 animate-pulse rounded-md bg-surface-secondary" />)}</div>;
-  if (query.isError || query.data.length === 0) return <p className="mt-6 text-sm text-text-secondary">Os próximos sorteios estão sendo atualizados. Consulte novamente em instantes.</p>;
-  return <div className="mt-6 grid gap-3 sm:grid-cols-3">{query.data.map((draw)=><article key={draw.lottery_slug} data-lottery={draw.color_key} className="surface-card border-l-4 border-l-lottery p-4"><p className="font-display font-semibold text-text-primary">{draw.lottery_name}</p><p className="mt-1 text-sm text-text-secondary">Concurso {draw.next_contest_number ?? "a confirmar"}</p><p className="mt-3 text-sm font-medium text-text-primary">{draw.next_draw_date ? formatDate(draw.next_draw_date) : "Data a confirmar"}</p>{draw.estimated_next_prize ? <p className="mt-1 text-xs text-text-secondary">Estimativa {formatCurrency(draw.estimated_next_prize)}</p> : null}</article>)}</div>;
+  const draws = query.data ?? [];
+  if (query.isError || draws.length === 0) return <p className="mt-6 text-sm text-text-secondary">Os próximos sorteios estão sendo atualizados. Consulte novamente em instantes.</p>;
+  return <div className="mt-6 grid gap-3 sm:grid-cols-3">{draws.map((draw)=><article key={draw.lottery_slug} data-lottery={draw.color_key} className="surface-card border-l-4 border-l-lottery p-4"><p className="font-display font-semibold text-text-primary">{draw.lottery_name}</p><p className="mt-1 text-sm text-text-secondary">Concurso {draw.next_contest_number ?? "a confirmar"}</p><p className="mt-3 text-sm font-medium text-text-primary">{draw.next_draw_date ? formatDate(draw.next_draw_date) : "Data a confirmar"}</p>{draw.estimated_next_prize ? <p className="mt-1 text-xs text-text-secondary">Estimativa {formatCurrency(draw.estimated_next_prize)}</p> : null}</article>)}</div>;
 }
