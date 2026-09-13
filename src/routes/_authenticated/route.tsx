@@ -35,7 +35,8 @@ function AuthenticatedLayout() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) await supabase.auth.signOut({ scope: "local" });
     navigate({ to: "/login", replace: true });
   }
 

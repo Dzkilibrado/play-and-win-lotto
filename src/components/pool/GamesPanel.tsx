@@ -71,7 +71,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-game-candidates", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
-      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
+      void queryClient.invalidateQueries({ queryKey: ["pools"] });
     },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
@@ -84,7 +84,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-game-candidates", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
-      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
+      void queryClient.invalidateQueries({ queryKey: ["pools"] });
     },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
@@ -101,7 +101,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       setTargetStatus("");
       void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
-      void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
+      void queryClient.invalidateQueries({ queryKey: ["pools"] });
     },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
   });

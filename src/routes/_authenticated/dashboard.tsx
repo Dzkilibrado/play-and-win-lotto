@@ -56,7 +56,7 @@ function DashboardPage() {
       return;
     }
     setResultsLottery((current) =>
-      current && followedSlugs.includes(current) ? current : followedSlugs[0]!,
+      current && followedSlugs.includes(current) ? current : (followedSlugs[0] ?? null),
     );
   }, [followedSlugs]);
 
@@ -122,7 +122,7 @@ function DashboardPage() {
             <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
               Seus jogos
             </h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
               <StatCard label="Total salvos" value={counts.data?.total ?? 0} icon={ListChecks} to="/games" />
               <StatCard
                 label="Aguardando sorteio"
@@ -149,7 +149,7 @@ function DashboardPage() {
                 search={{ status: "PRIZED" }}
               />
             </div>
-            <p className="text-xs text-text-secondary">
+            <p className="hidden text-xs text-text-secondary sm:block">
               Os indicadores consideram todos os seus jogos, de todas as modalidades.
             </p>
           </section>
@@ -178,7 +178,7 @@ function DashboardPage() {
               />
             ) : (
               <div className="surface-card space-y-3 p-4">
-                <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                <dl className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:grid-cols-3">
                   <div className="min-w-0">
                     <dt className="text-xs text-text-secondary">Ativos</dt>
                     <dd className="font-display text-lg font-semibold text-text-primary">
@@ -192,7 +192,7 @@ function DashboardPage() {
                     </dd>
                   </div>
                   <div className="min-w-0">
-                    <dt className="text-xs text-text-secondary">Pagamentos pendentes</dt>
+                    <dt className="text-xs text-text-secondary">Pendentes</dt>
                     <dd
                       className={cn(
                         "font-display text-lg font-semibold",
@@ -233,7 +233,7 @@ function DashboardPage() {
                       key={lottery.slug}
                       data-lottery={lottery.config.colorKey}
                       className={cn(
-                        "surface-card flex items-center gap-3 p-3",
+                        "surface-card flex items-center gap-2 p-2",
                         lottery.id === prefs.favoriteId && "ring-1 ring-lottery",
                       )}
                     >
@@ -312,7 +312,7 @@ function DashboardPage() {
                 }
               />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
                 {(recent.data ?? []).map((draw) => (
                   <ContestCard key={draw.id} contest={toContestSummary(draw)} compact />
                 ))}
@@ -376,7 +376,7 @@ function DashboardPage() {
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Início"
-        description="O essencial primeiro: seus jogos, os próximos sorteios e os últimos resultados."
+        description="Seus jogos, bolões e próximos sorteios em um só lugar."
         actions={
           <Button asChild variant="ghost" size="sm" className="h-11">
             <Link to="/settings">
@@ -391,7 +391,7 @@ function DashboardPage() {
         <h2 id="shortcuts" className="sr-only">
           Atalhos
         </h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           <Shortcut to="/generate" icon={Sparkles} label="Criar jogo" primary />
           <Shortcut to="/games/importar" icon={Camera} label="Importar por foto" />
           <Shortcut to="/games" icon={ListChecks} label="Meus jogos" />
@@ -441,13 +441,13 @@ function Shortcut({
     <Link
       to={to}
       className={cn(
-        "surface-card flex min-h-[4.5rem] sm:min-h-[5.5rem] min-w-0 flex-col justify-between gap-2 p-3 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary",
+        "surface-card flex min-h-[4.75rem] min-w-0 flex-col justify-between gap-1.5 p-2.5 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary sm:min-h-[5.5rem] sm:gap-2 sm:p-3",
         primary && "border-primary/40",
       )}
     >
       <span
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-lg",
+          "flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-9",
           primary ? "bg-primary text-primary-foreground" : "bg-surface-secondary text-text-secondary",
         )}
       >
