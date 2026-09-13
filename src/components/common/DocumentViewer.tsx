@@ -86,7 +86,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
     })]).then(([{ GlobalWorkerOptions, getDocument }, bytes]) => {
       GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
       return getDocument({ data: bytes }).promise;
-    }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch((cause) => { console.error("Falha ao carregar PDF", cause); if (active) setError(true); });
+    }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [url, attempt]);
 
@@ -98,10 +98,8 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
     void pdf.getPage(page).then((pdfPage) => {
       if (!active) return;
       const viewport = pdfPage.getViewport({ scale: 1.45 * zoom });
-      const context = canvas.getContext("2d", { alpha: false });
-      if (!context) throw new Error("Canvas indisponível");
       canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
-      const task = pdfPage.render({ canvas, canvasContext: context, viewport }); renderTaskRef.current = task;
+      const task = pdfPage.render({ canvas, viewport }); renderTaskRef.current = task;
       return task.promise;
     }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
