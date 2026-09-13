@@ -50,10 +50,7 @@ export const homeBlockDefinitions: HomeBlockDefinition[] = [
     label: "Últimos resultados",
     description: "Resultados recentes das modalidades acompanhadas.",
     lotteryScoped: true,
-    label: "Últimos resultados",
-    description: "Resultados recentes das modalidades acompanhadas.",
-    lotteryScoped: true,
-    defaultEnabled: true,
+    defaultEnabled: false,
   },
   {
     key: "awaiting_check",
