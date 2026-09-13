@@ -52,7 +52,7 @@ export function StatCard({
   );
 
   if (!to) {
-    return <div className="surface-card min-w-0 p-4">{content}</div>;
+    return <div className="surface-card min-w-0 p-3 sm:p-4">{content}</div>;
   }
 
   // Toda a superfície do cartão navega — a seta é apenas indicador visual.
@@ -61,7 +61,7 @@ export function StatCard({
       to={to}
       search={search ?? {}}
       aria-label={`${label}: abrir listagem`}
-      className="surface-card tappable block min-w-0 p-4 hover:bg-surface-secondary focus-visible:bg-surface-secondary"
+      className="surface-card tappable block min-w-0 p-3 sm:p-4 hover:bg-surface-secondary focus-visible:bg-surface-secondary"
     >
       {content}
     </Link>

@@ -233,7 +233,7 @@ function DashboardPage() {
                       key={lottery.slug}
                       data-lottery={lottery.config.colorKey}
                       className={cn(
-                        "surface-card flex items-center gap-3 p-3",
+                        "surface-card flex items-center gap-2 p-2",
                         lottery.id === prefs.favoriteId && "ring-1 ring-lottery",
                       )}
                     >
