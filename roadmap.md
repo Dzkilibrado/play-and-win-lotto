@@ -93,9 +93,9 @@
 
 ## Visualização estrutural de comprovantes
 
-- [ ] Auditar o arquivo real, metadados, bytes, autorização e todos os pontos de visualização.
-- [ ] Centralizar imagens, PDFs e fallback em um viewer reutilizável sem popups.
-- [ ] Endurecer validação de tipo, nome original e acesso privado/público temporário.
-- [ ] Corrigir incorporação de imagens, WEBP e PDFs multipágina no relatório completo.
-- [ ] Validar o cenário real, matriz de arquivos, temas, acessibilidade e resoluções solicitadas.
-- [ ] Rodar testes, tipos e build; documentar causas, resultados e limitações para homologação.
+- [x] Auditar o arquivo real, metadados, bytes, autorização e todos os pontos de visualização.
+- [x] Centralizar imagens, PDFs e fallback em um viewer reutilizável sem popups.
+- [x] Endurecer validação de tipo, nome original e acesso privado/público temporário.
+- [x] Corrigir incorporação de imagens, WEBP e PDFs multipágina no relatório completo.
+- [x] Validar o cenário real, matriz de arquivos, temas, acessibilidade e resoluções solicitadas.
+- [x] Rodar testes, tipos e build; documentar causas, resultados e limitações para homologação.
