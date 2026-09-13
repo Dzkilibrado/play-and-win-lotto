@@ -36,6 +36,7 @@ import { canSharePdfFile, createPoolReportPdf, mapPoolReportGames, poolReportFil
 import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
+import { userErrorMessage } from "@/lib/user-error";
 
 export function PoolShareDialog({
   pool,
@@ -85,7 +86,7 @@ export function PoolShareDialog({
       void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   // Ação explícita do organizador já é intenção suficiente: o link é criado
@@ -140,21 +141,23 @@ export function PoolShareDialog({
       ]);
       const games = mapPoolReportGames(rawGames);
       const checks = await checkService.getChecksForGames(games.map((game) => game.gameId));
-      const documents = await Promise.all(documentRows.filter((document) => document.is_published).map(async (document) => {
-        const url = await getDocumentUrl({ data: { documentId: document.id } });
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Não foi possível carregar ${document.title}.`);
-        const bytes = await response.arrayBuffer();
-        const mimeType = sniffDocumentMime(new Uint8Array(bytes));
-        if (!mimeType || mimeType !== document.mime_type) throw new Error(`O arquivo ${document.title} está inválido ou com formato divergente.`);
-        return { title: document.title, mimeType, bytes };
-      }));
+      const settledDocuments = await Promise.allSettled(documentRows.filter((document) => document.is_published).map(async (document) => {
+          const url = await getDocumentUrl({ data: { documentId: document.id } });
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) throw new Error("Comprovante indisponível.");
+          const bytes = await response.arrayBuffer();
+          const mimeType = sniffDocumentMime(new Uint8Array(bytes));
+          if (!mimeType || mimeType !== document.mime_type) throw new Error("Comprovante inválido.");
+          return { title: document.title, mimeType, bytes };
+        }));
+      const documents = settledDocuments.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
+      if (documents.length < settledDocuments.length) toast.warning("Alguns comprovantes não puderam ser incluídos no PDF.");
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents });
       setPdfBlob(blob);
       toast.success("PDF completo preparado");
       return blob;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível gerar o PDF.");
+      toast.error(userErrorMessage(error, "Não foi possível gerar o PDF."));
       return null;
     } finally {
       setPdfLoading(false);

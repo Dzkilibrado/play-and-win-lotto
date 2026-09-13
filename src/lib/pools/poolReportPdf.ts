@@ -108,6 +108,10 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { text: `Premiação oficial\n${formatCurrency(data.officialPrizeTotal)}`, bold: true },
     ], columnGap: 16 },
   ] : [];
+  const documentSection: Content[] = data.documents?.length ? [
+    { text: "Comprovantes", style: "section", pageBreak: "before" },
+    { text: `${data.documents.length} ${data.documents.length === 1 ? "arquivo publicado anexado" : "arquivos publicados anexados"} nas páginas seguintes.`, color: "#66736b" },
+  ] : [];
 
   return {
     info: { title: `Relatório completo — ${data.pool.name}`, author: appConfig.name, subject: "Relatório administrativo de bolão" },
@@ -141,8 +145,9 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
         ? { table: { headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum jogo no bolão.", color: "#66736b" },
       ...resultSection,
+      ...documentSection,
       ...(publicUrl ? [{ text: "Acompanhamento público", style: "section" } as Content, { text: publicUrl, link: publicUrl, color: "#315f9c", decoration: "underline", margin: [0, 0, 0, 4] } as Content] : []),
-      { text: "Relatório administrativo. Dados pessoais sensíveis, documentos, observações e identificadores internos não são incluídos.", margin: [0, 18, 0, 0], fontSize: 8, color: "#66736b" },
+      { text: "Relatório administrativo. Dados pessoais sensíveis, observações e identificadores internos não são incluídos.", margin: [0, 18, 0, 0], fontSize: 8, color: "#66736b" },
     ],
   };
 }
@@ -161,24 +166,30 @@ export async function createPoolReportPdf(data: PoolReportData) {
   const merged = await PDFDocument.load(await report.arrayBuffer());
   const font = await merged.embedFont(StandardFonts.HelveticaBold);
   for (const attachmentDocument of data.documents) {
-    if (attachmentDocument.mimeType === "application/pdf") {
-      const attachment = await PDFDocument.load(attachmentDocument.bytes);
-      const pages = await merged.copyPages(attachment, attachment.getPageIndices());
-      pages.forEach((page) => merged.addPage(page));
-      continue;
+    try {
+      if (attachmentDocument.mimeType === "application/pdf") {
+        const attachment = await PDFDocument.load(attachmentDocument.bytes);
+        const pages = await merged.copyPages(attachment, attachment.getPageIndices());
+        pages.forEach((page) => merged.addPage(page));
+        continue;
+      }
+      const imageBytes = attachmentDocument.mimeType === "image/webp" ? await convertWebpToPng(attachmentDocument.bytes) : attachmentDocument.bytes;
+      const image = attachmentDocument.mimeType === "image/jpeg" ? await merged.embedJpg(imageBytes) : await merged.embedPng(imageBytes);
+      const page = merged.addPage([595.28, 841.89]);
+      const margin = 36;
+      const titleHeight = 34;
+      const availableWidth = page.getWidth() - margin * 2;
+      const availableHeight = page.getHeight() - margin * 2 - titleHeight;
+      const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
+      const width = image.width * scale;
+      const height = image.height * scale;
+      page.drawText(attachmentDocument.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
+      page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
+    } catch {
+      const page = merged.addPage([595.28, 841.89]);
+      page.drawText(attachmentDocument.title, { x: 36, y: 793, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
+      page.drawText("Não foi possível incorporar este arquivo ao relatório.", { x: 36, y: 765, size: 9, color: rgb(0.4, 0.45, 0.42) });
     }
-    const imageBytes = attachmentDocument.mimeType === "image/webp" ? await convertWebpToPng(attachmentDocument.bytes) : attachmentDocument.bytes;
-    const image = attachmentDocument.mimeType === "image/jpeg" ? await merged.embedJpg(imageBytes) : await merged.embedPng(imageBytes);
-    const page = merged.addPage([595.28, 841.89]);
-    const margin = 36;
-    const titleHeight = 34;
-    const availableWidth = page.getWidth() - margin * 2;
-    const availableHeight = page.getHeight() - margin * 2 - titleHeight;
-    const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
-    const width = image.width * scale;
-    const height = image.height * scale;
-    page.drawText(attachmentDocument.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
-    page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
   }
   const saved = await merged.save();
   const bytes = new Uint8Array(saved.byteLength);
