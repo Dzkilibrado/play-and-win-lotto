@@ -8,9 +8,10 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateV
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { appConfig } from "@/config/app.config";
+import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
 import { syncConfig } from "@/config/sync.config";
 import { useIsAdmin, useSession } from "@/hooks/useAuth";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { formatDate, formatNumber } from "@/lib/format";
 import { getSyncOverview, listSyncErrors, runSyncBatch, startSync } from "@/lib/sync.functions";
 import {
@@ -69,9 +70,37 @@ function AdminPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Administração" description="Gestão de dados e recursos do sistema." />
+      <FeatureFlagsPanel />
       <SyncPanel />
       <CheckPanel />
     </div>
+  );
+}
+
+const featureTone: Record<FeatureStatus, StatusTone> = {
+  ACTIVE: "success",
+  BETA: "info",
+  MAINTENANCE: "warning",
+  DISABLED: "neutral",
+};
+
+function FeatureFlagsPanel() {
+  const flags = useFeatureFlags();
+  if (flags.isLoading) return <LoadingState rows={1} />;
+  if (flags.isError) return <ErrorState onRetry={() => flags.refetch()} />;
+  return (
+    <section className="rounded-xl border border-border bg-surface p-4">
+      <h2 className="font-display text-sm font-semibold text-text-primary">Sistema · Recursos</h2>
+      <p className="mt-1 text-xs text-text-secondary">Diagnóstico interno visível somente para administradores.</p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {Object.entries(flags.flags).map(([key, status]) => (
+          <li key={key} className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
+            <code className="min-w-0 truncate text-text-primary">{key}</code>
+            <StatusBadge label={featureStatusLabel[status]} tone={featureTone[status]} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

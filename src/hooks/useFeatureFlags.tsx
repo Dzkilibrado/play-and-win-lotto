@@ -7,6 +7,7 @@ import {
 } from "@/config/app.config";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 
+/** Uso restrito à área administrativa; usuários comuns recebem apenas padrões locais. */
 export function useFeatureFlags() {
   const query = useQuery({
     queryKey: ["feature-flags"],
