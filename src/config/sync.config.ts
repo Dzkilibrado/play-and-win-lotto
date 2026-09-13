@@ -28,8 +28,8 @@ export const syncConfig = {
    * vencida; não representa a frequência de consulta à fonte oficial.
    */
   schedulerMinutes: 10,
-  /** Verificações de calendário em dias comuns (America/Sao_Paulo). */
-  healthCheckHours: [7, 12, 17, 22] as const,
+  /** Verificação diária de calendário em período normal (America/Sao_Paulo). */
+  healthCheckHours: [12] as const,
   /** Uma confirmação do calendário pouco antes do sorteio. */
   preDrawWindowMinutes: 45,
   /** Tentativas rápidas somente na primeira hora após o horário previsto. */
