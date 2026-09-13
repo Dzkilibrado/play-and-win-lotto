@@ -49,12 +49,23 @@ describe("relatório PDF do bolão", () => {
     const mergedBlob = await createPoolReportPdf({ ...data, documents: [{ title: "Comprovante", mimeType: "application/pdf", bytes: bytes.buffer }] });
     const merged = await PDFDocument.load(await mergedBlob.arrayBuffer());
     expect(merged.getPageCount()).toBe(base.getPageCount() + 3);
+  }, 15_000);
+
+  it("não mascara um comprovante corrompido com uma página substituta", async () => {
+    await expect(createPoolReportPdf({ ...data, documents: [{ title: "Arquivo incompatível", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]).buffer }] })).rejects.toThrow();
   });
 
-  it("mantém o relatório utilizável quando um comprovante está corrompido", async () => {
-    const blob = await createPoolReportPdf({ ...data, documents: [{ title: "Arquivo incompatível", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]).buffer }] });
-    const output = await PDFDocument.load(await blob.arrayBuffer());
-    expect(output.getPageCount()).toBeGreaterThan(1);
+  it("não inclui comprovantes quando a opção está desmarcada", async () => {
+    const attachment = await PDFDocument.create();
+    attachment.addPage();
+    const bytes = await attachment.save();
+    const baseBlob = await createPoolReportPdf({ ...data, sections: { participants: true, games: true, documents: false } });
+    const documentBytes = new Uint8Array(bytes.byteLength);
+    documentBytes.set(bytes);
+    const outputBlob = await createPoolReportPdf({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: documentBytes.buffer }] });
+    const [base, output] = await Promise.all([PDFDocument.load(await baseBlob.arrayBuffer()), PDFDocument.load(await outputBlob.arrayBuffer())]);
+    expect(output.getPageCount()).toBe(base.getPageCount());
+    expect(JSON.stringify(buildPoolReportDefinition({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: documentBytes.buffer }] }))).not.toContain("Comprovantes");
   });
 
   it.each([1, 2, 5, 10])("inclui a seção para %i comprovante(s)", (count) => {
@@ -69,6 +80,17 @@ describe("relatório PDF do bolão", () => {
 
   it("cria nome amigável sem identificador técnico", () => {
     expect(poolReportFileName(pool)).toBe("relatorio-bolao-galera-gmill-concurso-3780.pdf");
+  });
+
+  it.each([
+    [{ participants: true, games: false, documents: false }, true, false],
+    [{ participants: false, games: true, documents: false }, false, true],
+    [{ participants: true, games: true, documents: false }, true, true],
+  ])("respeita a seleção de seções %o", (sections, hasParticipants, hasGames) => {
+    const definition = buildPoolReportDefinition({ ...data, sections });
+    const content = Array.isArray(definition.content) ? definition.content as unknown as Array<Record<string, unknown>> : [];
+    expect(content.some((item) => item["text"] === "Participantes ativos")).toBe(hasParticipants);
+    expect(content.some((item) => item["text"] === "Jogos do bolão")).toBe(hasGames);
   });
 
   it("inclui o cenário real e exclui dados privados", () => {

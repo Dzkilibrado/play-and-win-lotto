@@ -3,13 +3,14 @@
  * Todos os botões "Compartilhar" do módulo abrem este diálogo — a mensagem,
  * o link e o tratamento de erro vêm de `@/lib/pools/poolShare`.
  */
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, Download, Eye, FileText, Link2Off, Loader2, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DocumentViewer, type ViewableDocument } from "@/components/common/DocumentViewer";
 import { getPoolDocumentUrl } from "@/lib/pools/poolManagement.functions";
 import {
@@ -32,7 +33,7 @@ import {
   poolShareScopeLabel,
   poolShareTitle,
 } from "@/lib/pools/poolShare";
-import { canSharePdfFile, createPoolReportPdf, mapPoolReportGames, poolReportFileName } from "@/lib/pools/poolReportPdf";
+import { canSharePdfFile, createPoolReportPdf, defaultPoolReportSections, mapPoolReportGames, poolReportFileName, type PoolReportSections } from "@/lib/pools/poolReportPdf";
 import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
@@ -56,9 +57,19 @@ export function PoolShareDialog({
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfOptionsOpen, setPdfOptionsOpen] = useState(false);
+  const [reportSections, setReportSections] = useState<PoolReportSections>(defaultPoolReportSections);
+  const [pdfSelectionError, setPdfSelectionError] = useState(false);
+  const documentRows = useQuery({
+    queryKey: ["pool-documents", pool.id],
+    queryFn: () => poolService.activeDocuments(pool.id),
+    enabled: open,
+  });
+  const publishedDocuments = (documentRows.data ?? []).filter((document) => document.is_published);
+  const publishedDocumentFingerprint = publishedDocuments.map((document) => `${document.id}:${document.version}:${document.updated_at}`).join("|");
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
-  const preview = poolSharePreview(pool, scope);
+  const preview = poolSharePreview(pool, scope, publishedDocuments.length);
 
   useEffect(() => {
     if (!open) {
@@ -71,6 +82,10 @@ export function PoolShareDialog({
     }
     setScopeReady(true);
   }, [open, pool.id]);
+
+  useEffect(() => {
+    if (open) setPdfBlob(null);
+  }, [open, pool.id, publishedDocumentFingerprint]);
 
   const chooseScope = (next: PoolShareScope) => {
     setScope(next);
@@ -131,30 +146,32 @@ export function PoolShareDialog({
 
   const generatePdf = async () => {
     if (pdfBlob) return pdfBlob;
+    if (!reportSections.participants && !reportSections.games && !reportSections.documents) {
+      setPdfSelectionError(true);
+      return null;
+    }
     setPdfLoading(true);
     try {
-      const [participants, rawGames, officialPrizeTotal, documentRows] = await Promise.all([
+      const [participants, rawGames, officialPrizeTotal] = await Promise.all([
         poolService.participants(pool.id),
         poolService.games(pool.id),
         poolService.prizeTotal(pool.id),
-        poolService.activeDocuments(pool.id),
       ]);
       const games = mapPoolReportGames(rawGames);
-      const checks = await checkService.getChecksForGames(games.map((game) => game.gameId));
-      const settledDocuments = await Promise.allSettled(documentRows.filter((document) => document.is_published).map(async (document) => {
+      const checks = reportSections.games ? await checkService.getChecksForGames(games.map((game) => game.gameId)) : new Map();
+      const documents = reportSections.documents ? await Promise.all(publishedDocuments.map(async (document) => {
           const url = await getDocumentUrl({ data: { documentId: document.id } });
           const response = await fetch(url, { cache: "no-store" });
           if (!response.ok) throw new Error("Comprovante indisponível.");
           const bytes = await response.arrayBuffer();
           const mimeType = sniffDocumentMime(new Uint8Array(bytes));
           if (!mimeType || mimeType !== document.mime_type) throw new Error("Comprovante inválido.");
-          return { title: document.title, mimeType, bytes };
-        }));
-      const documents = settledDocuments.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
-      if (documents.length < settledDocuments.length) toast.warning("Alguns comprovantes não puderam ser incluídos no PDF.");
-      const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents });
+          return { title: document.title, description: document.description, mimeType, bytes };
+        })) : [];
+      const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents, sections: reportSections });
       setPdfBlob(blob);
-      toast.success("PDF completo preparado");
+      setPdfOptionsOpen(false);
+      toast.success("PDF preparado");
       return blob;
     } catch (error) {
       toast.error(userErrorMessage(error, "Não foi possível gerar o PDF."));
@@ -162,6 +179,12 @@ export function PoolShareDialog({
     } finally {
       setPdfLoading(false);
     }
+  };
+
+  const updateReportSection = (section: keyof PoolReportSections, checked: boolean) => {
+    setReportSections((current) => ({ ...current, [section]: checked }));
+    setPdfBlob(null);
+    setPdfSelectionError(false);
   };
 
   const downloadPdf = async () => {
@@ -276,18 +299,19 @@ export function PoolShareDialog({
                 <div className="space-y-2 border-t border-border pt-3">
                   <p className="text-xs font-semibold uppercase text-text-secondary">Outras opções</p>
                   {!pdfBlob ? (
-                    <Button variant="outline" className="h-11 w-full justify-start" disabled={pdfLoading} onClick={() => void generatePdf()}>
-                      {pdfLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileText className="size-4" aria-hidden />}
-                      {pdfLoading ? "Preparando PDF…" : "Gerar PDF completo"}
+                    <Button variant="outline" className="h-11 w-full justify-start" disabled={pdfLoading} onClick={() => setPdfOptionsOpen(true)}>
+                      <FileText className="size-4" aria-hidden />
+                      Gerar PDF
                     </Button>
                   ) : (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <Button variant="outline" className="h-11" onClick={() => void previewPdf()}><Eye className="size-4" aria-hidden /> Visualizar</Button>
                       <Button variant="outline" className="h-11" onClick={() => void sharePdf()}><Share2 className="size-4" aria-hidden /> Compartilhar</Button>
                       <Button variant="outline" className="h-11" onClick={() => void downloadPdf()}><Download className="size-4" aria-hidden /> Salvar</Button>
+                      <Button variant="outline" className="h-11" onClick={() => setPdfOptionsOpen(true)}><FileText className="size-4" aria-hidden /> Alterar conteúdo</Button>
                     </div>
                   )}
-                  <p className="text-xs text-text-secondary">Relatório administrativo com participantes ativos, resumo financeiro, jogos e comprovantes publicados. Criado somente neste dispositivo.</p>
+                  <p className="text-xs text-text-secondary">Escolha as seções detalhadas antes de gerar. O resumo principal permanece no relatório.</p>
                 </div>
               ) : null}
               {canManage ? (
@@ -316,6 +340,35 @@ export function PoolShareDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog><DocumentViewer open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} document={reportDocument} /></>
+    </Dialog>
+    <Dialog open={pdfOptionsOpen} onOpenChange={setPdfOptionsOpen}>
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle>Gerar PDF</DialogTitle>
+          <DialogDescription>Conteúdo do relatório</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          {([
+            ["participants", "Participantes", "Lista detalhada de participantes ativos."],
+            ["games", "Jogos", "Jogos, dezenas, situação, custo e resultado."],
+            ["documents", "Incluir comprovantes publicados", `${publishedDocuments.length} ${publishedDocuments.length === 1 ? "comprovante disponível" : "comprovantes disponíveis"}.`],
+          ] as const).map(([section, label, description]) => (
+            <label key={section} className="flex min-h-14 cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+              <Checkbox checked={reportSections[section]} onCheckedChange={(checked) => updateReportSection(section, checked === true)} aria-label={label} />
+              <span className="min-w-0"><span className="block text-sm font-medium text-text-primary">{label}</span><span className="block text-xs text-text-secondary">{description}</span></span>
+            </label>
+          ))}
+          {pdfSelectionError ? <p role="alert" className="text-sm text-destructive">Selecione pelo menos uma seção para gerar o relatório.</p> : null}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setPdfOptionsOpen(false)}>Cancelar</Button>
+          <Button disabled={pdfLoading} onClick={() => void generatePdf()}>
+            {pdfLoading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileText className="size-4" aria-hidden />}
+            {pdfLoading ? "Preparando PDF…" : "Gerar PDF"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <DocumentViewer open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} document={reportDocument} /></>
   );
 }

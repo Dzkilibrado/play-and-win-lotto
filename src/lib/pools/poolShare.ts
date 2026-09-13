@@ -16,7 +16,7 @@ export const poolShareScopeLabel: Record<PoolShareScope, string> = {
 export const poolShareScopeDescription: Record<PoolShareScope, string> = {
   PARTICIPANTS: "Lista de participantes, cotas e situação de pagamento.",
   GAMES: "Jogos liberados para conferência e acompanhamento.",
-  FULL: "Resumo do bolão, participantes e jogos.",
+  FULL: "Resumo completo com participantes, jogos e comprovantes publicados.",
 };
 
 /** Link público ativo para um escopo, ou `null` quando ainda não foi criado. */
@@ -63,7 +63,7 @@ export function poolGamesSummary(stats: Pick<PoolShareStats, "games" | "confirme
   return total;
 }
 
-export function poolSharePreview(pool: PoolRow, scope: PoolShareScope): string[] {
+export function poolSharePreview(pool: PoolRow, scope: PoolShareScope, publishedDocuments = 0): string[] {
   const stats = poolShareStats(pool);
   if (scope === "PARTICIPANTS") {
     return [
@@ -76,8 +76,10 @@ export function poolSharePreview(pool: PoolRow, scope: PoolShareScope): string[]
     return [poolGamesSummary(stats), "Dezenas e situação de cada jogo"];
   }
   return [
-    `${stats.participants} ${stats.participants === 1 ? "participante confirmado" : "participantes confirmados"} · ${stats.paidQuotas} ${stats.paidQuotas === 1 ? "cota paga" : "cotas pagas"}`,
-    poolGamesSummary(stats),
+    `${stats.participants} ${stats.participants === 1 ? "participante confirmado" : "participantes confirmados"}`,
+    `${stats.paidQuotas} ${stats.paidQuotas === 1 ? "cota paga" : "cotas pagas"}`,
+    `${stats.games} ${stats.games === 1 ? "jogo" : "jogos"}`,
+    ...(publishedDocuments > 0 ? [`${publishedDocuments} ${publishedDocuments === 1 ? "comprovante publicado" : "comprovantes publicados"}`] : []),
   ];
 }
 
