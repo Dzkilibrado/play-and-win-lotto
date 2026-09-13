@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime, validateDocumentFile } from "@/lib/documents/documentFiles";
+import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime } from "@/lib/documents/documentFiles";
 
 const DOCUMENT_BUCKET = "pool-documents";
 
