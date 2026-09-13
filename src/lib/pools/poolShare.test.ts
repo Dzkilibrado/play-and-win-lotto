@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { nativeShare, poolPublicUrl, poolShareMessage, poolSharePreview, poolShareStats, whatsappShareUrl } from "./poolShare";
 import type { PoolRow } from "@/lib/services/poolService";
