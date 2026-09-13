@@ -45,17 +45,19 @@ export const Route = createFileRoute("/api/public/sync/run")({
           .order("created_at", { ascending: true })
           .limit(5);
 
+        let advancedJob: { id: string; status: string } | null = null;
         for (const candidate of jobs ?? []) {
           const before = candidate.current_contest;
           const job = await runJobBatch(candidate.id);
           const advanced = job.current_contest !== before || job.finished_at !== null;
           if (advanced) {
-            const checks = await runChecks();
-            return Response.json({ mode: "job", jobId: job.id, status: job.status, checks });
+            advancedJob = { id: job.id, status: job.status };
+            break;
           }
         }
 
-        // 2) sem trabalhos pendentes: executa apenas as modalidades vencidas.
+        // 2) atualiza as modalidades vencidas mesmo enquanto uma importação
+        // histórica avança, para a operação normal nunca ficar bloqueada.
         const lotteries = await listLotteryRows(admin);
         const results = [];
         for (const lottery of lotteries) {
@@ -63,7 +65,12 @@ export const Route = createFileRoute("/api/public/sync/run")({
           results.push(result);
         }
         const checks = await runChecks();
-        return Response.json({ mode: "latest", results, checks });
+        return Response.json({
+          mode: advancedJob ? "job-and-latest" : "latest",
+          job: advancedJob,
+          results,
+          checks,
+        });
       },
     },
   },
