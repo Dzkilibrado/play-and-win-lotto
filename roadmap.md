@@ -121,8 +121,8 @@
 - [x] Rodar testes, tipos e build; entregar relatório final de 27 itens.
 
 ## Regressão do comprovante no PDF e compartilhamento
-- [ ] Diagnosticar a regressão com o comprovante real do Bolão Galera Gmill.
-- [ ] Corrigir a incorporação de PDF e imagens sem mascarar falhas.
-- [ ] Adicionar seleção de participantes, jogos e comprovantes na geração do PDF.
-- [ ] Refinar a opção Completo e sua contagem de comprovantes publicados.
+- [x] Diagnosticar a regressão com o comprovante real do Bolão Galera Gmill.
+- [x] Corrigir a incorporação de PDF e imagens sem mascarar falhas.
+- [x] Adicionar seleção de participantes, jogos e comprovantes na geração do PDF.
+- [x] Refinar a opção Completo e sua contagem de comprovantes publicados.
 - [ ] Validar os três links, sete resoluções, testes, tipos e compilação.

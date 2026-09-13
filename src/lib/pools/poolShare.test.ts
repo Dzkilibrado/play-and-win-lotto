@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { nativeShare, poolPublicUrl, poolShareMessage, poolSharePreview, poolShareStats, whatsappShareUrl } from "./poolShare";
+import { nativeShare, poolPublicUrl, poolShareMessage, poolSharePreview, poolShareScopeDescription, poolShareStats, whatsappShareUrl } from "./poolShare";
 import type { PoolRow } from "@/lib/services/poolService";
 
 const pool = {
@@ -23,7 +23,12 @@ const pool = {
 describe("mensagens reais de compartilhamento", () => {
   it("usa os números reais do bolão oficial", () => {
     expect(poolShareStats(pool)).toEqual({ participants: 23, paidQuotas: 23, games: 19, confirmedBets: 19, plannedGames: 0 });
-    expect(poolSharePreview(pool, "FULL")).toEqual(["23 participantes confirmados · 23 cotas pagas", "19 jogos · Todos apostados"]);
+    expect(poolSharePreview(pool, "FULL", 1)).toEqual(["23 participantes confirmados", "23 cotas pagas", "19 jogos", "1 comprovante publicado"]);
+    expect(poolShareScopeDescription.FULL).toBe("Resumo completo com participantes, jogos e comprovantes publicados.");
+  });
+
+  it("omite a linha de comprovantes quando não há publicação", () => {
+    expect(poolSharePreview(pool, "FULL", 0)).toEqual(["23 participantes confirmados", "23 cotas pagas", "19 jogos"]);
   });
 
   it("organiza a mensagem de jogos e mantém o link em linha própria", () => {
