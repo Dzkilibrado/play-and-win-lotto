@@ -68,6 +68,15 @@ const automationLabel: Record<string, string> = {
   ATTENTION: "Requer atenção",
 };
 
+const runOutcomeLabel: Record<string, string> = {
+  inserted: "Resultado importado",
+  updated: "Resultado atualizado",
+  unchanged: "Sem alteração oficial",
+  RECTIFICATION_DETECTED: "Retificação detectada",
+  NOT_PUBLISHED: "Publicação ainda aguardada",
+  RETRY_SCHEDULED: "Nova verificação programada",
+};
+
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
@@ -353,7 +362,7 @@ function SyncPanel() {
           Atualização automática
         </h2>
         <p className="mt-1 text-xs text-text-secondary">
-          Ativa no servidor a cada {syncConfig.schedulerMinutes} minutos · Fonte: {syncConfig.sourceLabel}
+          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte: {syncConfig.sourceLabel}
         </p>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
@@ -417,6 +426,12 @@ function SyncPanel() {
                 </dd>
               </div>
               <div>
+                <dt className="text-text-secondary">Última verificação</dt>
+                <dd className="font-medium text-text-primary">
+                  {formatDateTime(row.automation?.lastHealthCheckAt ?? row.automation?.lastAttemptAt)}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-text-secondary">Próxima verificação</dt>
                 <dd className="font-medium text-text-primary">
                   {formatDateTime(row.automation?.nextAttemptAt)}
@@ -471,7 +486,7 @@ function SyncPanel() {
                     {row.name} · concurso {run.contest_number ?? "—"}
                   </span>
                   <span className="text-text-secondary">
-                    {run.trigger_source === "SCHEDULED" ? "Automática" : "Manual"} · {formatDateTime(run.started_at)}
+                    {runOutcomeLabel[run.outcome ?? ""] ?? "Verificação concluída"} · {formatDateTime(run.started_at)}
                   </span>
                 </li>
               )),

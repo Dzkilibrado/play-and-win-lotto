@@ -23,11 +23,25 @@ export const syncConfig = {
   officialDrawHour: 21,
   /** Aos domingos, o sorteio oficial ocorre pela manhã. */
   sundayDrawHour: 11,
-  /** O agendamento chama o orquestrador a cada 15 minutos. */
-  schedulerMinutes: 15,
-  /** Retentativas persistentes após o horário previsto. */
-  retryBackoffMinutes: [15, 30, 60, 120] as const,
+  /**
+   * Relógio leve do banco. Ele só chama o aplicativo quando existe uma ação
+   * vencida; não representa a frequência de consulta à fonte oficial.
+   */
+  schedulerMinutes: 10,
+  /** Verificação diária de calendário em período normal (America/Sao_Paulo). */
+  healthCheckHours: [12] as const,
+  /** Uma confirmação do calendário pouco antes do sorteio. */
+  preDrawWindowMinutes: 45,
+  /** Tentativas rápidas somente na primeira hora após o horário previsto. */
+  postDrawIntervalMinutes: 10,
+  postDrawFastWindowMinutes: 60,
+  /** Depois da janela rápida, reduz progressivamente a frequência. */
+  retryBackoffMinutes: [30, 60, 120] as const,
   maxRetryDelayMinutes: 120,
+  /** Revisão posterior do concurso importado para detectar retificação oficial. */
+  consistencyCheckDelayMinutes: 360,
+  /** Atraso de publicação a partir do qual o painel pede atenção. */
+  maxAlertDelayMinutes: 720,
   /** Depois deste total, o painel destaca que a modalidade requer atenção. */
   attentionAfterAttempts: 8,
   /** Recuperação limitada para nunca transformar uma execução em reimportação histórica. */

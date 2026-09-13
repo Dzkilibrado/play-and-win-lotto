@@ -27,11 +27,11 @@ export const Route = createFileRoute("/api/public/sync/run")({
         // Conferência automática: sempre que esta execução acontece, os
         // concursos recentes com jogos pendentes entram na fila e um lote é
         // processado. Nunca depende de navegador aberto.
-        const runChecks = async () => {
+        const runChecks = async (scan: boolean) => {
           const { scanPendingChecks, runOpenCheckJobs, getAdminClient: adminForChecks } =
             await import("@/lib/check/gameCheck.server");
           const checkAdmin = await adminForChecks();
-          const queued = await scanPendingChecks(checkAdmin);
+          const queued = scan ? await scanPendingChecks(checkAdmin) : [];
           const executed = await runOpenCheckJobs(checkAdmin, 3);
           return { queued: queued.length, executed };
         };
@@ -64,7 +64,10 @@ export const Route = createFileRoute("/api/public/sync/run")({
           const result = await runLotteryAutomation(admin, lottery, { trigger: "SCHEDULED" });
           results.push(result);
         }
-        const checks = await runChecks();
+        const changed = results.some(
+          (result) => result.attempted && (result.outcome === "inserted" || result.outcome === "updated"),
+        );
+        const checks = await runChecks(changed);
         return Response.json({
           mode: advancedJob ? "job-and-latest" : "latest",
           job: advancedJob,
