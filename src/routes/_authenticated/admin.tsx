@@ -52,6 +52,33 @@ const statusLabel: Record<string, string> = {
   failed: "Falhou",
 };
 
+const automationTone: Record<string, StatusTone> = {
+  UP_TO_DATE: "success",
+  WAITING_DRAW: "info",
+  WAITING_PUBLICATION: "warning",
+  SYNCING: "info",
+  ATTENTION: "danger",
+};
+
+const automationLabel: Record<string, string> = {
+  UP_TO_DATE: "Atualizado",
+  WAITING_DRAW: "Aguardando sorteio",
+  WAITING_PUBLICATION: "Aguardando publicação",
+  SYNCING: "Atualizando",
+  ATTENTION: "Requer atenção",
+};
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+}
+
 function AdminPage() {
   const { user } = useSession();
   const isAdmin = useIsAdmin(user);
@@ -323,9 +350,11 @@ function SyncPanel() {
     <section className="space-y-4">
       <div className="rounded-xl border border-border bg-surface p-4">
         <h2 className="font-display text-sm font-semibold text-text-primary">
-          Dados das loterias
+          Atualização automática
         </h2>
-        <p className="mt-1 text-xs text-text-secondary">Fonte: {syncConfig.sourceLabel}</p>
+        <p className="mt-1 text-xs text-text-secondary">
+          Ativa no servidor a cada {syncConfig.schedulerMinutes} minutos · Fonte: {syncConfig.sourceLabel}
+        </p>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
 
@@ -339,12 +368,17 @@ function SyncPanel() {
                   {formatNumber(row.totalContests)} concursos no banco
                 </p>
               </div>
-              {row.job && (
+              {row.automation ? (
+                <StatusBadge
+                  tone={automationTone[row.automation.status] ?? "neutral"}
+                  label={automationLabel[row.automation.status] ?? row.automation.status}
+                />
+              ) : row.job ? (
                 <StatusBadge
                   tone={statusTone[row.job.status] ?? "neutral"}
                   label={statusLabel[row.job.status] ?? row.job.status}
                 />
-              )}
+              ) : null}
             </div>
 
             <dl className="grid grid-cols-2 gap-2 text-xs">
@@ -364,7 +398,38 @@ function SyncPanel() {
                 <dt className="text-text-secondary">Concursos com erro</dt>
                 <dd className="font-medium text-text-primary">{formatNumber(row.pendingErrors)}</dd>
               </div>
+              <div>
+                <dt className="text-text-secondary">Próximo concurso</dt>
+                <dd className="font-medium text-text-primary">
+                  {row.automation?.expectedContest ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Sorteio previsto</dt>
+                <dd className="font-medium text-text-primary">
+                  {formatDateTime(row.automation?.expectedDrawAt)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Último sucesso</dt>
+                <dd className="font-medium text-text-primary">
+                  {formatDateTime(row.automation?.lastSuccessAt)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Próxima verificação</dt>
+                <dd className="font-medium text-text-primary">
+                  {formatDateTime(row.automation?.nextAttemptAt)}
+                </dd>
+              </div>
             </dl>
+
+            {row.automation && row.automation.consecutiveFailures > 0 ? (
+              <p className="rounded-lg bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
+                {row.automation.consecutiveFailures} tentativa(s) sem sucesso
+                {row.automation.lastErrorMessage ? ` · ${row.automation.lastErrorMessage}` : ""}
+              </p>
+            ) : null}
 
             <div className="flex flex-wrap gap-2">
               {(
@@ -389,6 +454,30 @@ function SyncPanel() {
             </div>
           </article>
         ))}
+      </div>
+
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <h2 className="font-display text-sm font-semibold text-text-primary">
+          Histórico recente da automação
+        </h2>
+        {(overview.data ?? []).every((row) => row.runs.length === 0) ? (
+          <p className="mt-2 text-xs text-text-secondary">A primeira execução será registrada no próximo ciclo.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-xs">
+            {(overview.data ?? []).flatMap((row) =>
+              row.runs.map((run) => (
+                <li key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2">
+                  <span className="font-medium text-text-primary">
+                    {row.name} · concurso {run.contest_number ?? "—"}
+                  </span>
+                  <span className="text-text-secondary">
+                    {run.trigger_source === "SCHEDULED" ? "Automática" : "Manual"} · {formatDateTime(run.started_at)}
+                  </span>
+                </li>
+              )),
+            )}
+          </ul>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-4">
