@@ -122,7 +122,7 @@ function DashboardPage() {
             <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
               Seus jogos
             </h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
               <StatCard label="Total salvos" value={counts.data?.total ?? 0} icon={ListChecks} to="/games" />
               <StatCard
                 label="Aguardando sorteio"
@@ -178,7 +178,7 @@ function DashboardPage() {
               />
             ) : (
               <div className="surface-card space-y-3 p-4">
-                <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                <dl className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:grid-cols-3">
                   <div className="min-w-0">
                     <dt className="text-xs text-text-secondary">Ativos</dt>
                     <dd className="font-display text-lg font-semibold text-text-primary">
@@ -312,7 +312,7 @@ function DashboardPage() {
                 }
               />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
                 {(recent.data ?? []).map((draw) => (
                   <ContestCard key={draw.id} contest={toContestSummary(draw)} compact />
                 ))}
@@ -391,7 +391,7 @@ function DashboardPage() {
         <h2 id="shortcuts" className="sr-only">
           Atalhos
         </h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           <Shortcut to="/generate" icon={Sparkles} label="Criar jogo" primary />
           <Shortcut to="/games/importar" icon={Camera} label="Importar por foto" />
           <Shortcut to="/games" icon={ListChecks} label="Meus jogos" />
