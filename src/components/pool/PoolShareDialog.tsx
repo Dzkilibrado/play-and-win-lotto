@@ -367,10 +367,12 @@ export function PoolShareDialog({
           {([
             ["participants", "Participantes", "Lista detalhada de participantes ativos."],
             ["games", "Jogos", "Jogos, dezenas, situação, custo e resultado."],
-            ["documents", "Incluir comprovantes publicados", `${publishedDocuments.length} ${publishedDocuments.length === 1 ? "comprovante disponível" : "comprovantes disponíveis"}.`],
+            ["documents", "Incluir comprovantes publicados", documentRows.isLoading
+              ? "Carregando comprovantes…"
+              : `${publishedDocuments.length} ${publishedDocuments.length === 1 ? "comprovante disponível" : "comprovantes disponíveis"}.`],
           ] as const).map(([section, label, description]) => (
-            <label key={section} className={`flex min-h-14 items-start gap-3 rounded-md border border-border p-3 ${section === "documents" && publishedDocuments.length === 0 ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
-              <Checkbox checked={reportSections[section]} disabled={section === "documents" && publishedDocuments.length === 0} onCheckedChange={(checked) => updateReportSection(section, checked === true)} aria-label={label} />
+            <label key={section} className={`flex min-h-14 items-start gap-3 rounded-md border border-border p-3 ${section === "documents" && (documentRows.isLoading || publishedDocuments.length === 0) ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+              <Checkbox checked={reportSections[section]} disabled={section === "documents" && (documentRows.isLoading || publishedDocuments.length === 0)} onCheckedChange={(checked) => updateReportSection(section, checked === true)} aria-label={label} />
               <span className="min-w-0"><span className="block text-sm font-medium text-text-primary">{label}</span><span className="block text-xs text-text-secondary">{description}</span></span>
             </label>
           ))}
