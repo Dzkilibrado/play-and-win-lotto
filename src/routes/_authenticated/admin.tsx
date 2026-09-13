@@ -68,6 +68,15 @@ const automationLabel: Record<string, string> = {
   ATTENTION: "Requer atenção",
 };
 
+const runOutcomeLabel: Record<string, string> = {
+  inserted: "Resultado importado",
+  updated: "Resultado atualizado",
+  unchanged: "Sem alteração oficial",
+  RECTIFICATION_DETECTED: "Retificação detectada",
+  NOT_PUBLISHED: "Publicação ainda aguardada",
+  RETRY_SCHEDULED: "Nova verificação programada",
+};
+
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
@@ -353,7 +362,7 @@ function SyncPanel() {
           Atualização automática
         </h2>
         <p className="mt-1 text-xs text-text-secondary">
-          Ativa no servidor · verifica somente quando necessário · Fonte: {syncConfig.sourceLabel}
+          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte: {syncConfig.sourceLabel}
         </p>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
@@ -477,7 +486,7 @@ function SyncPanel() {
                     {row.name} · concurso {run.contest_number ?? "—"}
                   </span>
                   <span className="text-text-secondary">
-                    {run.trigger_source === "SCHEDULED" ? "Automática" : "Manual"} · {formatDateTime(run.started_at)}
+                    {runOutcomeLabel[run.outcome ?? ""] ?? "Verificação concluída"} · {formatDateTime(run.started_at)}
                   </span>
                 </li>
               )),
