@@ -1,20 +1,18 @@
 /**
  * Lista pública de participantes confirmados.
  *
- * Apresentação tabular responsiva: no desktop, três colunas
- * (Participante | Cotas | Pagamento); no celular, uma linha compacta
- * "Nome · 1 COTA · PAGO", sem tabela larga e sem rolagem horizontal.
+ * Apresentação tabular responsiva com três colunas reais em qualquer largura.
  * Só recebe quem já pagou integralmente — a filtragem acontece no banco.
  */
-import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/common/SearchInput";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import {
   filterParticipants,
   publicPreviewSize,
-  quotaTextUpper,
+  quotaText,
   type PublicParticipant,
 } from "@/lib/pools/publicPool";
 
@@ -45,19 +43,12 @@ export function PublicParticipantList({
   return (
     <div className="space-y-2">
       {searchable ? (
-        <div className="relative">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary"
-            aria-hidden
-          />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar participante"
-            aria-label="Buscar participante"
-            className="h-11 pl-9"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Buscar participante"
+          ariaLabel="Buscar participante"
+        />
       ) : null}
 
       {visible.length === 0 ? (
@@ -65,40 +56,55 @@ export function PublicParticipantList({
           Nenhum participante encontrado com esse nome.
         </p>
       ) : (
-        <div className="min-w-0">
-          {/* Cabeçalho só no desktop: no celular as linhas já se explicam. */}
-          <div className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-x-4 border-b border-border pb-1.5 text-xs font-medium uppercase tracking-wide text-text-secondary sm:grid">
+        <div className="min-w-0 rounded-md border border-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_3.5rem_4.75rem] items-center gap-x-2 border-b border-border bg-surface-secondary px-2 py-2 text-[0.6875rem] font-semibold uppercase text-text-secondary sm:hidden">
             <span>Participante</span>
-            <span className="text-right">Cotas</span>
-            <span className="text-right">Pagamento</span>
+            <span>Cotas</span>
+            <span>Status</span>
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border sm:hidden" aria-label="Participantes confirmados">
             {visible.map((participant) => (
               <li
                 // Identidade pública estável vinda do banco — nunca o texto do
                 // nome (homônimos são pessoas distintas) nem a posição visível
                 // (que muda com busca e filtro), nem o identificador interno.
                 key={participant.ordinal}
-                className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4"
+                className="grid min-h-12 min-w-0 grid-cols-[minmax(0,1fr)_3.5rem_4.75rem] items-center gap-x-2 px-2 py-2"
               >
-                <span className="min-w-0 max-w-full truncate text-sm font-medium text-text-primary">
+                <span className="min-w-0 truncate text-sm font-medium text-text-primary" title={participant.name}>
                   {participant.name}
                 </span>
-                <span aria-hidden className="text-xs text-border sm:hidden">
-                  ·
+                <span className="whitespace-nowrap text-xs tabular-nums text-text-secondary">
+                  {quotaText(participant.quotas)}
                 </span>
-                <span className="shrink-0 text-xs font-bold uppercase tabular-nums text-text-secondary sm:text-right">
-                  {quotaTextUpper(participant.quotas)}
-                </span>
-                <span aria-hidden className="text-xs text-border sm:hidden">
-                  ·
-                </span>
-                <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-success sm:text-right">
-                  {participant.paymentStatus === "PAID" ? "Pago" : participant.paymentStatus}
-                </span>
+                <StatusBadge label="✓ Pago" tone="success" className="justify-self-start whitespace-nowrap px-2" />
               </li>
             ))}
           </ul>
+          <table className="hidden w-full table-fixed text-sm sm:table">
+            <caption className="sr-only">Participantes confirmados</caption>
+            <colgroup>
+              <col />
+              <col className="w-24" />
+              <col className="w-28" />
+            </colgroup>
+            <thead className="bg-surface-secondary text-left text-xs font-semibold uppercase text-text-secondary">
+              <tr>
+                <th scope="col" className="px-3 py-2">Participante</th>
+                <th scope="col" className="px-3 py-2">Cotas</th>
+                <th scope="col" className="px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {visible.map((participant) => (
+                <tr key={participant.ordinal}>
+                  <td className="min-w-0 px-3 py-2.5"><span className="block truncate font-medium text-text-primary" title={participant.name}>{participant.name}</span></td>
+                  <td className="whitespace-nowrap px-3 py-2.5 tabular-nums text-text-secondary">{quotaText(participant.quotas)}</td>
+                  <td className="px-3 py-2.5"><StatusBadge label="✓ Pago" tone="success" className="whitespace-nowrap" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
