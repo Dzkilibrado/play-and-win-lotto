@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
 import { noQuotaLimitLabel, quotaLabel, remainingQuotas } from "@/lib/pools/poolMath";
 import { paymentStatusLabel, paymentStatusTone } from "@/types/domain";
+import { userErrorMessage } from "@/lib/user-error";
 
 interface Props {
   pool: PoolRow;
@@ -51,7 +52,7 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       setCancelError(null);
       invalidate();
     },
-    onError: (error: Error) => setCancelError(error.message),
+    onError: (error: Error) => setCancelError(userErrorMessage(error)),
   });
 
   const eligibilityMutation = useMutation({
@@ -64,8 +65,8 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
       invalidate();
     },
     onError: (error: Error) => {
-      if (eligibilityTarget) setEligibilityError(error.message);
-      else toast.error(error.message);
+      if (eligibilityTarget) setEligibilityError(userErrorMessage(error));
+      else toast.error(userErrorMessage(error));
     },
   });
 

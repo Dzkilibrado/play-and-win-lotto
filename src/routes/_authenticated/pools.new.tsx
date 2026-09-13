@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { userErrorMessage } from "@/lib/user-error";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ function NewPoolPage() {
       toast.success("Bolão criado");
       void navigate({ to: "/pools/$id", params: { id } });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const submit = () => {

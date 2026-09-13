@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { distributionStatusLabel, poolNotices } from "@/config/pools.config";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
+import { userErrorMessage } from "@/lib/user-error";
 import type { StatusTone } from "@/types/domain";
 
 const statusTone: Record<string, StatusTone> = {
@@ -49,7 +50,7 @@ export function DistributionPanel({
       toast.success("Rateio calculado");
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const confirm = useMutation({
@@ -58,7 +59,7 @@ export function DistributionPanel({
       toast.success("Rateio confirmado");
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const current = (distributions.data ?? [])[0] ?? null;

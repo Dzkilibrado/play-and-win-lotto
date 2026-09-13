@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { userErrorMessage } from "@/lib/user-error";
 
 import { NumberStepper } from "@/components/common/NumberStepper";
 import { PaymentMethodField, validatePaymentMethod } from "@/components/pool/PaymentMethodField";
@@ -134,7 +135,7 @@ export function ParticipantFormDialog({
       onOpenChange(false);
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const submit = () => {

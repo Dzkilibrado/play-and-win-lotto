@@ -1896,6 +1896,7 @@ export type Database = {
           _description: string
           _file_size: number
           _mime_type: string
+          _original_file_name: string
           _pool_id: string
           _sort_order: number
           _storage_path: string
@@ -1935,6 +1936,7 @@ export type Database = {
           _document_id: string
           _file_size: number
           _mime_type: string
+          _original_file_name: string
           _storage_path: string
         }
         Returns: {
@@ -2010,6 +2012,7 @@ export type Database = {
         Args: { _document_id: string; _token: string }
         Returns: {
           mime_type: string
+          original_file_name: string
           storage_path: string
           title: string
         }[]

@@ -17,6 +17,7 @@ import {
 import { poolNotices, poolStatusAction, poolStatusRequiresReason, poolStatusTransitions } from "@/config/pools.config";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { poolStatusLabel, type PoolStatus } from "@/types/domain";
+import { userErrorMessage } from "@/lib/user-error";
 
 export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
   const queryClient = useQueryClient();
@@ -40,12 +41,12 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
       setReasonTarget(null);
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
   const archiveMutation = useMutation({
     mutationFn: (archived: boolean) => poolService.setArchived(pool.id, archived),
     onSuccess: (_data, archived) => { toast.success(archived ? "Bolão arquivado" : "Bolão restaurado"); invalidate(); },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const targets = poolStatusTransitions[pool.status];

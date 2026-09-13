@@ -7,6 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { userErrorMessage } from "@/lib/user-error";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,7 @@ export function PoolEditDialog({
     },
     onError: (error: Error) => {
       setConfirmStep(null);
-      toast.error(error.message);
+      toast.error(userErrorMessage(error));
     },
   });
 

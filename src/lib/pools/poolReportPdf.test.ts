@@ -51,6 +51,22 @@ describe("relatório PDF do bolão", () => {
     expect(merged.getPageCount()).toBe(base.getPageCount() + 2);
   });
 
+  it("mantém o relatório utilizável quando um comprovante está corrompido", async () => {
+    const blob = await createPoolReportPdf({ ...data, documents: [{ title: "Arquivo incompatível", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]).buffer }] });
+    const output = await PDFDocument.load(await blob.arrayBuffer());
+    expect(output.getPageCount()).toBeGreaterThan(1);
+  });
+
+  it.each([1, 2, 5, 10])("inclui a seção para %i comprovante(s)", (count) => {
+    const definition = buildPoolReportDefinition({
+      ...data,
+      documents: Array.from({ length: count }, (_, index) => ({ title: `Comprovante ${index + 1}`, mimeType: "application/pdf" as const, bytes: new ArrayBuffer(0) })),
+    });
+    const serialized = JSON.stringify(definition);
+    expect(serialized).toContain("Comprovantes");
+    expect(serialized).toContain(String(count));
+  });
+
   it("cria nome amigável sem identificador técnico", () => {
     expect(poolReportFileName(pool)).toBe("relatorio-bolao-galera-gmill-concurso-3780.pdf");
   });

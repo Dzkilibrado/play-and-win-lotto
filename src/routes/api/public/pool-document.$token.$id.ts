@@ -5,22 +5,25 @@ export const Route = createFileRoute("/api/public/pool-document/$token/$id")({
     handlers: {
       GET: async ({ params }) => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: links, error: linkError } = await supabaseAdmin.from("pool_share_links").select("pool_id, scope").eq("token", params.token).is("revoked_at", null).in("scope", ["GAMES", "FULL"]).limit(1);
-        const link = links?.[0];
-        if (linkError || !link) return new Response("Não encontrado", { status: 404 });
-        const { data: document, error } = await supabaseAdmin.from("pool_documents").select("storage_path, mime_type, title, original_file_name").eq("id", params.id).eq("pool_id", link.pool_id).eq("is_published", true).is("deleted_at", null).maybeSingle();
-        if (error || !document) return new Response("Não encontrado", { status: 404 });
+        const { data: authorized, error } = await supabaseAdmin.rpc("pool_public_document_path", {
+          _token: params.token,
+          _document_id: params.id,
+        });
+        const document = authorized?.[0];
+        if (error || !document) return new Response("Não encontrado", { status: 404, headers: { "cache-control": "no-store" } });
 
-        const { data: file, error: downloadError } = await supabaseAdmin.storage
+        const { data: signed, error: signedError } = await supabaseAdmin.storage
           .from("pool-documents")
-          .download(document.storage_path);
-        if (downloadError) return new Response("Não encontrado", { status: 404 });
+          .createSignedUrl(document.storage_path, 120, {
+            download: document.original_file_name || document.title,
+          });
+        if (signedError) return new Response("Não encontrado", { status: 404, headers: { "cache-control": "no-store" } });
 
-        return new Response(file, {
+        return new Response(null, {
+          status: 302,
           headers: {
-            "content-type": document.mime_type ?? "application/octet-stream",
-            "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(document.original_file_name || document.title)}`,
-            "cache-control": "private, max-age=60",
+            location: signed.signedUrl,
+            "cache-control": "private, no-store, max-age=0",
             "x-content-type-options": "nosniff",
           },
         });
