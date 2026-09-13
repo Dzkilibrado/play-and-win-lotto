@@ -28,6 +28,7 @@ import { formatCurrency } from "@/lib/format";
 import { automaticStatuses, manualStatuses } from "@/lib/games/gameStatus";
 import { gameService } from "@/lib/services/gameService";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
+import { userErrorMessage } from "@/lib/user-error";
 import type { PoolGameEligibility } from "@/lib/services/poolService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
 
@@ -72,7 +73,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const detach = useMutation({
@@ -85,7 +86,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       void queryClient.invalidateQueries({ queryKey: ["pool-game-eligibility", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const changeStatus = useMutation({
@@ -102,7 +103,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
       void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
       void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const rows = games.data ?? [];

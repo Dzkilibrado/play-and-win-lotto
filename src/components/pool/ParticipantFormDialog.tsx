@@ -134,7 +134,7 @@ export function ParticipantFormDialog({
       onOpenChange(false);
       invalidate();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const submit = () => {

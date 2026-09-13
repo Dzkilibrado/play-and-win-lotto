@@ -107,7 +107,7 @@ export function PoolEditDialog({
     },
     onError: (error: Error) => {
       setConfirmStep(null);
-      toast.error(error.message);
+      toast.error(userErrorMessage(error));
     },
   });
 

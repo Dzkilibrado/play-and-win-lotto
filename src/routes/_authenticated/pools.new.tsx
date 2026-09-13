@@ -65,7 +65,7 @@ function NewPoolPage() {
       toast.success("Bolão criado");
       void navigate({ to: "/pools/$id", params: { id } });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 
   const submit = () => {

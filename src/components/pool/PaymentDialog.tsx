@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { poolNotices, type PaymentMethod } from "@/config/pools.config";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow } from "@/lib/services/poolService";
+import { userErrorMessage } from "@/lib/user-error";
 
 export function PaymentDialog({
   poolId,
@@ -74,7 +75,7 @@ export function PaymentDialog({
         toast.warning(poolNotices.overpay);
         return;
       }
-      toast.error(error.message);
+      toast.error(userErrorMessage(error));
     },
   });
 

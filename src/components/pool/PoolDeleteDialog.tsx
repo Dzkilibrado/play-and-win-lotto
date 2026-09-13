@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deletePoolPermanently } from "@/lib/pools/poolManagement.functions";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
+import { userErrorMessage } from "@/lib/user-error";
 
 export function PoolDeleteDialog({ pool, open, onOpenChange }: { pool: PoolRow; open: boolean; onOpenChange: (open: boolean) => void }) {
   const [confirmation, setConfirmation] = useState("");
@@ -32,7 +33,7 @@ export function PoolDeleteDialog({ pool, open, onOpenChange }: { pool: PoolRow; 
       onOpenChange(false);
       navigate({ to: "/pools" });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
   const counts = summary.data;
 
