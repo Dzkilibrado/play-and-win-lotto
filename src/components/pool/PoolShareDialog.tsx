@@ -6,7 +6,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, Download, Eye, FileText, Link2Off, Loader2, MessageCircle, RefreshCw, Share2, Users, Ticket, LayoutList } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -177,7 +177,7 @@ export function PoolShareDialog({
     if (blob) setPdfPreviewOpen(true);
   };
 
-  const reportDocument: ViewableDocument | null = pdfBlob ? { title: `Relatório completo — ${pool.name}`, fileName: poolReportFileName(pool), mimeType: "application/pdf", fileSize: pdfBlob.size, getUrl: async () => URL.createObjectURL(pdfBlob) } : null;
+  const reportDocument = useMemo<ViewableDocument | null>(() => pdfBlob ? { title: `Relatório completo — ${pool.name}`, fileName: poolReportFileName(pool), mimeType: "application/pdf", fileSize: pdfBlob.size, getUrl: async () => URL.createObjectURL(pdfBlob) } : null, [pdfBlob, pool]);
 
   const sharePdf = async () => {
     const blob = await generatePdf();
