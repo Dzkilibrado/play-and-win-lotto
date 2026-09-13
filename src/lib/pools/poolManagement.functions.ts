@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime, validateDocumentFile } from "@/lib/documents/documentFiles";
+import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime } from "@/lib/documents/documentFiles";
 
 const DOCUMENT_BUCKET = "pool-documents";
 
@@ -24,11 +24,11 @@ function requiredText(form: FormData, key: string) {
 async function requiredFile(form: FormData) {
   const value = form.get("file");
   if (!(value instanceof File) || value.size <= 0) throw new Error("Selecione um arquivo válido.");
-  validateDocumentFile(value);
   if (value.size > DOCUMENT_MAX_FILE_SIZE) throw new Error("O arquivo deve ter no máximo 20 MB.");
   const bytes = new Uint8Array(await value.arrayBuffer());
   const mimeType = sniffDocumentMime(bytes);
-  if (!mimeType || mimeType !== value.type) throw new Error("O conteúdo do arquivo não corresponde ao formato informado.");
+  if (!mimeType) throw new Error("Use um arquivo JPG, PNG, WEBP ou PDF válido.");
+  if (value.type && value.type !== mimeType) throw new Error("O conteúdo do arquivo não corresponde ao formato informado.");
   return { file: value, bytes, mimeType, originalFileName: value.name.slice(0, 255) };
 }
 
@@ -67,13 +67,13 @@ export const uploadPoolDocument = createServerFn({ method: "POST" })
       _sort_order: sortOrder,
       _mime_type: mimeType,
       _file_size: file.size,
-      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
       if (cleanupError) console.error("pool_document_upload_cleanup_failed", { path, message: cleanupError.message });
       throw new Error("Não foi possível salvar o comprovante. Tente novamente.");
     }
+    if (document) await supabaseAdmin.from("pool_documents").update({ original_file_name: originalFileName }).eq("id", document.id);
     return document;
   });
 
@@ -104,13 +104,13 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
       _storage_path: path,
       _mime_type: mimeType,
       _file_size: file.size,
-      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
       if (cleanupError) console.error("pool_document_replace_cleanup_failed", { path, message: cleanupError.message });
       throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
     }
+    await supabaseAdmin.from("pool_documents").update({ original_file_name: originalFileName }).eq("id", documentId);
     return updated;
   });
 

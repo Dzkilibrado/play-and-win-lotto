@@ -2,6 +2,7 @@ import { Download, FileQuestion, Loader2, Minus, Plus, RotateCcw, Share2 } from 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,9 +26,10 @@ export function DocumentViewer({ open, onOpenChange, document }: { open: boolean
   useEffect(() => {
     if (!open || !document) { setUrl(null); setFailed(false); return; }
     let active = true;
+    let resolvedUrl: string | null = null;
     setLoading(true); setFailed(false); setUrl(null);
-    void document.getUrl().then((nextUrl) => { if (active) setUrl(nextUrl); }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; if (url?.startsWith("blob:")) URL.revokeObjectURL(url); };
+    void document.getUrl().then((nextUrl) => { resolvedUrl = nextUrl; if (active) setUrl(nextUrl); else if (nextUrl.startsWith("blob:")) URL.revokeObjectURL(nextUrl); }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; if (resolvedUrl?.startsWith("blob:")) URL.revokeObjectURL(resolvedUrl); };
   }, [open, document, attempt]);
 
   const retry = () => setAttempt((value) => value + 1);
@@ -74,15 +76,19 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-    void import("pdfjs-dist").then(({ GlobalWorkerOptions, getDocument }) => {
-      GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-      return getDocument({ url }).promise;
+    void Promise.all([import("pdfjs-dist/legacy/build/pdf.mjs"), fetch(url).then((response) => {
+      if (!response.ok) throw new Error("PDF indisponível.");
+      return response.arrayBuffer();
+    })]).then(([{ GlobalWorkerOptions, getDocument }, bytes]) => {
+      GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+      return getDocument({ data: bytes }).promise;
     }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
-  }, [url]);
+  }, [url, attempt]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -92,16 +98,14 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
     void pdf.getPage(page).then((pdfPage) => {
       if (!active) return;
       const viewport = pdfPage.getViewport({ scale: 1.45 * zoom });
-      const context = canvas.getContext("2d", { alpha: false });
-      if (!context) throw new Error("Canvas indisponível");
       canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
-      const task = pdfPage.render({ canvas, canvasContext: context, viewport }); renderTaskRef.current = task;
+      const task = pdfPage.render({ canvas, viewport }); renderTaskRef.current = task;
       return task.promise;
     }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [pdf, page, zoom]);
 
-  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); }} onDownload={undefined} />;
+  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); setAttempt((value) => value + 1); }} onDownload={undefined} />;
   return <div className="flex size-full min-h-0 flex-col">
     <div className="flex min-h-11 shrink-0 items-center justify-center gap-1 border-b border-border bg-background px-2">
       <Button size="icon" variant="ghost" aria-label="Página anterior" disabled={!pdf || page <= 1} onClick={() => setPage((value) => value - 1)}>‹</Button>
