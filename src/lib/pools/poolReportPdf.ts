@@ -4,6 +4,7 @@ import { appConfig } from "@/config/app.config";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { summarizeFinance } from "@/lib/pools/poolMath";
 import { poolPublicUrl } from "@/lib/pools/poolShare";
+import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import type { CheckResultRow } from "@/lib/services/checkService";
 import type { PoolParticipantRow, PoolRow } from "@/lib/services/poolService";
 import { gameStatusLabel, paymentStatusLabel, poolStatusLabel, type GameStatus } from "@/types/domain";
@@ -32,7 +33,17 @@ export interface PoolReportSections { participants: boolean; games: boolean; doc
 
 export const defaultPoolReportSections: PoolReportSections = { participants: true, games: true, documents: false };
 
-export interface PoolReportDocument { title: string; description?: string | null; mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"; bytes: ArrayBuffer; }
+export interface PoolReportDocument { title: string; description?: string | null; mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"; bytes: ArrayBuffer; originalFileName?: string | null; sourceVersion?: number; }
+
+export function poolReportDocumentDiagnostics(documents: PoolReportDocument[]) {
+  return documents.map((document) => ({
+    title: document.title,
+    originalFileName: document.originalFileName ?? null,
+    mimeType: document.mimeType,
+    sourceVersion: document.sourceVersion ?? null,
+    byteLength: document.bytes.byteLength,
+  }));
+}
 
 const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
@@ -179,6 +190,8 @@ export async function createPoolReportPdf(data: PoolReportData) {
   const merged = await PDFDocument.load(await report.arrayBuffer());
   const font = await merged.embedFont(StandardFonts.HelveticaBold);
   for (const attachmentDocument of includedDocuments) {
+    const detectedMimeType = sniffDocumentMime(new Uint8Array(attachmentDocument.bytes));
+    if (detectedMimeType !== attachmentDocument.mimeType) throw new Error("Comprovante inválido.");
     if (attachmentDocument.mimeType === "application/pdf") {
       const attachment = await PDFDocument.load(attachmentDocument.bytes, { updateMetadata: false });
       const pages = await merged.copyPages(attachment, attachment.getPageIndices());

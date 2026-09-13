@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DocumentViewer, type ViewableDocument } from "@/components/common/DocumentViewer";
-import { getPoolDocumentUrl } from "@/lib/pools/poolManagement.functions";
+import { getAvailablePoolDocuments, getPoolDocumentUrl } from "@/lib/pools/poolManagement.functions";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,7 @@ export function PoolShareDialog({
 }) {
   const queryClient = useQueryClient();
   const getDocumentUrl = useServerFn(getPoolDocumentUrl);
+  const getAvailableDocuments = useServerFn(getAvailablePoolDocuments);
   const [scope, setScope] = useState<PoolShareScope>("FULL");
   const [scopeReady, setScopeReady] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
@@ -61,11 +62,12 @@ export function PoolShareDialog({
   const [reportSections, setReportSections] = useState<PoolReportSections>(defaultPoolReportSections);
   const [pdfSelectionError, setPdfSelectionError] = useState(false);
   const documentRows = useQuery({
-    queryKey: ["pool-documents", pool.id],
-    queryFn: () => poolService.activeDocuments(pool.id),
+    queryKey: ["pool-available-documents", pool.id],
+    queryFn: () => getAvailableDocuments({ data: { poolId: pool.id } }),
     enabled: open,
+    staleTime: 30_000,
   });
-  const publishedDocuments = (documentRows.data ?? []).filter((document) => document.is_published);
+  const publishedDocuments = documentRows.data ?? [];
   const publishedDocumentFingerprint = publishedDocuments.map((document) => `${document.id}:${document.version}:${document.updated_at}`).join("|");
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
@@ -86,6 +88,13 @@ export function PoolShareDialog({
   useEffect(() => {
     if (open) setPdfBlob(null);
   }, [open, pool.id, publishedDocumentFingerprint]);
+
+  useEffect(() => {
+    if (!documentRows.isLoading && publishedDocuments.length === 0 && reportSections.documents) {
+      setReportSections((current) => ({ ...current, documents: false }));
+      setPdfBlob(null);
+    }
+  }, [documentRows.isLoading, publishedDocuments.length, reportSections.documents]);
 
   const chooseScope = (next: PoolShareScope) => {
     setScope(next);
@@ -166,7 +175,7 @@ export function PoolShareDialog({
           const bytes = await response.arrayBuffer();
           const mimeType = sniffDocumentMime(new Uint8Array(bytes));
           if (!mimeType || mimeType !== document.mime_type) throw new Error("Comprovante inválido.");
-          return { title: document.title, description: document.description, mimeType, bytes };
+          return { title: document.title, description: document.description, mimeType, bytes, originalFileName: document.original_file_name, sourceVersion: document.version };
         })) : [];
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents, sections: reportSections });
       setPdfBlob(blob);
@@ -353,8 +362,8 @@ export function PoolShareDialog({
             ["games", "Jogos", "Jogos, dezenas, situação, custo e resultado."],
             ["documents", "Incluir comprovantes publicados", `${publishedDocuments.length} ${publishedDocuments.length === 1 ? "comprovante disponível" : "comprovantes disponíveis"}.`],
           ] as const).map(([section, label, description]) => (
-            <label key={section} className="flex min-h-14 cursor-pointer items-start gap-3 rounded-md border border-border p-3">
-              <Checkbox checked={reportSections[section]} onCheckedChange={(checked) => updateReportSection(section, checked === true)} aria-label={label} />
+            <label key={section} className={`flex min-h-14 items-start gap-3 rounded-md border border-border p-3 ${section === "documents" && publishedDocuments.length === 0 ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+              <Checkbox checked={reportSections[section]} disabled={section === "documents" && publishedDocuments.length === 0} onCheckedChange={(checked) => updateReportSection(section, checked === true)} aria-label={label} />
               <span className="min-w-0"><span className="block text-sm font-medium text-text-primary">{label}</span><span className="block text-xs text-text-secondary">{description}</span></span>
             </label>
           ))}

@@ -29,7 +29,15 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
   const replacement = useRef<PoolDocumentRow | null>(null);
   const replaceInput = useRef<HTMLInputElement | null>(null);
   const documents = useQuery({ queryKey: ["pool-documents", poolId], queryFn: () => poolService.activeDocuments(poolId) });
-  const invalidate = () => { void queryClient.invalidateQueries({ queryKey: ["pool-documents", poolId] }); void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] }); };
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["pool-documents", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-available-documents", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pools"] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["public-pool"] });
+    void queryClient.invalidateQueries({ queryKey: ["public-pool-documents"] });
+  };
   const replace = useMutation({
     mutationFn: ({ document, file }: { document: PoolDocumentRow; file: File }) => {
       const form = new FormData();

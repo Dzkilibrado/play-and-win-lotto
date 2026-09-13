@@ -9,6 +9,7 @@ import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime } from "@/
 const DOCUMENT_BUCKET = "pool-documents";
 
 const documentActionSchema = z.object({ documentId: z.string().uuid() });
+const poolActionSchema = z.object({ poolId: z.string().uuid() });
 
 function requireFormData(input: unknown) {
   if (!(input instanceof FormData)) throw new Error("Dados do comprovante inválidos.");
@@ -150,6 +151,23 @@ export const getPoolDocumentUrl = createServerFn({ method: "POST" })
     const { data: signed, error: signedError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).createSignedUrl(document.storage_path, 300);
     if (signedError) throw new Error("Não foi possível abrir o comprovante. Tente novamente.");
     return signed.signedUrl;
+  });
+
+export const getAvailablePoolDocuments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => poolActionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertCanManagePool(context.supabase, data.poolId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: documents, error } = await supabaseAdmin
+      .from("pool_available_documents")
+      .select("id, pool_id, title, description, mime_type, file_size, sort_order, version, original_file_name, updated_at")
+      .eq("pool_id", data.poolId)
+      .order("sort_order")
+      .order("updated_at")
+      .order("id");
+    if (error) throw new Error("Não foi possível carregar os comprovantes publicados.");
+    return documents ?? [];
   });
 
 const deletePoolSchema = z.object({
