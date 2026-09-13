@@ -131,5 +131,5 @@
 - [x] Confirmar o histórico real e a causa da contagem zerada no Bolão Galera Gmill.
 - [x] Centralizar documentos ativos, publicados e atuais para modal, PDF e links públicos.
 - [x] Restaurar a publicação do comprovante PDF atual sem alterar arquivo, versão ou tokens.
-- [ ] Invalidar todas as consultas afetadas e cobrir mudanças de publicação e versão.
+- [x] Invalidar todas as consultas afetadas e cobrir mudanças de publicação e versão.
 - [ ] Validar os PDFs reais, links, telas móveis, testes, tipos e compilação.

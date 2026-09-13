@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
 
-import { buildPoolReportDefinition, createPoolReportPdf, poolReportFileName, type PoolReportData } from "./poolReportPdf";
+import { buildPoolReportDefinition, createPoolReportPdf, poolReportDocumentDiagnostics, poolReportFileName, type PoolReportData } from "./poolReportPdf";
 import type { PoolParticipantRow, PoolRow } from "@/lib/services/poolService";
 
 const pool = {
@@ -53,6 +53,39 @@ describe("relatório PDF do bolão", () => {
 
   it("não mascara um comprovante corrompido com uma página substituta", async () => {
     await expect(createPoolReportPdf({ ...data, documents: [{ title: "Arquivo incompatível", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]).buffer }] })).rejects.toThrow();
+  });
+
+  it("rejeita quando o MIME declarado não corresponde aos bytes reais", async () => {
+    const attachment = await PDFDocument.create();
+    attachment.addPage();
+    const saved = await attachment.save();
+    const bytes = new Uint8Array(saved.byteLength);
+    bytes.set(saved);
+    await expect(createPoolReportPdf({
+      ...data,
+      documents: [{ title: "PDF declarado como imagem", mimeType: "image/png", bytes: bytes.buffer }],
+    })).rejects.toThrow("Comprovante inválido.");
+  });
+
+  it("registra somente metadados seguros da entrada do relatório", async () => {
+    const attachment = await PDFDocument.create();
+    attachment.addPage();
+    const saved = await attachment.save();
+    const bytes = new Uint8Array(saved.byteLength);
+    bytes.set(saved);
+    expect(poolReportDocumentDiagnostics([{
+      title: "Comprovante Picpay",
+      originalFileName: "DOC-20260912-WA0064.pdf",
+      mimeType: "application/pdf",
+      sourceVersion: 1,
+      bytes: bytes.buffer,
+    }])).toEqual([{
+      title: "Comprovante Picpay",
+      originalFileName: "DOC-20260912-WA0064.pdf",
+      mimeType: "application/pdf",
+      sourceVersion: 1,
+      byteLength: saved.byteLength,
+    }]);
   });
 
   it("não inclui comprovantes quando a opção está desmarcada", async () => {
