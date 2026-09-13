@@ -66,6 +66,7 @@ export function PoolShareDialog({
     enabled: open,
   });
   const publishedDocuments = (documentRows.data ?? []).filter((document) => document.is_published);
+  const publishedDocumentFingerprint = publishedDocuments.map((document) => `${document.id}:${document.version}:${document.updated_at}`).join("|");
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
   const preview = poolSharePreview(pool, scope, publishedDocuments.length);
@@ -81,6 +82,10 @@ export function PoolShareDialog({
     }
     setScopeReady(true);
   }, [open, pool.id]);
+
+  useEffect(() => {
+    if (open) setPdfBlob(null);
+  }, [open, pool.id, publishedDocumentFingerprint]);
 
   const chooseScope = (next: PoolShareScope) => {
     setScope(next);
@@ -148,9 +153,9 @@ export function PoolShareDialog({
     setPdfLoading(true);
     try {
       const [participants, rawGames, officialPrizeTotal] = await Promise.all([
-        reportSections.participants ? poolService.participants(pool.id) : Promise.resolve([]),
-        reportSections.games ? poolService.games(pool.id) : Promise.resolve([]),
-        reportSections.games ? poolService.prizeTotal(pool.id) : Promise.resolve(0),
+        poolService.participants(pool.id),
+        poolService.games(pool.id),
+        poolService.prizeTotal(pool.id),
       ]);
       const games = mapPoolReportGames(rawGames);
       const checks = reportSections.games ? await checkService.getChecksForGames(games.map((game) => game.gameId)) : new Map();
