@@ -19,6 +19,17 @@ export const syncConfig = {
   batchSize: 100,
   /** Requisições simultâneas dentro de um lote. */
   concurrency: 8,
+  /** Horário oficial de referência, em America/Sao_Paulo. */
+  officialDrawHour: 21,
+  /** O agendamento chama o orquestrador a cada 15 minutos. */
+  schedulerMinutes: 15,
+  /** Retentativas persistentes após o horário previsto. */
+  retryBackoffMinutes: [15, 30, 60, 120] as const,
+  maxRetryDelayMinutes: 120,
+  /** Depois deste total, o painel destaca que a modalidade requer atenção. */
+  attentionAfterAttempts: 8,
+  /** Recuperação limitada para nunca transformar uma execução em reimportação histórica. */
+  maxRecoveryContestsPerRun: 5,
 } as const;
 
 /** Caminho da modalidade na fonte oficial. */

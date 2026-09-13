@@ -929,6 +929,148 @@ export type Database = {
           },
         ]
       }
+      lottery_sync_runs: {
+        Row: {
+          attempt_number: number
+          contest_number: number | null
+          created_at: string
+          error_message: string | null
+          error_type: string | null
+          finished_at: string | null
+          id: string
+          lottery_id: string
+          next_action_at: string | null
+          outcome: string | null
+          started_at: string
+          status: string
+          trigger_source: string
+        }
+        Insert: {
+          attempt_number?: number
+          contest_number?: number | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          finished_at?: string | null
+          id?: string
+          lottery_id: string
+          next_action_at?: string | null
+          outcome?: string | null
+          started_at?: string
+          status: string
+          trigger_source: string
+        }
+        Update: {
+          attempt_number?: number
+          contest_number?: number | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          finished_at?: string | null
+          id?: string
+          lottery_id?: string
+          next_action_at?: string | null
+          outcome?: string | null
+          started_at?: string
+          status?: string
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lottery_sync_runs_lottery_id_fkey"
+            columns: ["lottery_id"]
+            isOneToOne: false
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lottery_sync_scheduler_config: {
+        Row: {
+          enabled: boolean
+          endpoint: string
+          scheduler_token: string
+          singleton: boolean
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          endpoint: string
+          scheduler_token: string
+          singleton?: boolean
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          endpoint?: string
+          scheduler_token?: string
+          singleton?: boolean
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lottery_sync_state: {
+        Row: {
+          consecutive_failures: number
+          enabled: boolean
+          expected_contest_number: number | null
+          expected_draw_at: string | null
+          last_attempt_at: string | null
+          last_error_at: string | null
+          last_error_message: string | null
+          last_error_type: string | null
+          last_success_at: string | null
+          locked_at: string | null
+          lottery_id: string
+          next_attempt_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consecutive_failures?: number
+          enabled?: boolean
+          expected_contest_number?: number | null
+          expected_draw_at?: string | null
+          last_attempt_at?: string | null
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_error_type?: string | null
+          last_success_at?: string | null
+          locked_at?: string | null
+          lottery_id: string
+          next_attempt_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consecutive_failures?: number
+          enabled?: boolean
+          expected_contest_number?: number | null
+          expected_draw_at?: string | null
+          last_attempt_at?: string | null
+          last_error_at?: string | null
+          last_error_message?: string | null
+          last_error_type?: string | null
+          last_success_at?: string | null
+          locked_at?: string | null
+          lottery_id?: string
+          next_attempt_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lottery_sync_state_lottery_id_fkey"
+            columns: ["lottery_id"]
+            isOneToOne: true
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1775,6 +1917,31 @@ export type Database = {
         Args: { _job_id: string; _stale_after?: string }
         Returns: boolean
       }
+      claim_lottery_sync: {
+        Args: { _force?: boolean; _lottery_id: string; _stale_after?: string }
+        Returns: {
+          consecutive_failures: number
+          enabled: boolean
+          expected_contest_number: number | null
+          expected_draw_at: string | null
+          last_attempt_at: string | null
+          last_error_at: string | null
+          last_error_message: string | null
+          last_error_type: string | null
+          last_success_at: string | null
+          locked_at: string | null
+          lottery_id: string
+          next_attempt_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lottery_sync_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       claim_sync_job_batch: {
         Args: { _batch_size: number; _job_id: string; _stale_after?: string }
         Returns: {
@@ -1785,6 +1952,40 @@ export type Database = {
           lottery_id: string
           resumed: boolean
         }[]
+      }
+      complete_lottery_sync: {
+        Args: {
+          _error_message?: string
+          _error_type?: string
+          _expected_contest_number: number
+          _expected_draw_at: string
+          _lottery_id: string
+          _next_attempt_at: string
+          _status: string
+          _success: boolean
+        }
+        Returns: {
+          consecutive_failures: number
+          enabled: boolean
+          expected_contest_number: number | null
+          expected_draw_at: string | null
+          last_attempt_at: string | null
+          last_error_at: string | null
+          last_error_message: string | null
+          last_error_type: string | null
+          last_success_at: string | null
+          locked_at: string | null
+          lottery_id: string
+          next_attempt_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lottery_sync_state"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       complete_profile_onboarding: {
         Args: {
@@ -1855,6 +2056,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      invoke_lottery_sync_scheduler: { Args: never; Returns: number }
       is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
       is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
       log_pool_event: {
@@ -2188,6 +2390,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["game_status"]
         }
         Returns: Database["public"]["Enums"]["game_status"]
+      }
+      verify_sync_scheduler_token: {
+        Args: { _token: string }
+        Returns: boolean
       }
     }
     Enums: {

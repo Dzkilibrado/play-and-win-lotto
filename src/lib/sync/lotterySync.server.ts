@@ -9,6 +9,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { syncConfig } from "@/config/sync.config";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  expectedDrawAt,
+  isBeforeExpectedDraw,
+  nextRetryAt,
+  waitingStatus,
+  type AutomationStatus,
+} from "./automation";
 import { fetchOfficialDraw, SyncError, type NormalizedDraw } from "./caixa.provider.server";
 
 type Admin = SupabaseClient<Database>;
@@ -19,6 +26,29 @@ export interface LotteryRow {
   id: string;
   slug: string;
   name: string;
+}
+
+type SyncTrigger = "SCHEDULED" | "MANUAL";
+
+interface SyncStateRow {
+  lottery_id: string;
+  enabled: boolean;
+  status: AutomationStatus;
+  expected_contest_number: number | null;
+  expected_draw_at: string | null;
+  consecutive_failures: number;
+  next_attempt_at: string | null;
+}
+
+export interface AutomationResult {
+  lottery: string;
+  attempted: boolean;
+  ok: boolean;
+  status: AutomationStatus | "LOCKED";
+  contest: number | null;
+  outcome?: "inserted" | "updated";
+  nextAttemptAt: string | null;
+  errorType?: string;
 }
 
 async function getAdmin(): Promise<Admin> {
@@ -93,6 +123,287 @@ async function persistDraw(
 
   if (error) throw new SyncError("PERSISTENCE", error.message);
   return data === "inserted" ? "inserted" : "updated";
+}
+
+function publicFailureMessage(type: SyncError["type"]) {
+  if (type === "NOT_FOUND") return "Resultado oficial ainda não publicado.";
+  if (type === "VALIDATION" || type === "INVALID_RESPONSE") {
+    return "A fonte oficial enviou dados que precisam de revisão.";
+  }
+  if (type === "PERSISTENCE") return "Não foi possível concluir a atualização dos dados.";
+  return "A fonte oficial está temporariamente indisponível.";
+}
+
+async function ensureSyncState(admin: Admin, lottery: LotteryRow) {
+  const { data: state } = await admin
+    .from("lottery_sync_state")
+    .select("*")
+    .eq("lottery_id", lottery.id)
+    .maybeSingle();
+  if (state) return state as SyncStateRow;
+
+  const { data: latest } = await admin
+    .from("lottery_draws")
+    .select("next_contest_number, next_draw_date")
+    .eq("lottery_id", lottery.id)
+    .order("contest_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const expectedAt = expectedDrawAt(latest?.next_draw_date ?? null);
+  const now = new Date();
+  const { data, error } = await admin
+    .from("lottery_sync_state")
+    .upsert({
+      lottery_id: lottery.id,
+      status: isBeforeExpectedDraw(now, expectedAt) ? "WAITING_DRAW" : "WAITING_PUBLICATION",
+      expected_contest_number: latest?.next_contest_number ?? null,
+      expected_draw_at: expectedAt,
+      next_attempt_at: isBeforeExpectedDraw(now, expectedAt) ? expectedAt : now.toISOString(),
+    })
+    .select("*")
+    .single();
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+  return data as SyncStateRow;
+}
+
+async function finishAutomationState(
+  admin: Admin,
+  input: {
+    lotteryId: string;
+    status: AutomationStatus;
+    expectedContest: number | null;
+    expectedAt: string | null;
+    nextAttemptAt: string | null;
+    success: boolean;
+    errorType?: string | null;
+    errorMessage?: string | null;
+  },
+) {
+  const { error } = await (admin as unknown as {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("complete_lottery_sync", {
+    _lottery_id: input.lotteryId,
+    _status: input.status,
+    _expected_contest_number: input.expectedContest,
+    _expected_draw_at: input.expectedAt,
+    _next_attempt_at: input.nextAttemptAt,
+    _success: input.success,
+    _error_type: input.errorType ?? null,
+    _error_message: input.errorMessage ?? null,
+  });
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+}
+
+async function createAutomationRun(
+  admin: Admin,
+  lotteryId: string,
+  contest: number | null,
+  trigger: SyncTrigger,
+  attemptNumber: number,
+) {
+  const { data, error } = await admin
+    .from("lottery_sync_runs")
+    .insert({
+      lottery_id: lotteryId,
+      contest_number: contest,
+      trigger_source: trigger,
+      status: "RUNNING",
+      attempt_number: Math.max(1, attemptNumber),
+    })
+    .select("id")
+    .single();
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+  return data.id;
+}
+
+async function finishAutomationRun(
+  admin: Admin,
+  runId: string,
+  input: {
+    status: "SUCCEEDED" | "WAITING" | "FAILED";
+    outcome: string;
+    nextActionAt: string | null;
+    errorType?: string | null;
+    errorMessage?: string | null;
+  },
+) {
+  await admin
+    .from("lottery_sync_runs")
+    .update({
+      status: input.status,
+      outcome: input.outcome,
+      finished_at: new Date().toISOString(),
+      next_action_at: input.nextActionAt,
+      error_type: input.errorType ?? null,
+      error_message: input.errorMessage ?? null,
+    })
+    .eq("id", runId);
+}
+
+/**
+ * Caminho único para agendamento e botão administrativo. A reserva por
+ * modalidade evita chamadas simultâneas para o mesmo concurso.
+ */
+export async function runLotteryAutomation(
+  admin: Admin,
+  lottery: LotteryRow,
+  options: { force?: boolean; trigger?: SyncTrigger; now?: Date } = {},
+): Promise<AutomationResult> {
+  const force = options.force ?? false;
+  const trigger = options.trigger ?? "SCHEDULED";
+  const now = options.now ?? new Date();
+  const current = await ensureSyncState(admin, lottery);
+
+  if (!force && isBeforeExpectedDraw(now, current.expected_draw_at)) {
+    return {
+      lottery: lottery.slug,
+      attempted: false,
+      ok: true,
+      status: "WAITING_DRAW",
+      contest: current.expected_contest_number,
+      nextAttemptAt: current.expected_draw_at,
+    };
+  }
+
+  const { data: claimed, error: claimError } = await admin.rpc("claim_lottery_sync", {
+    _lottery_id: lottery.id,
+    _force: force,
+  });
+  if (claimError) throw new SyncError("PERSISTENCE", claimError.message);
+  if (!claimed) {
+    return {
+      lottery: lottery.slug,
+      attempted: false,
+      ok: true,
+      status: "LOCKED",
+      contest: current.expected_contest_number,
+      nextAttemptAt: current.next_attempt_at,
+    };
+  }
+
+  const state = claimed as unknown as SyncStateRow;
+  const contest = state.expected_contest_number;
+  const runId = await createAutomationRun(
+    admin,
+    lottery.id,
+    contest,
+    trigger,
+    state.consecutive_failures + 1,
+  );
+
+  try {
+    const latest = await fetchOfficialDraw(lottery.slug as LotterySlug);
+    if (contest && latest.contestNumber < contest) {
+      throw new SyncError("NOT_FOUND", `Concurso ${contest} ainda não foi publicado.`);
+    }
+    const { data: localLatest } = await admin
+      .from("lottery_draws")
+      .select("contest_number")
+      .eq("lottery_id", lottery.id)
+      .order("contest_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const localContest = localLatest?.contest_number ?? 0;
+    const firstContest = Math.max(
+      1,
+      latest.contestNumber - syncConfig.maxRecoveryContestsPerRun + 1,
+      localContest + 1,
+    );
+    let outcome: "inserted" | "updated" = "updated";
+    for (let number = firstContest; number <= latest.contestNumber; number += 1) {
+      const draw = number === latest.contestNumber
+        ? latest
+        : await fetchOfficialDraw(lottery.slug as LotterySlug, number);
+      outcome = await persistDraw(admin, lottery, draw);
+    }
+
+    const expectedContest = latest.nextContestNumber ?? latest.contestNumber + 1;
+    const expectedAt = expectedDrawAt(latest.nextDrawDate);
+    const beforeNextDraw = isBeforeExpectedDraw(now, expectedAt);
+    const nextAttemptAt = beforeNextDraw
+      ? expectedAt
+      : new Date(now.getTime() + syncConfig.schedulerMinutes * 60_000).toISOString();
+    const status: AutomationStatus = beforeNextDraw ? "WAITING_DRAW" : "UP_TO_DATE";
+
+    await finishAutomationState(admin, {
+      lotteryId: lottery.id,
+      status,
+      expectedContest,
+      expectedAt,
+      nextAttemptAt,
+      success: true,
+    });
+    await finishAutomationRun(admin, runId, {
+      status: "SUCCEEDED",
+      outcome,
+      nextActionAt: nextAttemptAt,
+    });
+    await admin
+      .from("lottery_sync_errors")
+      .update({ resolved_at: now.toISOString() })
+      .eq("lottery_id", lottery.id)
+      .lte("contest_number", latest.contestNumber)
+      .is("resolved_at", null);
+    await logAudit(admin, null, "automation_sync_succeeded", lottery.id, {
+      lottery: lottery.slug,
+      contest: latest.contestNumber,
+      next_contest: expectedContest,
+      trigger,
+    });
+    return {
+      lottery: lottery.slug,
+      attempted: true,
+      ok: true,
+      status,
+      contest: latest.contestNumber,
+      outcome,
+      nextAttemptAt,
+    };
+  } catch (error) {
+    const syncError = error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
+    await recordError(admin, null, lottery.id, contest, syncError);
+    const nextFailureCount = state.consecutive_failures + 1;
+    const status = waitingStatus(syncError.type, nextFailureCount);
+    const retryAt = nextRetryAt(now, state.consecutive_failures);
+    const safeMessage = publicFailureMessage(syncError.type);
+    await finishAutomationState(admin, {
+      lotteryId: lottery.id,
+      status,
+      expectedContest: contest,
+      expectedAt: state.expected_draw_at,
+      nextAttemptAt: retryAt,
+      success: false,
+      errorType: syncError.type,
+      errorMessage: safeMessage,
+    });
+    await finishAutomationRun(admin, runId, {
+      status: status === "ATTENTION" ? "FAILED" : "WAITING",
+      outcome: syncError.type === "NOT_FOUND" ? "NOT_PUBLISHED" : "RETRY_SCHEDULED",
+      nextActionAt: retryAt,
+      errorType: syncError.type,
+      errorMessage: safeMessage,
+    });
+    await logAudit(admin, null, "automation_sync_waiting", lottery.id, {
+      lottery: lottery.slug,
+      contest,
+      error_type: syncError.type,
+      attempt: nextFailureCount,
+      next_attempt_at: retryAt,
+      trigger,
+    });
+    return {
+      lottery: lottery.slug,
+      attempted: true,
+      ok: false,
+      status,
+      contest,
+      nextAttemptAt: retryAt,
+      errorType: syncError.type,
+    };
+  }
 }
 
 async function recordError(
