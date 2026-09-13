@@ -657,6 +657,51 @@ export type Database = {
         }
         Relationships: []
       }
+      lottery_draw_revisions: {
+        Row: {
+          contest_number: number
+          detected_at: string
+          draw_id: string
+          id: string
+          lottery_id: string
+          new_snapshot: Json
+          previous_snapshot: Json
+        }
+        Insert: {
+          contest_number: number
+          detected_at?: string
+          draw_id: string
+          id?: string
+          lottery_id: string
+          new_snapshot: Json
+          previous_snapshot: Json
+        }
+        Update: {
+          contest_number?: number
+          detected_at?: string
+          draw_id?: string
+          id?: string
+          lottery_id?: string
+          new_snapshot?: Json
+          previous_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lottery_draw_revisions_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "lottery_draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lottery_draw_revisions_lottery_id_fkey"
+            columns: ["lottery_id"]
+            isOneToOne: false
+            referencedRelation: "lotteries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lottery_draws: {
         Row: {
           contest_number: number
