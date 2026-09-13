@@ -9,7 +9,11 @@ export type AutomationStatus =
 
 export function expectedDrawAt(drawDate: string | null): string | null {
   if (!drawDate) return null;
-  return `${drawDate}T${String(syncConfig.officialDrawHour).padStart(2, "0")}:00:00-03:00`;
+  // Desde julho/2026, os sorteios de domingo acontecem às 11h; nos demais
+  // dias de concurso, às 21h. A data da fonte é interpretada em São Paulo.
+  const weekday = new Date(`${drawDate}T12:00:00-03:00`).getUTCDay();
+  const hour = weekday === 0 ? syncConfig.sundayDrawHour : syncConfig.officialDrawHour;
+  return `${drawDate}T${String(hour).padStart(2, "0")}:00:00-03:00`;
 }
 
 export function retryDelayMinutes(consecutiveFailures: number): number {

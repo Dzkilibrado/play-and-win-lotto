@@ -12,13 +12,8 @@ export const Route = createFileRoute("/_authenticated")({
      * hora. Só quando não existe sessão local é que consultamos o servidor —
      * antes, toda troca de tela esperava uma ida e volta à rede.
      */
-    const { data: local } = await supabase.auth.getSession();
-    if (local.session?.user) {
-      const { data: status } = await supabase.rpc("profile_onboarding_status");
-      if (!(status && typeof status === "object" && !Array.isArray(status) && status["complete"] === true)) throw redirect({ to: "/complete-profile" });
-      return { user: local.session.user };
-    }
-
+    // getUser valida a sessão no servidor; um token apenas persistido e já
+    // expirado nunca é aceito como identidade válida para a rota protegida.
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/login" });
     const { data: status } = await supabase.rpc("profile_onboarding_status");
@@ -35,9 +30,13 @@ function AuthenticatedLayout() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    const { error } = await supabase.auth.signOut();
-    if (error) await supabase.auth.signOut({ scope: "local" });
-    navigate({ to: "/login", replace: true });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) await supabase.auth.signOut({ scope: "local" });
+    } finally {
+      queryClient.clear();
+      navigate({ to: "/login", replace: true });
+    }
   }
 
   return (

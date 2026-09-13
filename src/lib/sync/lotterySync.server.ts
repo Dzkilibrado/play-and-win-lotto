@@ -320,6 +320,11 @@ export async function runLotteryAutomation(
       outcome = await persistDraw(admin, lottery, draw);
     }
 
+    // O cache de estatísticas vive no processo do servidor e precisa ser
+    // descartado também quando a atualização veio do agendador.
+    const { statisticsService } = await import("@/lib/services/statisticsService");
+    statisticsService.invalidate(lottery.slug);
+
     const expectedContest = latest.nextContestNumber ?? latest.contestNumber + 1;
     const expectedAt = expectedDrawAt(latest.nextDrawDate);
     const beforeNextDraw = isBeforeExpectedDraw(now, expectedAt);
