@@ -126,3 +126,10 @@
 - [x] Adicionar seleção de participantes, jogos e comprovantes na geração do PDF.
 - [x] Refinar a opção Completo e sua contagem de comprovantes publicados.
 - [x] Validar os três links, sete resoluções, testes, tipos e compilação.
+
+## Fonte única dos comprovantes no PDF
+- [x] Confirmar o histórico real e a causa da contagem zerada no Bolão Galera Gmill.
+- [x] Centralizar documentos ativos, publicados e atuais para modal, PDF e links públicos.
+- [x] Restaurar a publicação do comprovante PDF atual sem alterar arquivo, versão ou tokens.
+- [x] Invalidar todas as consultas afetadas e cobrir mudanças de publicação e versão.
+- [ ] Validar os PDFs reais, links, telas móveis, testes, tipos e compilação.
