@@ -181,7 +181,7 @@ export function PoolShareDialog({
             mimeType,
             bytes,
             originalFileName: document.original_file_name,
-            sourceVersion: document.version ?? undefined,
+            ...(document.version == null ? {} : { sourceVersion: document.version }),
           };
         })) : [];
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents, sections: reportSections });
