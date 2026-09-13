@@ -5,6 +5,7 @@
  */
 import type { PoolRow, PoolShareScope } from "@/lib/services/poolService";
 import { formatDate } from "@/lib/format";
+import { publicAppUrl } from "@/config/app.config";
 
 export const poolShareScopeLabel: Record<PoolShareScope, string> = {
   PARTICIPANTS: "Participantes",
@@ -26,9 +27,8 @@ export function poolPublicUrl(
 ): string | null {
   const link = pool.pool_share_links?.find((item) => item.scope === scope && !item.revoked_at);
   if (!link) return null;
-  const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
-  if (!base) return null;
-  return `${base}/b/${link.token}`;
+  if (origin) return new URL(`/b/${link.token}`, `${origin}/`).toString();
+  return publicAppUrl(`/b/${link.token}`);
 }
 
 export function poolShareTitle(pool: PoolRow) {

@@ -14,6 +14,7 @@ const pool = {
   total_quotas: 23,
   status: "AWAITING_DRAW",
   lotteries: { name: "Lotofácil", slug: "lotofacil", short_name: "Lotofácil", color_key: "lotofacil" },
+  pool_share_links: [{ scope: "FULL", token: "relatorio-publico", revoked_at: null }],
 } as unknown as PoolRow;
 
 const participants = Array.from({ length: 23 }, (_, index) => ({
@@ -66,6 +67,9 @@ describe("relatório PDF do bolão", () => {
     expect(serialized).not.toContain("11999999999");
     expect(serialized).not.toContain("privado");
     expect(serialized).not.toContain("game-0");
+    expect(serialized).toContain("https://www.gestordasorte.com.br/b/relatorio-publico");
+    expect(serialized).not.toContain("lovable.app");
+    expect(serialized).not.toContain("localhost");
   });
 
   it("inicia jogos em nova página, repete o cabeçalho e mantém cada jogo indivisível", () => {

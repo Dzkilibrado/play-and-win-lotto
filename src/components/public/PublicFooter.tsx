@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Brand } from "@/components/brand/Brand";
+import { appConfig } from "@/config/app.config";
 
 export function PublicFooter() {
   return (
@@ -13,7 +14,7 @@ export function PublicFooter() {
         <nav className="flex flex-col items-start gap-2 text-sm" aria-label="Informações legais">
           <Link to="/terms" className="touch-target inline-flex items-center text-text-secondary underline-offset-4 hover:text-text-primary hover:underline">Termos de Uso</Link>
           <Link to="/privacy" className="touch-target inline-flex items-center text-text-secondary underline-offset-4 hover:text-text-primary hover:underline">Política de Privacidade</Link>
-          <span className="text-xs text-text-secondary">gestordasorte.com.br</span>
+          <span className="text-xs text-text-secondary">{appConfig.domain}</span>
         </nav>
       </div>
     </footer>
