@@ -133,3 +133,11 @@
 - [x] Restaurar a publicação do comprovante PDF atual sem alterar arquivo, versão ou tokens.
 - [x] Invalidar todas as consultas afetadas e cobrir mudanças de publicação e versão.
 - [ ] Validar os PDFs reais, links, telas móveis, testes, tipos e compilação.
+
+## Login, navegação de bolão e Home mobile
+- [ ] Separar redirecionamento por sessão válida de autenticação explícita após autofill.
+- [ ] Garantir logout completo sem reentrada por estado antigo e cobrir os cenários de sessão.
+- [ ] Eliminar o falso “Bolão não encontrado” com busca direta, loading correto e cache coerente.
+- [ ] Compactar a Home mobile, preservar atalhos e próximos sorteios, e desligar resultados recentes por padrão.
+- [ ] Validar fluxos reais, três larguras móveis, desktop, overflow, testes, tipos e compilação.
+- [ ] Entregar relatório final de 29 itens e aguardar homologação.
