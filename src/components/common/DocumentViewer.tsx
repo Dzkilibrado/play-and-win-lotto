@@ -76,7 +76,10 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
 
   useEffect(() => {
     let active = true;
-    void import("pdfjs-dist/webpack.mjs").then(({ getDocument }) => getDocument({ url }).promise).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
+    void import("pdfjs-dist").then(({ GlobalWorkerOptions, getDocument }) => {
+      GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+      return getDocument({ url }).promise;
+    }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [url]);
 
@@ -111,6 +114,6 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   </div>;
 }
 
-function ViewerError({ onRetry, onDownload }: { onRetry: () => void; onDownload?: () => void }) { return <div className="flex max-w-sm flex-col items-center gap-3 p-6 text-center"><FileQuestion className="size-10 text-danger" aria-hidden /><div><p className="font-semibold text-text-primary">Não foi possível visualizar este comprovante.</p><p className="text-sm text-text-secondary">O arquivo pode estar indisponível, corrompido ou a autorização pode ter expirado.</p></div><div className="flex flex-wrap justify-center gap-2"><Button variant="outline" onClick={onRetry}>Tentar novamente</Button>{onDownload ? <Button variant="outline" onClick={onDownload}><Download aria-hidden />Baixar arquivo</Button> : null}</div></div>; }
+function ViewerError({ onRetry, onDownload }: { onRetry: () => void; onDownload: (() => void) | undefined }) { return <div className="flex max-w-sm flex-col items-center gap-3 p-6 text-center"><FileQuestion className="size-10 text-danger" aria-hidden /><div><p className="font-semibold text-text-primary">Não foi possível visualizar este comprovante.</p><p className="text-sm text-text-secondary">O arquivo pode estar indisponível, corrompido ou a autorização pode ter expirado.</p></div><div className="flex flex-wrap justify-center gap-2"><Button variant="outline" onClick={onRetry}>Tentar novamente</Button>{onDownload ? <Button variant="outline" onClick={onDownload}><Download aria-hidden />Baixar arquivo</Button> : null}</div></div>; }
 
-function FileFallback({ document, onDownload }: { document: ViewableDocument | null; onDownload?: () => void }) { return <div className="flex max-w-sm flex-col items-center gap-3 p-6 text-center"><FileQuestion className="size-10 text-text-secondary" aria-hidden /><div><p className="font-semibold text-text-primary">Pré-visualização não disponível para este formato.</p><p className="text-sm text-text-secondary">{document?.fileName || document?.title} · {documentTypeLabel(document?.mimeType)} · {formatDocumentSize(document?.fileSize)}</p></div>{onDownload ? <Button onClick={onDownload}><Download aria-hidden />Baixar arquivo</Button> : null}</div>; }
+function FileFallback({ document, onDownload }: { document: ViewableDocument | null; onDownload: (() => void) | undefined }) { return <div className="flex max-w-sm flex-col items-center gap-3 p-6 text-center"><FileQuestion className="size-10 text-text-secondary" aria-hidden /><div><p className="font-semibold text-text-primary">Pré-visualização não disponível para este formato.</p><p className="text-sm text-text-secondary">{document?.fileName || document?.title} · {documentTypeLabel(document?.mimeType)} · {formatDocumentSize(document?.fileSize)}</p></div>{onDownload ? <Button onClick={onDownload}><Download aria-hidden />Baixar arquivo</Button> : null}</div>; }
