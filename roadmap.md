@@ -109,6 +109,6 @@
 ## Fechamento de pendências funcionais
 - [x] Diagnosticar o comprovante real e corrigir sessão expirada antes de operações autenticadas.
 - [x] Tornar nome original e versão atual atômicos; centralizar autorização pública do arquivo.
-- [ ] Publicar e validar o comprovante real nos fluxos privado, Jogos, Completo e PDF.
-- [ ] Homologar alteração de senha, ocultação de diagnósticos e menu mobile.
-- [ ] Executar matriz de formatos, volumes, telas, temas, testes, tipos e build.
+- [x] Publicar e validar o comprovante real nos fluxos privado, Jogos, Completo e PDF.
+- [x] Homologar alteração de senha, ocultação de diagnósticos e menu mobile.
+- [x] Executar matriz de formatos, volumes, telas, temas, testes, tipos e build.
