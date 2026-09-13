@@ -101,7 +101,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
       canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
       const task = pdfPage.render({ canvas, viewport }); renderTaskRef.current = task;
       return task.promise;
-    }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) setError(true); });
+    }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) { console.error("Falha ao desenhar PDF", cause); setError(true); } });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [pdf, page, zoom]);
 
