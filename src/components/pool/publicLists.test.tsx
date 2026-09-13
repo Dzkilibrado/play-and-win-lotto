@@ -32,7 +32,7 @@ const games = (count: number): PublicGame[] =>
 describe("lista pública de participantes", () => {
   afterEach(cleanup);
 
-  it.each([50, 100, 200])("mostra a prévia e permite ver todos com %i pessoas", (total) => {
+  it.each([23, 50, 100, 200])("mostra a prévia e permite ver todos com %i pessoas", (total) => {
     render(<PublicParticipantList participants={people(total)} />);
     expect(screen.getAllByText(/^Participante \d+$/)).toHaveLength(
       publicPreviewSize.participants,
@@ -41,10 +41,19 @@ describe("lista pública de participantes", () => {
     expect(screen.getAllByText(/^Participante \d+$/)).toHaveLength(total);
   });
 
-  it("usa COTA/COTAS em caixa alta e o selo PAGO", () => {
+  it("usa singular correto e o selo Pago", () => {
     render(<PublicParticipantList participants={[{ ordinal: 1, name: "Gilber", quotas: 1, paymentStatus: "PAID" }]} />);
-    expect(screen.getByText("1 COTA")).toBeTruthy();
-    expect(screen.getByText("Pago").className).toContain("uppercase");
+    expect(screen.getByText("1 cota")).toBeTruthy();
+    expect(screen.getByText("✓ Pago")).toBeTruthy();
+  });
+
+  it("mantém nomes longos em uma coluna truncável sem perder cotas e status", () => {
+    const name = "Participante com um nome excepcionalmente longo para validar a coluna";
+    render(<PublicParticipantList participants={[{ ordinal: 1, name, quotas: 2, paymentStatus: "PAID" }]} />);
+    const cell = screen.getByTitle(name);
+    expect(cell.className).toContain("truncate");
+    expect(screen.getByText("2 cotas")).toBeTruthy();
+    expect(screen.getByText("✓ Pago")).toBeTruthy();
   });
 
   it("busca por nome, sem diferenciar acentos", () => {

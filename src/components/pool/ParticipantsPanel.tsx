@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownAZ, ArrowDownUp, Ban, Pencil, Plus, Search, UserMinus, UserPlus, Wallet } from "lucide-react";
+import { ArrowDownAZ, ArrowDownUp, Ban, Pencil, Plus, UserMinus, UserPlus, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -61,10 +61,10 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   }, [participants]);
   const visibleParticipants = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("pt-BR");
-    return participants
+    return [...participants]
       .filter((participant) => paymentFilter === "ALL" || participant.payment_status === paymentFilter)
       .filter((participant) => !term || participant.name.toLocaleLowerCase("pt-BR").includes(term))
-      .toSorted((a, b) => {
+      .sort((a, b) => {
         if (sort === "QUOTAS") return b.quotas - a.quotas || a.name.localeCompare(b.name, "pt-BR");
         if (sort === "PAYMENT") return paymentOrder[a.payment_status] - paymentOrder[b.payment_status] || a.name.localeCompare(b.name, "pt-BR");
         return a.name.localeCompare(b.name, "pt-BR");
