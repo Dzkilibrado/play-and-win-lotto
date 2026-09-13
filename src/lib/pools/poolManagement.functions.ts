@@ -24,11 +24,11 @@ function requiredText(form: FormData, key: string) {
 async function requiredFile(form: FormData) {
   const value = form.get("file");
   if (!(value instanceof File) || value.size <= 0) throw new Error("Selecione um arquivo válido.");
-  validateDocumentFile(value);
   if (value.size > DOCUMENT_MAX_FILE_SIZE) throw new Error("O arquivo deve ter no máximo 20 MB.");
   const bytes = new Uint8Array(await value.arrayBuffer());
   const mimeType = sniffDocumentMime(bytes);
-  if (!mimeType || mimeType !== value.type) throw new Error("O conteúdo do arquivo não corresponde ao formato informado.");
+  if (!mimeType) throw new Error("Use um arquivo JPG, PNG, WEBP ou PDF válido.");
+  if (value.type && value.type !== mimeType) throw new Error("O conteúdo do arquivo não corresponde ao formato informado.");
   return { file: value, bytes, mimeType, originalFileName: value.name.slice(0, 255) };
 }
 

@@ -75,6 +75,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -83,7 +84,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
       return getDocument({ url }).promise;
     }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
-  }, [url]);
+  }, [url, attempt]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -102,7 +103,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [pdf, page, zoom]);
 
-  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); }} onDownload={undefined} />;
+  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); setAttempt((value) => value + 1); }} onDownload={undefined} />;
   return <div className="flex size-full min-h-0 flex-col">
     <div className="flex min-h-11 shrink-0 items-center justify-center gap-1 border-b border-border bg-background px-2">
       <Button size="icon" variant="ghost" aria-label="Página anterior" disabled={!pdf || page <= 1} onClick={() => setPage((value) => value - 1)}>‹</Button>

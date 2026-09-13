@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Eye, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState, LoadingState } from "@/components/common/StateViews";
@@ -15,7 +15,7 @@ import { deletePoolDocument, getPoolDocumentUrl, replacePoolDocumentFile, upload
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { poolService, type PoolDocumentRow } from "@/lib/services/poolService";
-import { DOCUMENT_ACCEPT, DOCUMENT_MAX_FILE_SIZE, documentTypeLabel, validateDocumentFile } from "@/lib/documents/documentFiles";
+import { DOCUMENT_ACCEPT, documentTypeLabel, validateDocumentFile } from "@/lib/documents/documentFiles";
 
 export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string; canManage: boolean; readOnly: boolean }) {
   const queryClient = useQueryClient();
@@ -49,7 +49,7 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
     try { validateDocumentFile(file); return true; }
     catch (error) { toast.error(error instanceof Error ? error.message : "Use um arquivo JPG, PNG, WEBP ou PDF."); return false; }
   };
-  const viewerDocument: ViewableDocument | null = viewing ? { title: viewing.title, description: viewing.description, fileName: viewing.title, mimeType: viewing.mime_type, fileSize: viewing.file_size, getUrl: () => getDocumentUrl({ data: { documentId: viewing.id } }) } : null;
+  const viewerDocument = useMemo<ViewableDocument | null>(() => viewing ? { title: viewing.title, description: viewing.description, fileName: viewing.original_file_name || viewing.title, mimeType: viewing.mime_type, fileSize: viewing.file_size, getUrl: () => getDocumentUrl({ data: { documentId: viewing.id } }) } : null, [getDocumentUrl, viewing]);
 
   if (documents.isLoading) return <LoadingState rows={3} />;
   const rows = documents.data ?? [];
