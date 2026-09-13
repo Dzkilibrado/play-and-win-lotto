@@ -60,10 +60,12 @@ describe("relatório PDF do bolão", () => {
     attachment.addPage();
     const bytes = await attachment.save();
     const baseBlob = await createPoolReportPdf({ ...data, sections: { participants: true, games: true, documents: false } });
-    const outputBlob = await createPoolReportPdf({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: bytes.buffer }] });
+    const documentBytes = new Uint8Array(bytes.byteLength);
+    documentBytes.set(bytes);
+    const outputBlob = await createPoolReportPdf({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: documentBytes.buffer }] });
     const [base, output] = await Promise.all([PDFDocument.load(await baseBlob.arrayBuffer()), PDFDocument.load(await outputBlob.arrayBuffer())]);
     expect(output.getPageCount()).toBe(base.getPageCount());
-    expect(JSON.stringify(buildPoolReportDefinition({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: bytes.buffer }] }))).not.toContain("Comprovantes");
+    expect(JSON.stringify(buildPoolReportDefinition({ ...data, sections: { participants: true, games: true, documents: false }, documents: [{ title: "Ignorado", mimeType: "application/pdf", bytes: documentBytes.buffer }] }))).not.toContain("Comprovantes");
   });
 
   it.each([1, 2, 5, 10])("inclui a seção para %i comprovante(s)", (count) => {
