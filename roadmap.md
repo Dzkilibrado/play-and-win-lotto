@@ -112,3 +112,10 @@
 - [x] Publicar e validar o comprovante real nos fluxos privado, Jogos, Completo e PDF.
 - [x] Homologar alteração de senha, ocultação de diagnósticos e menu mobile.
 - [x] Executar matriz de formatos, volumes, telas, temas, testes, tipos e build.
+
+## Refinamento UX da lista de participantes
+- [ ] Reorganizar as listas administrativa e pública em três colunas responsivas.
+- [ ] Adicionar busca, filtros reais e ordenação simples na área administrativa.
+- [ ] Preservar minimização pública e carregamento progressivo para listas grandes.
+- [ ] Validar cenário real, acessibilidade, temas e seis resoluções sem overflow.
+- [ ] Rodar testes, tipos e build; entregar relatório final de 27 itens.
