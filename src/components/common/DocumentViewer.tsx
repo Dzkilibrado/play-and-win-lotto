@@ -2,6 +2,7 @@ import { Download, FileQuestion, Loader2, Minus, Plus, RotateCcw, Share2 } from 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -80,7 +81,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   useEffect(() => {
     let active = true;
     void import("pdfjs-dist").then(({ GlobalWorkerOptions, getDocument }) => {
-      GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+      GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
       return getDocument({ url }).promise;
     }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
