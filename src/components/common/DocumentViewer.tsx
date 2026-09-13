@@ -80,9 +80,12 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
 
   useEffect(() => {
     let active = true;
-    void import("pdfjs-dist").then(({ GlobalWorkerOptions, getDocument }) => {
+    void Promise.all([import("pdfjs-dist"), fetch(url).then((response) => {
+      if (!response.ok) throw new Error("PDF indisponível.");
+      return response.arrayBuffer();
+    })]).then(([{ GlobalWorkerOptions, getDocument }, bytes]) => {
       GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-      return getDocument({ url }).promise;
+      return getDocument({ data: bytes }).promise;
     }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [url, attempt]);
