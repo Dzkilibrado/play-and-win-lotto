@@ -25,9 +25,14 @@ export interface PoolReportData {
   officialPrizeTotal: number;
   generatedAt?: Date;
   documents?: PoolReportDocument[];
+  sections?: PoolReportSections;
 }
 
-export interface PoolReportDocument { title: string; mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"; bytes: ArrayBuffer; }
+export interface PoolReportSections { participants: boolean; games: boolean; documents: boolean; }
+
+export const defaultPoolReportSections: PoolReportSections = { participants: true, games: true, documents: false };
+
+export interface PoolReportDocument { title: string; description?: string | null; mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"; bytes: ArrayBuffer; }
 
 const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
@@ -53,6 +58,7 @@ export function mapPoolReportGames(rows: Awaited<ReturnType<typeof import("@/lib
 }
 
 export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefinitions {
+  const sections = data.sections ?? { participants: true, games: true, documents: true };
   const active = data.participants.filter((participant) => participant.status === "ACTIVE");
   const finance = summarizeFinance(active.map((participant) => ({
     quotas: participant.quotas,
@@ -100,7 +106,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
   const balanceNotice: Content[] = poolBalance < 0
     ? [{ text: `Valor ainda necessário para cobrir os jogos: ${formatCurrency(Math.abs(poolBalance))}`, margin: [0, 6, 0, 0], fontSize: 8, color: "#66736b" }]
     : [];
-  const resultSection: Content[] = checked.length > 0 ? [
+  const resultSection: Content[] = sections.games && checked.length > 0 ? [
     { text: "Resultado oficial", style: "section" },
     { columns: [
       { text: `Jogos conferidos\n${checked.length}`, bold: true },
@@ -108,9 +114,14 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { text: `Premiação oficial\n${formatCurrency(data.officialPrizeTotal)}`, bold: true },
     ], columnGap: 16 },
   ] : [];
-  const documentSection: Content[] = data.documents?.length ? [
+  const includedDocuments = sections.documents ? data.documents ?? [] : [];
+  const documentSection: Content[] = includedDocuments.length ? [
     { text: "Comprovantes", style: "section", pageBreak: "before" },
-    { text: `${data.documents.length} ${data.documents.length === 1 ? "arquivo publicado anexado" : "arquivos publicados anexados"} nas páginas seguintes.`, color: "#66736b" },
+    { text: `${includedDocuments.length} ${includedDocuments.length === 1 ? "comprovante publicado anexado" : "comprovantes publicados anexados"} nas páginas seguintes.`, color: "#66736b" },
+    ...includedDocuments.flatMap((document, index) => [
+      { text: `${index + 1}. ${document.title}`, bold: true, margin: [0, 5, 0, 0] } as Content,
+      ...(document.description ? [{ text: document.description, color: "#66736b", fontSize: 8 } as Content] : []),
+    ]),
   ] : [];
 
   return {
@@ -136,14 +147,14 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
       { table: { widths: ["*", "auto", "*", "auto"], body: summaryRows }, layout: "lightHorizontalLines" },
       ...balanceNotice,
       { text: `Sorteio: ${drawDate ? formatDate(drawDate) : "A definir"}`, margin: [0, 8, 0, 0] },
-      { text: "Participantes ativos", style: "section" },
+      ...(sections.participants ? [{ text: "Participantes ativos", style: "section" } as Content,
       participantRows.length > 0
         ? { table: { headerRows: 1, widths: [20, "*", 34, 58, 58, 48], body: [[{ text: "#", style: "tableHeader" }, { text: "Nome", style: "tableHeader" }, { text: "Cotas", style: "tableHeader" }, { text: "Devido", style: "tableHeader" }, { text: "Pago", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }], ...participantRows] }, layout: "lightHorizontalLines" }
-        : { text: "Nenhum participante ativo.", color: "#66736b" },
-      { text: "Jogos do bolão", style: "section", pageBreak: "before" },
+        : { text: "Nenhum participante ativo.", color: "#66736b" }] as Content[] : []),
+      ...(sections.games ? [{ text: "Jogos do bolão", style: "section", pageBreak: "before" } as Content,
       gameRows.length > 0
         ? { table: { headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
-        : { text: "Nenhum jogo no bolão.", color: "#66736b" },
+        : { text: "Nenhum jogo no bolão.", color: "#66736b" }] as Content[] : []),
       ...resultSection,
       ...documentSection,
       ...(publicUrl ? [{ text: "Acompanhamento público", style: "section" } as Content, { text: publicUrl, link: publicUrl, color: "#315f9c", decoration: "underline", margin: [0, 0, 0, 4] } as Content] : []),
@@ -160,38 +171,34 @@ export async function createPoolReportPdf(data: PoolReportData) {
   const pdfMake = pdfMakeModule.default;
   pdfMake.addVirtualFileSystem(fontsModule.default);
   const report = await pdfMake.createPdf(buildPoolReportDefinition(data)).getBlob();
-  if (!data.documents?.length) return report;
+  const sections = data.sections ?? { participants: true, games: true, documents: true };
+  const includedDocuments = sections.documents ? data.documents ?? [] : [];
+  if (!includedDocuments.length) return report;
 
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const merged = await PDFDocument.load(await report.arrayBuffer());
   const font = await merged.embedFont(StandardFonts.HelveticaBold);
-  for (const attachmentDocument of data.documents) {
-    try {
-      if (attachmentDocument.mimeType === "application/pdf") {
-        const attachment = await PDFDocument.load(attachmentDocument.bytes);
-        const pages = await merged.copyPages(attachment, attachment.getPageIndices());
-        pages.forEach((page) => merged.addPage(page));
-        continue;
-      }
-      const imageBytes = attachmentDocument.mimeType === "image/webp" ? await convertWebpToPng(attachmentDocument.bytes) : attachmentDocument.bytes;
-      const image = attachmentDocument.mimeType === "image/jpeg" ? await merged.embedJpg(imageBytes) : await merged.embedPng(imageBytes);
-      const page = merged.addPage([595.28, 841.89]);
-      const margin = 36;
-      const titleHeight = 34;
-      const availableWidth = page.getWidth() - margin * 2;
-      const availableHeight = page.getHeight() - margin * 2 - titleHeight;
-      const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
-      const width = image.width * scale;
-      const height = image.height * scale;
-      page.drawText(attachmentDocument.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
-      page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
-    } catch {
-      const page = merged.addPage([595.28, 841.89]);
-      page.drawText(attachmentDocument.title, { x: 36, y: 793, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
-      page.drawText("Não foi possível incorporar este arquivo ao relatório.", { x: 36, y: 765, size: 9, color: rgb(0.4, 0.45, 0.42) });
+  for (const attachmentDocument of includedDocuments) {
+    if (attachmentDocument.mimeType === "application/pdf") {
+      const attachment = await PDFDocument.load(attachmentDocument.bytes, { updateMetadata: false });
+      const pages = await merged.copyPages(attachment, attachment.getPageIndices());
+      pages.forEach((page) => merged.addPage(page));
+      continue;
     }
+    const imageBytes = attachmentDocument.mimeType === "image/webp" ? await convertWebpToPng(attachmentDocument.bytes) : attachmentDocument.bytes;
+    const image = attachmentDocument.mimeType === "image/jpeg" ? await merged.embedJpg(imageBytes) : await merged.embedPng(imageBytes);
+    const page = merged.addPage([595.28, 841.89]);
+    const margin = 36;
+    const titleHeight = 34;
+    const availableWidth = page.getWidth() - margin * 2;
+    const availableHeight = page.getHeight() - margin * 2 - titleHeight;
+    const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    page.drawText(attachmentDocument.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
+    page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
   }
-  const saved = await merged.save();
+  const saved = await merged.save({ useObjectStreams: false });
   const bytes = new Uint8Array(saved.byteLength);
   bytes.set(saved);
   return new Blob([bytes.buffer], { type: "application/pdf" });
