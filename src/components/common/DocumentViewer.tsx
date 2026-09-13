@@ -27,7 +27,7 @@ export function DocumentViewer({ open, onOpenChange, document }: { open: boolean
     let active = true;
     setLoading(true); setFailed(false); setUrl(null);
     void document.getUrl().then((nextUrl) => { if (active) setUrl(nextUrl); }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    return () => { active = false; if (url?.startsWith("blob:")) URL.revokeObjectURL(url); };
   }, [open, document, attempt]);
 
   const retry = () => setAttempt((value) => value + 1);

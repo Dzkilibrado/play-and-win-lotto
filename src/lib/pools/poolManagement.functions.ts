@@ -4,10 +4,9 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
+import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime, validateDocumentFile } from "@/lib/documents/documentFiles";
 
 const DOCUMENT_BUCKET = "pool-documents";
-const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024;
-const DOCUMENT_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
 
 const documentActionSchema = z.object({ documentId: z.string().uuid() });
 
@@ -22,18 +21,15 @@ function requiredText(form: FormData, key: string) {
   return value.trim();
 }
 
-function requiredFile(form: FormData) {
+async function requiredFile(form: FormData) {
   const value = form.get("file");
   if (!(value instanceof File) || value.size <= 0) throw new Error("Selecione um arquivo válido.");
-  if (value.size > MAX_DOCUMENT_SIZE) throw new Error("O arquivo deve ter no máximo 20 MB.");
-  if (!DOCUMENT_MIME_TYPES.some((mimeType) => mimeType === value.type)) throw new Error("Use um arquivo JPG, PNG ou PDF.");
-  return value;
-}
-
-function extensionFor(mimeType: string) {
-  if (mimeType === "application/pdf") return "pdf";
-  if (mimeType === "image/png") return "png";
-  return "jpg";
+  validateDocumentFile(value);
+  if (value.size > DOCUMENT_MAX_FILE_SIZE) throw new Error("O arquivo deve ter no máximo 20 MB.");
+  const bytes = new Uint8Array(await value.arrayBuffer());
+  const mimeType = sniffDocumentMime(bytes);
+  if (!mimeType || mimeType !== value.type) throw new Error("O conteúdo do arquivo não corresponde ao formato informado.");
+  return { file: value, bytes, mimeType, originalFileName: value.name.slice(0, 255) };
 }
 
 async function assertCanManagePool(
@@ -53,15 +49,14 @@ export const uploadPoolDocument = createServerFn({ method: "POST" })
     const descriptionValue = data.get("description");
     const description = typeof descriptionValue === "string" ? descriptionValue.trim() : "";
     const sortOrder = z.coerce.number().int().min(0).parse(data.get("sortOrder"));
-    const file = requiredFile(data);
+    const { file, bytes, mimeType, originalFileName } = await requiredFile(data);
     await assertCanManagePool(context.supabase, poolId);
 
-    const path = `${poolId}/${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    const path = `${poolId}/${crypto.randomUUID()}.${documentExtension(mimeType)}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const bytes = new Uint8Array(await file.arrayBuffer());
     const { error: uploadError } = await supabaseAdmin.storage
       .from(DOCUMENT_BUCKET)
-      .upload(path, bytes, { contentType: file.type, upsert: false });
+      .upload(path, bytes, { contentType: mimeType, upsert: false });
     if (uploadError) throw new Error("Não foi possível salvar o comprovante. Tente novamente.");
 
     const { data: document, error } = await context.supabase.rpc("pool_document_create", {
@@ -70,8 +65,9 @@ export const uploadPoolDocument = createServerFn({ method: "POST" })
       _title: title,
       _description: description,
       _sort_order: sortOrder,
-      _mime_type: file.type,
+      _mime_type: mimeType,
       _file_size: file.size,
+      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
@@ -86,7 +82,7 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
   .inputValidator(requireFormData)
   .handler(async ({ data, context }) => {
     const documentId = z.string().uuid().parse(requiredText(data, "documentId"));
-    const file = requiredFile(data);
+    const { file, bytes, mimeType, originalFileName } = await requiredFile(data);
     const { data: document, error: documentError } = await context.supabase
       .from("pool_documents")
       .select("id, pool_id, storage_path")
@@ -96,19 +92,19 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
     if (documentError || !document) throw new Error("Comprovante não encontrado.");
     await assertCanManagePool(context.supabase, document.pool_id);
 
-    const path = `${document.pool_id}/${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    const path = `${document.pool_id}/${crypto.randomUUID()}.${documentExtension(mimeType)}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const bytes = new Uint8Array(await file.arrayBuffer());
     const { error: uploadError } = await supabaseAdmin.storage
       .from(DOCUMENT_BUCKET)
-      .upload(path, bytes, { contentType: file.type, upsert: false });
+      .upload(path, bytes, { contentType: mimeType, upsert: false });
     if (uploadError) throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
 
     const { data: updated, error } = await context.supabase.rpc("pool_document_replace", {
       _document_id: documentId,
       _storage_path: path,
-      _mime_type: file.type,
+      _mime_type: mimeType,
       _file_size: file.size,
+      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);

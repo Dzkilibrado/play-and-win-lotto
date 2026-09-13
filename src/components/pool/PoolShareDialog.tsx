@@ -33,6 +33,7 @@ import {
   poolShareTitle,
 } from "@/lib/pools/poolShare";
 import { canSharePdfFile, createPoolReportPdf, mapPoolReportGames, poolReportFileName } from "@/lib/pools/poolReportPdf";
+import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
 
@@ -143,7 +144,10 @@ export function PoolShareDialog({
         const url = await getDocumentUrl({ data: { documentId: document.id } });
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Não foi possível carregar ${document.title}.`);
-        return { title: document.title, mimeType: document.mime_type as "image/jpeg" | "image/png" | "application/pdf", bytes: await response.arrayBuffer() };
+        const bytes = await response.arrayBuffer();
+        const mimeType = sniffDocumentMime(new Uint8Array(bytes));
+        if (!mimeType || mimeType !== document.mime_type) throw new Error(`O arquivo ${document.title} está inválido ou com formato divergente.`);
+        return { title: document.title, mimeType, bytes };
       }));
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents });
       setPdfBlob(blob);

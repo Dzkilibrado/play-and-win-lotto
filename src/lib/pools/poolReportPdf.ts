@@ -26,7 +26,7 @@ export interface PoolReportData {
   documents?: PoolReportDocument[];
 }
 
-export interface PoolReportDocument { title: string; mimeType: "image/jpeg" | "image/png" | "application/pdf"; bytes: ArrayBuffer; }
+export interface PoolReportDocument { title: string; mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf"; bytes: ArrayBuffer; }
 
 const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
@@ -157,14 +157,15 @@ export async function createPoolReportPdf(data: PoolReportData) {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const merged = await PDFDocument.load(await report.arrayBuffer());
   const font = await merged.embedFont(StandardFonts.HelveticaBold);
-  for (const document of data.documents) {
-    if (document.mimeType === "application/pdf") {
-      const attachment = await PDFDocument.load(document.bytes);
+  for (const attachmentDocument of data.documents) {
+    if (attachmentDocument.mimeType === "application/pdf") {
+      const attachment = await PDFDocument.load(attachmentDocument.bytes);
       const pages = await merged.copyPages(attachment, attachment.getPageIndices());
       pages.forEach((page) => merged.addPage(page));
       continue;
     }
-    const image = document.mimeType === "image/png" ? await merged.embedPng(document.bytes) : await merged.embedJpg(document.bytes);
+    const imageBytes = attachmentDocument.mimeType === "image/webp" ? await convertWebpToPng(attachmentDocument.bytes) : attachmentDocument.bytes;
+    const image = attachmentDocument.mimeType === "image/jpeg" ? await merged.embedJpg(imageBytes) : await merged.embedPng(imageBytes);
     const page = merged.addPage([595.28, 841.89]);
     const margin = 36;
     const titleHeight = 34;
@@ -173,13 +174,30 @@ export async function createPoolReportPdf(data: PoolReportData) {
     const scale = Math.min(availableWidth / image.width, availableHeight / image.height, 1);
     const width = image.width * scale;
     const height = image.height * scale;
-    page.drawText(document.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
+    page.drawText(attachmentDocument.title, { x: margin, y: page.getHeight() - margin - 12, size: 12, font, color: rgb(0.1, 0.24, 0.15) });
     page.drawImage(image, { x: (page.getWidth() - width) / 2, y: margin + (availableHeight - height) / 2, width, height });
   }
   const saved = await merged.save();
   const bytes = new Uint8Array(saved.byteLength);
   bytes.set(saved);
   return new Blob([bytes.buffer], { type: "application/pdf" });
+}
+
+async function convertWebpToPng(bytes: ArrayBuffer) {
+  if (typeof window === "undefined") throw new Error("Não foi possível incorporar a imagem WEBP neste ambiente.");
+  const source = URL.createObjectURL(new Blob([bytes], { type: "image/webp" }));
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error("Imagem WEBP inválida.")); image.src = source; });
+    const canvas = window.document.createElement("canvas");
+    canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Não foi possível processar a imagem WEBP.");
+    context.drawImage(image, 0, 0);
+    const png = await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Não foi possível processar a imagem WEBP.")), "image/png"));
+    return png.arrayBuffer();
+  } finally { URL.revokeObjectURL(source); }
 }
 
 export function canSharePdfFile(file: File) {
