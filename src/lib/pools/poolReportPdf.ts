@@ -3,6 +3,7 @@ import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { appConfig } from "@/config/app.config";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { summarizeFinance } from "@/lib/pools/poolMath";
+import { poolPublicUrl } from "@/lib/pools/poolShare";
 import type { CheckResultRow } from "@/lib/services/checkService";
 import type { PoolParticipantRow, PoolRow } from "@/lib/services/poolService";
 import { gameStatusLabel, paymentStatusLabel, poolStatusLabel, type GameStatus } from "@/types/domain";
@@ -65,6 +66,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
   const gameCost = data.games.reduce((sum, game) => sum + game.cost, 0);
   const poolBalance = finance.totalPaid - gameCost;
   const generatedAt = data.generatedAt ?? new Date();
+  const publicUrl = poolPublicUrl(data.pool, "FULL");
   const generatedLabel = new Intl.DateTimeFormat(appConfig.locale, {
     dateStyle: "short", timeStyle: "short", timeZone: appConfig.timeZone,
   }).format(generatedAt).replace(",", "");
@@ -139,6 +141,7 @@ export function buildPoolReportDefinition(data: PoolReportData): TDocumentDefini
         ? { table: { headerRows: 1, keepWithHeaderRows: 1, dontBreakRows: true, widths: [20, "*", 72, 55, 100], body: [[{ text: "#", style: "tableHeader" }, { text: "Dezenas", style: "tableHeader" }, { text: "Situação", style: "tableHeader" }, { text: "Custo", style: "tableHeader" }, { text: "Resultado", style: "tableHeader" }], ...gameRows] }, layout: "lightHorizontalLines" }
         : { text: "Nenhum jogo no bolão.", color: "#66736b" },
       ...resultSection,
+      ...(publicUrl ? [{ text: "Acompanhamento público", style: "section" } as Content, { text: publicUrl, link: publicUrl, color: "#315f9c", decoration: "underline", margin: [0, 0, 0, 4] } as Content] : []),
       { text: "Relatório administrativo. Dados pessoais sensíveis, documentos, observações e identificadores internos não são incluídos.", margin: [0, 18, 0, 0], fontSize: 8, color: "#66736b" },
     ],
   };

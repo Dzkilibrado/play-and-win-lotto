@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { poolShareMessage, poolSharePreview, poolShareStats } from "./poolShare";
+import { nativeShare, poolPublicUrl, poolShareMessage, poolSharePreview, poolShareStats, whatsappShareUrl } from "./poolShare";
 import type { PoolRow } from "@/lib/services/poolService";
 
 const pool = {
@@ -43,5 +43,31 @@ describe("mensagens reais de compartilhamento", () => {
   it("distingue jogos apostados e planejados", () => {
     const mixed = { ...pool, pool_games: pool.pool_games.map((item, index) => index < 4 ? { ...item, generated_games: { status: "PLANNED" as const } } : item) };
     expect(poolSharePreview(mixed as PoolRow, "GAMES")[0]).toBe("19 jogos · 15 apostados · 4 planejados");
+  });
+
+  it.each(["PARTICIPANTS", "GAMES", "FULL"] as const)("usa o domínio oficial com WWW no escopo %s", (scope) => {
+    const withLinks = {
+      ...pool,
+      pool_share_links: [{ scope, token: `token-${scope.toLowerCase()}`, revoked_at: null }],
+    } as PoolRow;
+    expect(poolPublicUrl(withLinks, scope)).toBe(`https://www.gestordasorte.com.br/b/token-${scope.toLowerCase()}`);
+  });
+
+  it("leva o mesmo endereço oficial na mensagem e no WhatsApp", () => {
+    const withLink = { ...pool, pool_share_links: [{ scope: "FULL", token: "abc123", revoked_at: null }] } as PoolRow;
+    const url = poolPublicUrl(withLink, "FULL");
+    const message = poolShareMessage(withLink, "FULL", url);
+    expect(message).toContain("https://www.gestordasorte.com.br/b/abc123");
+    expect(decodeURIComponent(whatsappShareUrl(message))).toContain("https://www.gestordasorte.com.br/b/abc123");
+  });
+
+  it("entrega o endereço oficial ao compartilhamento do aparelho", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("window", { isSecureContext: true });
+    vi.stubGlobal("navigator", { share });
+
+    await expect(nativeShare({ title: "Bolão", text: "Confira", url: "https://www.gestordasorte.com.br/b/abc123" })).resolves.toBe("shared");
+    expect(share).toHaveBeenCalledWith({ title: "Bolão", text: "Confira", url: "https://www.gestordasorte.com.br/b/abc123" });
+    vi.unstubAllGlobals();
   });
 });

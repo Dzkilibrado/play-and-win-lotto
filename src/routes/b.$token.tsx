@@ -28,7 +28,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
 
 export const Route = createFileRoute("/b/$token")({
-  head: () => ({
+  head: ({ params }) => {
+    const canonicalUrl = `${appConfig.canonicalOrigin}/b/${encodeURIComponent(params.token)}`;
+    return {
     meta: [
       { title: `Acompanhar bolão — ${appConfig.name}` },
       {
@@ -42,9 +44,11 @@ export const Route = createFileRoute("/b/$token")({
         content: "Situação do bolão, participantes confirmados, cotas pagas e jogos apostados.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonicalUrl },
       { name: "twitter:card", content: "summary" },
     ],
-  }),
+    links: [{ rel: "canonical", href: canonicalUrl }],
+  }},
   component: PublicPoolPage,
 });
 

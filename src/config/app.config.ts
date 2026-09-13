@@ -7,8 +7,8 @@ export const appConfig = {
   technicalName: "GestordaSorte",
   name: "Gestor da Sorte",
   shortName: "Gestor da Sorte",
-  domain: "gestordasorte.com.br",
-  canonicalOrigin: "https://gestordasorte.com.br",
+  domain: "www.gestordasorte.com.br",
+  canonicalOrigin: "https://www.gestordasorte.com.br",
   tagline: "Organize seus jogos. Gerencie seus bolões. Acompanhe os resultados.",
   supportingLine: "Seus jogos e bolões em um só lugar.",
   description:
@@ -25,6 +25,12 @@ export const appConfig = {
       "Os recursos de geração e análise não aumentam a probabilidade matemática de premiação. Os sorteios são independentes.",
   },
 } as const;
+
+/** Compõe toda URL pública apresentada ao usuário a partir da origem oficial. */
+export function publicAppUrl(path = "/") {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return new URL(normalizedPath, `${appConfig.canonicalOrigin}/`).toString();
+}
 
 export type FeatureStatus = "ACTIVE" | "BETA" | "MAINTENANCE" | "DISABLED";
 
