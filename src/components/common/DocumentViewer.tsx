@@ -86,7 +86,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
     })]).then(([{ GlobalWorkerOptions, getDocument }, bytes]) => {
       GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
       return getDocument({ data: bytes }).promise;
-    }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch(() => { if (active) setError(true); });
+    }).then((loaded) => { if (active) { setPdf(loaded); setPage(1); setError(false); } }).catch((cause) => { console.error("Falha ao carregar PDF", cause); if (active) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [url, attempt]);
 
