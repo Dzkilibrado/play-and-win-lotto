@@ -11,11 +11,17 @@ export const Route = createFileRoute("/api/public/sync/run")({
     handlers: {
       POST: async ({ request }) => {
         const denied = await authenticateCronRequest(request);
-        if (denied) return denied;
+        if (denied) {
+          const { authenticateDatabaseScheduler } = await import(
+            "@/lib/sync/schedulerAuth.server"
+          );
+          if (!(await authenticateDatabaseScheduler(request))) {
+            return new Response("Unauthorized", { status: 401 });
+          }
+        }
 
-        const { getAdminClient, runJobBatch, listLotteryRows, syncSingleContest } = await import(
-          "@/lib/sync/lotterySync.server"
-        );
+        const { getAdminClient, runJobBatch, listLotteryRows, runLotteryAutomation } =
+          await import("@/lib/sync/lotterySync.server");
         const admin = await getAdminClient();
 
         // Conferência automática: sempre que esta execução acontece, os
@@ -49,12 +55,12 @@ export const Route = createFileRoute("/api/public/sync/run")({
           }
         }
 
-        // 2) sem trabalhos pendentes: atualiza o último concurso de cada modalidade
+        // 2) sem trabalhos pendentes: executa apenas as modalidades vencidas.
         const lotteries = await listLotteryRows(admin);
         const results = [];
         for (const lottery of lotteries) {
-          const result = await syncSingleContest(admin, lottery, null, null);
-          results.push({ lottery: lottery.slug, ok: result.ok, contest: result.contest });
+          const result = await runLotteryAutomation(admin, lottery, { trigger: "SCHEDULED" });
+          results.push(result);
         }
         const checks = await runChecks();
         return Response.json({ mode: "latest", results, checks });

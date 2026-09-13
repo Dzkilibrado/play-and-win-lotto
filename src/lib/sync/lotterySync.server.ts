@@ -179,7 +179,12 @@ async function finishAutomationState(
     errorMessage?: string | null;
   },
 ) {
-  const { error } = await admin.rpc("complete_lottery_sync", {
+  const { error } = await (admin as unknown as {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("complete_lottery_sync", {
     _lottery_id: input.lotteryId,
     _status: input.status,
     _expected_contest_number: input.expectedContest,
@@ -291,7 +296,17 @@ export async function runLotteryAutomation(
 
   try {
     const latest = await fetchOfficialDraw(lottery.slug as LotterySlug);
-    const localContest = contest ? contest - 1 : 0;
+    if (contest && latest.contestNumber < contest) {
+      throw new SyncError("NOT_FOUND", `Concurso ${contest} ainda não foi publicado.`);
+    }
+    const { data: localLatest } = await admin
+      .from("lottery_draws")
+      .select("contest_number")
+      .eq("lottery_id", lottery.id)
+      .order("contest_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const localContest = localLatest?.contest_number ?? 0;
     const firstContest = Math.max(
       1,
       latest.contestNumber - syncConfig.maxRecoveryContestsPerRun + 1,
