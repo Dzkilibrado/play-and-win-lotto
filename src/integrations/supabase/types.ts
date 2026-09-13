@@ -968,6 +968,7 @@ export type Database = {
           file_size: number | null
           id: string
           mime_type: string | null
+          original_file_name: string | null
           replaced_at: string
           replaced_by: string | null
           storage_path: string
@@ -978,6 +979,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          original_file_name?: string | null
           replaced_at?: string
           replaced_by?: string | null
           storage_path: string
@@ -988,6 +990,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          original_file_name?: string | null
           replaced_at?: string
           replaced_by?: string | null
           storage_path?: string
@@ -1015,6 +1018,7 @@ export type Database = {
           kind: string
           mime_type: string | null
           notes: string | null
+          original_file_name: string | null
           participant_id: string | null
           pool_id: string
           sort_order: number
@@ -1035,6 +1039,7 @@ export type Database = {
           kind?: string
           mime_type?: string | null
           notes?: string | null
+          original_file_name?: string | null
           participant_id?: string | null
           pool_id: string
           sort_order?: number
@@ -1055,6 +1060,7 @@ export type Database = {
           kind?: string
           mime_type?: string | null
           notes?: string | null
+          original_file_name?: string | null
           participant_id?: string | null
           pool_id?: string
           sort_order?: number
@@ -1885,78 +1891,157 @@ export type Database = {
         Args: { _game_id: string; _pool_id: string }
         Returns: undefined
       }
-      pool_document_create: {
-        Args: {
-          _description: string
-          _file_size: number
-          _mime_type: string
-          _pool_id: string
-          _sort_order: number
-          _storage_path: string
-          _title: string
-        }
-        Returns: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
-        SetofOptions: {
-          from: "*"
-          to: "pool_documents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      pool_document_create:
+        | {
+            Args: {
+              _description: string
+              _file_size: number
+              _mime_type: string
+              _pool_id: string
+              _sort_order: number
+              _storage_path: string
+              _title: string
+            }
+            Returns: {
+              created_at: string
+              deleted_at: string | null
+              description: string | null
+              file_size: number | null
+              game_id: string | null
+              id: string
+              is_published: boolean
+              kind: string
+              mime_type: string | null
+              notes: string | null
+              original_file_name: string | null
+              participant_id: string | null
+              pool_id: string
+              sort_order: number
+              storage_path: string
+              title: string
+              updated_at: string
+              uploaded_by: string | null
+              version: number
+            }
+            SetofOptions: {
+              from: "*"
+              to: "pool_documents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _description: string
+              _file_size: number
+              _mime_type: string
+              _original_file_name: string
+              _pool_id: string
+              _sort_order: number
+              _storage_path: string
+              _title: string
+            }
+            Returns: {
+              created_at: string
+              deleted_at: string | null
+              description: string | null
+              file_size: number | null
+              game_id: string | null
+              id: string
+              is_published: boolean
+              kind: string
+              mime_type: string | null
+              notes: string | null
+              original_file_name: string | null
+              participant_id: string | null
+              pool_id: string
+              sort_order: number
+              storage_path: string
+              title: string
+              updated_at: string
+              uploaded_by: string | null
+              version: number
+            }
+            SetofOptions: {
+              from: "*"
+              to: "pool_documents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       pool_document_delete: { Args: { _document_id: string }; Returns: string }
-      pool_document_replace: {
-        Args: {
-          _document_id: string
-          _file_size: number
-          _mime_type: string
-          _storage_path: string
-        }
-        Returns: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
-        SetofOptions: {
-          from: "*"
-          to: "pool_documents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      pool_document_replace:
+        | {
+            Args: {
+              _document_id: string
+              _file_size: number
+              _mime_type: string
+              _storage_path: string
+            }
+            Returns: {
+              created_at: string
+              deleted_at: string | null
+              description: string | null
+              file_size: number | null
+              game_id: string | null
+              id: string
+              is_published: boolean
+              kind: string
+              mime_type: string | null
+              notes: string | null
+              original_file_name: string | null
+              participant_id: string | null
+              pool_id: string
+              sort_order: number
+              storage_path: string
+              title: string
+              updated_at: string
+              uploaded_by: string | null
+              version: number
+            }
+            SetofOptions: {
+              from: "*"
+              to: "pool_documents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _document_id: string
+              _file_size: number
+              _mime_type: string
+              _original_file_name: string
+              _storage_path: string
+            }
+            Returns: {
+              created_at: string
+              deleted_at: string | null
+              description: string | null
+              file_size: number | null
+              game_id: string | null
+              id: string
+              is_published: boolean
+              kind: string
+              mime_type: string | null
+              notes: string | null
+              original_file_name: string | null
+              participant_id: string | null
+              pool_id: string
+              sort_order: number
+              storage_path: string
+              title: string
+              updated_at: string
+              uploaded_by: string | null
+              version: number
+            }
+            SetofOptions: {
+              from: "*"
+              to: "pool_documents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       pool_document_update: {
         Args: {
           _description: string
@@ -1976,6 +2061,7 @@ export type Database = {
           kind: string
           mime_type: string | null
           notes: string | null
+          original_file_name: string | null
           participant_id: string | null
           pool_id: string
           sort_order: number

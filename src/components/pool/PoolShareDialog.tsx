@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DocumentViewer, type ViewableDocument } from "@/components/common/DocumentViewer";
 import { getPoolDocumentUrl } from "@/lib/pools/poolManagement.functions";
 import {
   Dialog,
@@ -32,6 +33,7 @@ import {
   poolShareTitle,
 } from "@/lib/pools/poolShare";
 import { canSharePdfFile, createPoolReportPdf, mapPoolReportGames, poolReportFileName } from "@/lib/pools/poolReportPdf";
+import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
 
@@ -52,6 +54,7 @@ export function PoolShareDialog({
   const [scopeReady, setScopeReady] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const url = poolPublicUrl(pool, scope);
   const message = poolShareMessage(pool, scope, url);
   const preview = poolSharePreview(pool, scope);
@@ -141,7 +144,10 @@ export function PoolShareDialog({
         const url = await getDocumentUrl({ data: { documentId: document.id } });
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Não foi possível carregar ${document.title}.`);
-        return { title: document.title, mimeType: document.mime_type as "image/jpeg" | "image/png" | "application/pdf", bytes: await response.arrayBuffer() };
+        const bytes = await response.arrayBuffer();
+        const mimeType = sniffDocumentMime(new Uint8Array(bytes));
+        if (!mimeType || mimeType !== document.mime_type) throw new Error(`O arquivo ${document.title} está inválido ou com formato divergente.`);
+        return { title: document.title, mimeType, bytes };
       }));
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents });
       setPdfBlob(blob);
@@ -167,17 +173,11 @@ export function PoolShareDialog({
   };
 
   const previewPdf = async () => {
-    const preview = window.open("", "_blank", "noopener,noreferrer");
     const blob = await generatePdf();
-    if (!blob) {
-      preview?.close();
-      return;
-    }
-    const href = URL.createObjectURL(blob);
-    if (preview) preview.location.href = href;
-    else toast.error("Permita a abertura de uma nova janela para visualizar o PDF.");
-    setTimeout(() => URL.revokeObjectURL(href), 60_000);
+    if (blob) setPdfPreviewOpen(true);
   };
+
+  const reportDocument: ViewableDocument | null = pdfBlob ? { title: `Relatório completo — ${pool.name}`, fileName: poolReportFileName(pool), mimeType: "application/pdf", fileSize: pdfBlob.size, getUrl: async () => URL.createObjectURL(pdfBlob) } : null;
 
   const sharePdf = async () => {
     const blob = await generatePdf();
@@ -197,7 +197,7 @@ export function PoolShareDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <><Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-[34rem] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Compartilhar bolão</DialogTitle>
@@ -313,6 +313,6 @@ export function PoolShareDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </Dialog><DocumentViewer open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} document={reportDocument} /></>
   );
 }

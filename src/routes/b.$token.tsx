@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ExternalLink, FileText, Timer } from "lucide-react";
+import { Eye, FileText, Timer } from "lucide-react";
+import { useState } from "react";
 
 import { SectionTitleWithCount } from "@/components/common/CountBadge";
 import { EmptyState, LoadingState } from "@/components/common/StateViews";
+import { DocumentViewer, type ViewableDocument } from "@/components/common/DocumentViewer";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { NumberBall } from "@/components/lottery/NumberBall";
 import { PublicGameList } from "@/components/pool/PublicGameList";
@@ -67,6 +69,7 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
 
 function PublicPoolPage() {
   const { token } = Route.useParams();
+  const [viewing, setViewing] = useState<(ViewableDocument & { id: string }) | null>(null);
 
   const summary = useQuery({
     queryKey: ["public-pool", token],
@@ -246,8 +249,9 @@ function PublicPoolPage() {
             </AccordionContent>
           </AccordionItem>
         ) : null}
-        {showGames && (documents.data?.length ?? 0) > 0 ? <AccordionItem value="documents" className="border-0"><AccordionTrigger className="gap-3 py-3 text-sm font-semibold"><SectionTitleWithCount title="Comprovantes" count={documents.data?.length ?? 0} /></AccordionTrigger><AccordionContent className="pb-3"><ul className="space-y-2">{documents.data?.map((document) => <li key={document.id} className="flex items-center justify-between gap-3 rounded-lg bg-surface-secondary p-3"><span className="flex min-w-0 items-center gap-2"><FileText className="size-4 shrink-0 text-lottery" aria-hidden /><span className="min-w-0"><span className="block truncate text-sm font-medium text-text-primary">{document.title}</span>{document.description ? <span className="block text-xs text-text-secondary">{document.description}</span> : null}</span></span><Button asChild variant="ghost" size="icon"><a href={document.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${document.title}`}><ExternalLink /></a></Button></li>)}</ul></AccordionContent></AccordionItem> : null}
+        {showGames && (documents.data?.length ?? 0) > 0 ? <AccordionItem value="documents" className="border-0"><AccordionTrigger className="gap-3 py-3 text-sm font-semibold"><SectionTitleWithCount title="Comprovantes" count={documents.data?.length ?? 0} /></AccordionTrigger><AccordionContent className="pb-3"><ul className="space-y-2">{documents.data?.map((document) => <li key={document.id}><button type="button" className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-lg bg-surface-secondary p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setViewing({ id: document.id, title: document.title, description: document.description, fileName: document.title, mimeType: document.mime_type, fileSize: document.file_size, getUrl: async () => document.url })} aria-label={`Visualizar ${document.title}`}><span className="flex min-w-0 items-center gap-2"><FileText className="size-4 shrink-0 text-lottery" aria-hidden /><span className="min-w-0"><span className="block truncate text-sm font-medium text-text-primary">{document.title}</span>{document.description ? <span className="block text-xs text-text-secondary">{document.description}</span> : null}</span></span><span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary"><Eye className="size-4" aria-hidden />Visualizar</span></button></li>)}</ul></AccordionContent></AccordionItem> : null}
       </Accordion>
+      <DocumentViewer open={viewing !== null} onOpenChange={(open) => { if (!open) setViewing(null); }} document={viewing} />
 
       <p className="px-1 text-xs text-text-secondary">Por privacidade, apenas informações essenciais são exibidas.</p>
 
