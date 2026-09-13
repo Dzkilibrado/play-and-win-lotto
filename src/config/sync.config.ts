@@ -21,6 +21,8 @@ export const syncConfig = {
   concurrency: 8,
   /** Horário oficial de referência, em America/Sao_Paulo. */
   officialDrawHour: 21,
+  /** Aos domingos, o sorteio oficial ocorre pela manhã. */
+  sundayDrawHour: 11,
   /** O agendamento chama o orquestrador a cada 15 minutos. */
   schedulerMinutes: 15,
   /** Retentativas persistentes após o horário previsto. */
