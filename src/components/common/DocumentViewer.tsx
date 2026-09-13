@@ -1,6 +1,7 @@
 import { Download, FileQuestion, Loader2, Minus, Plus, RotateCcw, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -68,8 +69,8 @@ function ImageViewer({ url, title, onError }: { url: string; title: string; onEr
 
 function PdfViewer({ url, title }: { url: string; title: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
-  const [pdf, setPdf] = useState<{ numPages: number; getPage: (page: number) => Promise<{ getViewport: (input: { scale: number }) => { width: number; height: number }; render: (input: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => { promise: Promise<void>; cancel: () => void } }> } | null>(null);
+  const renderTaskRef = useRef<RenderTask | null>(null);
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState(false);
@@ -94,13 +95,13 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
       const context = canvas.getContext("2d", { alpha: false });
       if (!context) throw new Error("Canvas indisponível");
       canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
-      const task = pdfPage.render({ canvasContext: context, viewport }); renderTaskRef.current = task;
+      const task = pdfPage.render({ canvas, canvasContext: context, viewport }); renderTaskRef.current = task;
       return task.promise;
     }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [pdf, page, zoom]);
 
-  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); }} />;
+  if (error) return <ViewerError onRetry={() => { setError(false); setPdf(null); }} onDownload={undefined} />;
   return <div className="flex size-full min-h-0 flex-col">
     <div className="flex min-h-11 shrink-0 items-center justify-center gap-1 border-b border-border bg-background px-2">
       <Button size="icon" variant="ghost" aria-label="Página anterior" disabled={!pdf || page <= 1} onClick={() => setPage((value) => value - 1)}>‹</Button>
