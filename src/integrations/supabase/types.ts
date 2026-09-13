@@ -1001,6 +1001,13 @@ export type Database = {
             foreignKeyName: "pool_document_versions_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "pool_available_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pool_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "pool_documents"
             referencedColumns: ["id"]
           },
@@ -1709,7 +1716,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pool_available_documents: {
+        Row: {
+          description: string | null
+          file_size: number | null
+          id: string | null
+          mime_type: string | null
+          original_file_name: string | null
+          pool_id: string | null
+          sort_order: number | null
+          title: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          description?: string | null
+          file_size?: number | null
+          id?: string | null
+          mime_type?: string | null
+          original_file_name?: string | null
+          pool_id?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          description?: string | null
+          file_size?: number | null
+          id?: string | null
+          mime_type?: string | null
+          original_file_name?: string | null
+          pool_id?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pool_documents_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_game_check: {
