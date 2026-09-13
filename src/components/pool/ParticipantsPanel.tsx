@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
 import { noQuotaLimitLabel, quotaLabel, remainingQuotas } from "@/lib/pools/poolMath";
+import {
+  countPaymentStatuses,
+  filterAndSortParticipants,
+  paymentFilters,
+  type ParticipantSort,
+  type PaymentFilter,
+} from "@/lib/pools/participantList";
 import { paymentStatusLabel, paymentStatusTone, type PaymentStatus } from "@/types/domain";
 import { userErrorMessage } from "@/lib/user-error";
 
@@ -23,12 +30,6 @@ interface Props {
 }
 
 const editableStatuses = ["FORMING", "OPEN", "CLOSED"];
-type PaymentFilter = "ALL" | PaymentStatus;
-type ParticipantSort = "NAME" | "QUOTAS" | "PAYMENT";
-
-const paymentFilters: PaymentFilter[] = ["ALL", "PAID", "PENDING", "PARTIAL", "OVERDUE", "CANCELLED"];
-const paymentOrder: Record<PaymentStatus, number> = { PAID: 0, PARTIAL: 1, PENDING: 2, OVERDUE: 3, CANCELLED: 4 };
-
 function quotaText(value: number) {
   return `${value} ${value === 1 ? "cota" : "cotas"}`;
 }
@@ -54,22 +55,11 @@ export function ParticipantsPanel({ pool, participants, canManage, onPay }: Prop
   const livres = remainingQuotas(pool.total_quotas, quotasTaken);
   const semLimite = livres === null;
   const openForChanges = editableStatuses.includes(pool.status) && canManage;
-  const paymentCounts = useMemo(() => {
-    const counts: Record<PaymentStatus, number> = { PAID: 0, PENDING: 0, PARTIAL: 0, OVERDUE: 0, CANCELLED: 0 };
-    for (const participant of participants) counts[participant.payment_status] += 1;
-    return counts;
-  }, [participants]);
-  const visibleParticipants = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase("pt-BR");
-    return [...participants]
-      .filter((participant) => paymentFilter === "ALL" || participant.payment_status === paymentFilter)
-      .filter((participant) => !term || participant.name.toLocaleLowerCase("pt-BR").includes(term))
-      .sort((a, b) => {
-        if (sort === "QUOTAS") return b.quotas - a.quotas || a.name.localeCompare(b.name, "pt-BR");
-        if (sort === "PAYMENT") return paymentOrder[a.payment_status] - paymentOrder[b.payment_status] || a.name.localeCompare(b.name, "pt-BR");
-        return a.name.localeCompare(b.name, "pt-BR");
-      });
-  }, [participants, paymentFilter, query, sort]);
+  const paymentCounts = useMemo(() => countPaymentStatuses(participants), [participants]);
+  const visibleParticipants = useMemo(
+    () => filterAndSortParticipants(participants, query, paymentFilter, sort),
+    [participants, paymentFilter, query, sort],
+  );
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
