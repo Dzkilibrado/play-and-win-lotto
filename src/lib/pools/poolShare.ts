@@ -23,11 +23,9 @@ export const poolShareScopeDescription: Record<PoolShareScope, string> = {
 export function poolPublicUrl(
   pool: PoolRow,
   scope: PoolShareScope,
-  origin?: string,
 ): string | null {
   const link = pool.pool_share_links?.find((item) => item.scope === scope && !item.revoked_at);
   if (!link) return null;
-  if (origin) return new URL(`/b/${link.token}`, `${origin}/`).toString();
   return publicAppUrl(`/b/${link.token}`);
 }
 

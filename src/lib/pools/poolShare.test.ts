@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { poolPublicUrl, poolShareMessage, poolSharePreview, poolShareStats, whatsappShareUrl } from "./poolShare";
+import { nativeShare, poolPublicUrl, poolShareMessage, poolSharePreview, poolShareStats, whatsappShareUrl } from "./poolShare";
 import type { PoolRow } from "@/lib/services/poolService";
 
 const pool = {
@@ -59,5 +59,15 @@ describe("mensagens reais de compartilhamento", () => {
     const message = poolShareMessage(withLink, "FULL", url);
     expect(message).toContain("https://www.gestordasorte.com.br/b/abc123");
     expect(decodeURIComponent(whatsappShareUrl(message))).toContain("https://www.gestordasorte.com.br/b/abc123");
+  });
+
+  it("entrega o endereço oficial ao compartilhamento do aparelho", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("window", { isSecureContext: true });
+    vi.stubGlobal("navigator", { share });
+
+    await expect(nativeShare({ title: "Bolão", text: "Confira", url: "https://www.gestordasorte.com.br/b/abc123" })).resolves.toBe("shared");
+    expect(share).toHaveBeenCalledWith({ title: "Bolão", text: "Confira", url: "https://www.gestordasorte.com.br/b/abc123" });
+    vi.unstubAllGlobals();
   });
 });
