@@ -19,8 +19,10 @@ export const Route = createFileRoute("/api/public/pool-document/$token/$id")({
           });
         if (signedError) return new Response("Não encontrado", { status: 404, headers: { "cache-control": "no-store" } });
 
-        return Response.redirect(signed.signedUrl, 302, {
+        return new Response(null, {
+          status: 302,
           headers: {
+            location: signed.signedUrl,
             "cache-control": "private, no-store, max-age=0",
             "x-content-type-options": "nosniff",
           },
