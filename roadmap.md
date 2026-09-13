@@ -104,4 +104,4 @@
 - [x] Aplicar a compartilhamentos, PDFs e metadados
 - [x] Verificar Participantes, Jogos, Completo e ações de compartilhamento
 - [x] Implementar redirecionamento permanente sem WWW preservando rota, parâmetros e token
-- [ ] Confirmar o redirecionamento na publicação final após a nova versão entrar no ar
+- [x] Confirmar o redirecionamento na publicação final após a nova versão entrar no ar
