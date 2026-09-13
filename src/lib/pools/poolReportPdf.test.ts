@@ -87,9 +87,10 @@ describe("relatório PDF do bolão", () => {
     [{ participants: false, games: true, documents: false }, false, true],
     [{ participants: true, games: true, documents: false }, true, true],
   ])("respeita a seleção de seções %o", (sections, hasParticipants, hasGames) => {
-    const serialized = JSON.stringify(buildPoolReportDefinition({ ...data, sections }));
-    expect(serialized.includes("Participantes ativos")).toBe(hasParticipants);
-    expect(serialized.includes("Jogos do bolão")).toBe(hasGames);
+    const definition = buildPoolReportDefinition({ ...data, sections });
+    const content = Array.isArray(definition.content) ? definition.content as unknown as Array<Record<string, unknown>> : [];
+    expect(content.some((item) => item["text"] === "Participantes ativos")).toBe(hasParticipants);
+    expect(content.some((item) => item["text"] === "Jogos do bolão")).toBe(hasGames);
   });
 
   it("inclui o cenário real e exclui dados privados", () => {
