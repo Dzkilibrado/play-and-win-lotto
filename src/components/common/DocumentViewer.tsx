@@ -65,7 +65,7 @@ function ImageViewer({ url, title, onError }: { url: string; title: string; onEr
       <Button size="icon" variant="ghost" aria-label="Restaurar zoom" title="Restaurar zoom" disabled={zoom === 1} onClick={() => setZoom(1)}><RotateCcw /></Button>
       <Button size="icon" variant="ghost" aria-label="Aumentar zoom" title="Aumentar zoom" disabled={zoom >= 3} onClick={() => setZoom((value) => Math.min(3, value + .25))}><Plus /></Button>
     </div>
-    <div className="flex min-h-0 flex-1 overflow-auto p-3 touch-pan-x touch-pan-y sm:p-5"><img src={url} alt={title} onError={onError} className="m-auto block max-h-full max-w-full object-contain" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }} /></div>
+    <div className="flex min-h-0 flex-1 overflow-auto p-3 touch-pan-x touch-pan-y sm:p-5"><img src={url} alt={title} onError={onError} className="m-auto block h-auto max-h-full max-w-full object-contain transition-transform motion-reduce:transition-none" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }} /></div>
   </div>;
 }
 

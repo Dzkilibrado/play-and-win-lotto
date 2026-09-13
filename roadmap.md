@@ -105,3 +105,10 @@
 - [x] Verificar Participantes, Jogos, Completo e ações de compartilhamento
 - [x] Implementar redirecionamento permanente sem WWW preservando rota, parâmetros e token
 - [x] Confirmar o redirecionamento na publicação final após a nova versão entrar no ar
+
+## Fechamento de pendências funcionais
+- [x] Diagnosticar o comprovante real e corrigir sessão expirada antes de operações autenticadas.
+- [x] Tornar nome original e versão atual atômicos; centralizar autorização pública do arquivo.
+- [ ] Publicar e validar o comprovante real nos fluxos privado, Jogos, Completo e PDF.
+- [ ] Homologar alteração de senha, ocultação de diagnósticos e menu mobile.
+- [ ] Executar matriz de formatos, volumes, telas, temas, testes, tipos e build.
