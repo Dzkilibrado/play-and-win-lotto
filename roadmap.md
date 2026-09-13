@@ -119,3 +119,10 @@
 - [x] Preservar minimização pública e carregamento progressivo para listas grandes.
 - [x] Validar cenário real, acessibilidade, temas e seis resoluções sem overflow.
 - [x] Rodar testes, tipos e build; entregar relatório final de 27 itens.
+
+## Regressão do comprovante no PDF e compartilhamento
+- [ ] Diagnosticar a regressão com o comprovante real do Bolão Galera Gmill.
+- [ ] Corrigir a incorporação de PDF e imagens sem mascarar falhas.
+- [ ] Adicionar seleção de participantes, jogos e comprovantes na geração do PDF.
+- [ ] Refinar a opção Completo e sua contagem de comprovantes publicados.
+- [ ] Validar os três links, sete resoluções, testes, tipos e compilação.
