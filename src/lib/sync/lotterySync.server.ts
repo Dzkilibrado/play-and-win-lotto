@@ -10,10 +10,13 @@ import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { syncConfig } from "@/config/sync.config";
 import type { Database } from "@/integrations/supabase/types";
 import {
+  consistencyCheckAt,
   expectedDrawAt,
-  isBeforeExpectedDraw,
+  nextPreDrawAction,
   nextRetryAt,
+  publicationNeedsAttention,
   waitingStatus,
+  type AutomationAction,
   type AutomationStatus,
 } from "./automation";
 import { fetchOfficialDraw, SyncError, type NormalizedDraw } from "./caixa.provider.server";
@@ -38,6 +41,8 @@ interface SyncStateRow {
   expected_draw_at: string | null;
   consecutive_failures: number;
   next_attempt_at: string | null;
+  next_action_kind: AutomationAction;
+  consistency_contest_number: number | null;
 }
 
 export interface AutomationResult {
@@ -46,7 +51,7 @@ export interface AutomationResult {
   ok: boolean;
   status: AutomationStatus | "LOCKED";
   contest: number | null;
-  outcome?: "inserted" | "updated";
+  outcome?: "inserted" | "updated" | "unchanged";
   nextAttemptAt: string | null;
   errorType?: string;
 }
@@ -90,7 +95,7 @@ async function persistDraw(
   admin: Admin,
   lottery: LotteryRow,
   draw: NormalizedDraw,
-): Promise<"inserted" | "updated"> {
+): Promise<"inserted" | "updated" | "unchanged"> {
   const { data, error } = await (
     admin as unknown as {
       rpc: (
@@ -122,7 +127,8 @@ async function persistDraw(
   });
 
   if (error) throw new SyncError("PERSISTENCE", error.message);
-  return data === "inserted" ? "inserted" : "updated";
+  if (data === "inserted" || data === "unchanged") return data;
+  return "updated";
 }
 
 function publicFailureMessage(type: SyncError["type"]) {
@@ -151,14 +157,16 @@ async function ensureSyncState(admin: Admin, lottery: LotteryRow) {
     .maybeSingle();
   const expectedAt = expectedDrawAt(latest?.next_draw_date ?? null);
   const now = new Date();
+  const next = nextPreDrawAction(now, expectedAt);
   const { data, error } = await admin
     .from("lottery_sync_state")
     .upsert({
       lottery_id: lottery.id,
-      status: isBeforeExpectedDraw(now, expectedAt) ? "WAITING_DRAW" : "WAITING_PUBLICATION",
+      status: expectedAt && Date.parse(expectedAt) > now.getTime() ? "WAITING_DRAW" : "WAITING_PUBLICATION",
       expected_contest_number: latest?.next_contest_number ?? null,
       expected_draw_at: expectedAt,
-      next_attempt_at: isBeforeExpectedDraw(now, expectedAt) ? expectedAt : now.toISOString(),
+      next_attempt_at: expectedAt && Date.parse(expectedAt) > now.getTime() ? next.at : now.toISOString(),
+      next_action_kind: expectedAt && Date.parse(expectedAt) > now.getTime() ? next.action : "WAIT_PUBLICATION",
     })
     .select("*")
     .single();
@@ -177,6 +185,10 @@ async function finishAutomationState(
     success: boolean;
     errorType?: string | null;
     errorMessage?: string | null;
+    nextActionKind: AutomationAction;
+    healthChecked?: boolean;
+    consistencyChecked?: boolean;
+    consistencyContest?: number | null;
   },
 ) {
   const { error } = await (admin as unknown as {
@@ -193,6 +205,10 @@ async function finishAutomationState(
     _success: input.success,
     _error_type: input.errorType ?? null,
     _error_message: input.errorMessage ?? null,
+    _next_action_kind: input.nextActionKind,
+    _health_checked: input.healthChecked ?? false,
+    _consistency_checked: input.consistencyChecked ?? false,
+    _consistency_contest_number: input.consistencyContest ?? null,
   });
   if (error) throw new SyncError("PERSISTENCE", error.message);
 }
@@ -230,7 +246,7 @@ async function finishAutomationRun(
     errorMessage?: string | null;
   },
 ) {
-  await admin
+  const { error } = await admin
     .from("lottery_sync_runs")
     .update({
       status: input.status,
@@ -241,6 +257,13 @@ async function finishAutomationRun(
       error_message: input.errorMessage ?? null,
     })
     .eq("id", runId);
+  if (error) throw new SyncError("PERSISTENCE", error.message);
+}
+
+export function recoveryContestRange(localContest: number, officialContest: number) {
+  const start = Math.max(1, localContest + 1);
+  const end = Math.min(officialContest, localContest + syncConfig.maxRecoveryContestsPerRun);
+  return start <= end ? { start, end } : null;
 }
 
 /**
@@ -257,17 +280,6 @@ export async function runLotteryAutomation(
   const now = options.now ?? new Date();
   const current = await ensureSyncState(admin, lottery);
 
-  if (!force && isBeforeExpectedDraw(now, current.expected_draw_at)) {
-    return {
-      lottery: lottery.slug,
-      attempted: false,
-      ok: true,
-      status: "WAITING_DRAW",
-      contest: current.expected_contest_number,
-      nextAttemptAt: current.expected_draw_at,
-    };
-  }
-
   const { data: claimed, error: claimError } = await admin.rpc("claim_lottery_sync", {
     _lottery_id: lottery.id,
     _force: force,
@@ -278,7 +290,7 @@ export async function runLotteryAutomation(
       lottery: lottery.slug,
       attempted: false,
       ok: true,
-      status: "LOCKED",
+      status: current.status,
       contest: current.expected_contest_number,
       nextAttemptAt: current.next_attempt_at,
     };
@@ -295,7 +307,13 @@ export async function runLotteryAutomation(
   );
 
   try {
-    const latest = await fetchOfficialDraw(lottery.slug as LotterySlug);
+    const isConsistencyCheck = state.next_action_kind === "CONSISTENCY_CHECK";
+    const latest = await fetchOfficialDraw(
+      lottery.slug as LotterySlug,
+      isConsistencyCheck && state.consistency_contest_number
+        ? state.consistency_contest_number
+        : undefined,
+    );
     if (contest && latest.contestNumber < contest) {
       throw new SyncError("NOT_FOUND", `Concurso ${contest} ainda não foi publicado.`);
     }
@@ -307,17 +325,16 @@ export async function runLotteryAutomation(
       .limit(1)
       .maybeSingle();
     const localContest = localLatest?.contest_number ?? 0;
-    const firstContest = Math.max(
-      1,
-      latest.contestNumber - syncConfig.maxRecoveryContestsPerRun + 1,
-      localContest + 1,
-    );
-    let outcome: "inserted" | "updated" = "updated";
-    for (let number = firstContest; number <= latest.contestNumber; number += 1) {
+    const range = recoveryContestRange(localContest, latest.contestNumber);
+    let outcome: "inserted" | "updated" | "unchanged" = "unchanged";
+    const firstContest = range?.start ?? latest.contestNumber;
+    const lastContest = range?.end ?? latest.contestNumber;
+    for (let number = firstContest; number <= lastContest; number += 1) {
       const draw = number === latest.contestNumber
         ? latest
         : await fetchOfficialDraw(lottery.slug as LotterySlug, number);
-      outcome = await persistDraw(admin, lottery, draw);
+      const persisted = await persistDraw(admin, lottery, draw);
+      if (persisted !== "unchanged") outcome = persisted;
     }
 
     // O cache de estatísticas vive no processo do servidor e precisa ser
@@ -325,26 +342,38 @@ export async function runLotteryAutomation(
     const { statisticsService } = await import("@/lib/services/statisticsService");
     statisticsService.invalidate(lottery.slug);
 
-    const expectedContest = latest.nextContestNumber ?? latest.contestNumber + 1;
-    const expectedAt = expectedDrawAt(latest.nextDrawDate);
-    const beforeNextDraw = isBeforeExpectedDraw(now, expectedAt);
-    const nextAttemptAt = beforeNextDraw
-      ? expectedAt
-      : new Date(now.getTime() + syncConfig.schedulerMinutes * 60_000).toISOString();
-    const status: AutomationStatus = beforeNextDraw ? "WAITING_DRAW" : "UP_TO_DATE";
+    const recoveryPending = lastContest < latest.contestNumber;
+    const expectedContest = recoveryPending
+      ? lastContest + 1
+      : (latest.nextContestNumber ?? latest.contestNumber + 1);
+    const expectedAt = recoveryPending ? now.toISOString() : expectedDrawAt(latest.nextDrawDate);
+    const next = recoveryPending
+      ? { action: "RETRY" as const, at: now.toISOString() }
+      : isConsistencyCheck
+        ? nextPreDrawAction(now, expectedAt)
+        : { action: "CONSISTENCY_CHECK" as const, at: consistencyCheckAt(now) };
+    const status: AutomationStatus = recoveryPending
+      ? "WAITING_PUBLICATION"
+      : expectedAt && Date.parse(expectedAt) > now.getTime()
+        ? "WAITING_DRAW"
+        : "UP_TO_DATE";
 
     await finishAutomationState(admin, {
       lotteryId: lottery.id,
       status,
       expectedContest,
       expectedAt,
-      nextAttemptAt,
+      nextAttemptAt: next.at,
       success: true,
+      nextActionKind: next.action,
+      healthChecked: state.next_action_kind === "HEALTH_CHECK",
+      consistencyChecked: isConsistencyCheck,
+      consistencyContest: isConsistencyCheck ? null : latest.contestNumber,
     });
     await finishAutomationRun(admin, runId, {
       status: "SUCCEEDED",
-      outcome,
-      nextActionAt: nextAttemptAt,
+      outcome: outcome === "updated" && isConsistencyCheck ? "RECTIFICATION_DETECTED" : outcome,
+      nextActionAt: next.at,
     });
     await admin
       .from("lottery_sync_errors")
@@ -357,7 +386,16 @@ export async function runLotteryAutomation(
       contest: latest.contestNumber,
       next_contest: expectedContest,
       trigger,
+      action: state.next_action_kind,
+      changed: outcome !== "unchanged",
     });
+    if (outcome === "updated" && isConsistencyCheck) {
+      await logAudit(admin, null, "official_draw_rectified", lottery.id, {
+        lottery: lottery.slug,
+        contest: latest.contestNumber,
+        checked_at: now.toISOString(),
+      });
+    }
     return {
       lottery: lottery.slug,
       attempted: true,
@@ -365,14 +403,16 @@ export async function runLotteryAutomation(
       status,
       contest: latest.contestNumber,
       outcome,
-      nextAttemptAt,
+      nextAttemptAt: next.at,
     };
   } catch (error) {
     const syncError = error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
     await recordError(admin, null, lottery.id, contest, syncError);
     const nextFailureCount = state.consecutive_failures + 1;
-    const status = waitingStatus(syncError.type, nextFailureCount);
-    const retryAt = nextRetryAt(now, state.consecutive_failures);
+    const status = publicationNeedsAttention(now, state.expected_draw_at)
+      ? "ATTENTION"
+      : waitingStatus(syncError.type, nextFailureCount);
+    const retryAt = nextRetryAt(now, state.consecutive_failures, state.expected_draw_at);
     const safeMessage = publicFailureMessage(syncError.type);
     await finishAutomationState(admin, {
       lotteryId: lottery.id,
@@ -383,6 +423,8 @@ export async function runLotteryAutomation(
       success: false,
       errorType: syncError.type,
       errorMessage: safeMessage,
+      nextActionKind: "RETRY",
+      consistencyContest: state.consistency_contest_number,
     });
     await finishAutomationRun(admin, runId, {
       status: status === "ATTENTION" ? "FAILED" : "WAITING",
@@ -436,7 +478,7 @@ export async function syncSingleContest(
   lottery: LotteryRow,
   contest: number | null,
   jobId: string | null,
-): Promise<{ ok: boolean; outcome?: "inserted" | "updated"; contest: number | null }> {
+): Promise<{ ok: boolean; outcome?: "inserted" | "updated" | "unchanged"; contest: number | null }> {
   try {
     const draw = await fetchOfficialDraw(lottery.slug as LotterySlug, contest ?? undefined);
     const outcome = await persistDraw(admin, lottery, draw);
