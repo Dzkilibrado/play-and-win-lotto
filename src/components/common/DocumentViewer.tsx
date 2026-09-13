@@ -2,7 +2,7 @@ import { Download, FileQuestion, Loader2, Minus, Plus, RotateCcw, Share2 } from 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -80,7 +80,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
 
   useEffect(() => {
     let active = true;
-    void Promise.all([import("pdfjs-dist"), fetch(url).then((response) => {
+    void Promise.all([import("pdfjs-dist/legacy/build/pdf.mjs"), fetch(url).then((response) => {
       if (!response.ok) throw new Error("PDF indisponível.");
       return response.arrayBuffer();
     })]).then(([{ GlobalWorkerOptions, getDocument }, bytes]) => {
@@ -101,7 +101,7 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
       canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
       const task = pdfPage.render({ canvas, viewport }); renderTaskRef.current = task;
       return task.promise;
-    }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) { console.error("Falha ao desenhar PDF", cause); setError(true); } });
+    }).catch((cause) => { if (active && (!(cause instanceof Error) || cause.name !== "RenderingCancelledException")) setError(true); });
     return () => { active = false; renderTaskRef.current?.cancel(); };
   }, [pdf, page, zoom]);
 
