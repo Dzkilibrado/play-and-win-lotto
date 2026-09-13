@@ -175,7 +175,14 @@ export function PoolShareDialog({
           const bytes = await response.arrayBuffer();
           const mimeType = sniffDocumentMime(new Uint8Array(bytes));
           if (!mimeType || mimeType !== document.mime_type) throw new Error("Comprovante inválido.");
-          return { title: document.title, description: document.description, mimeType, bytes, originalFileName: document.original_file_name, sourceVersion: document.version };
+          return {
+            title: document.title ?? "Comprovante",
+            description: document.description,
+            mimeType,
+            bytes,
+            originalFileName: document.original_file_name,
+            sourceVersion: document.version ?? undefined,
+          };
         })) : [];
       const blob = await createPoolReportPdf({ pool, participants, games, checks, officialPrizeTotal, documents, sections: reportSections });
       setPdfBlob(blob);
