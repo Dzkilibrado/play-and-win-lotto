@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { supabase } from "@/integrations/supabase/client";
+import { shouldAuthenticatePassword } from "@/lib/auth/loginFlow";
 
 export const Route = createFileRoute("/login")({
   ssr: false,
@@ -38,7 +39,7 @@ function LoginPage() {
 
   async function handleSignIn(event: React.FormEvent) {
     event.preventDefault();
-    if (!explicitSubmit.current) return;
+    if (!shouldAuthenticatePassword(explicitSubmit.current)) return;
     explicitSubmit.current = false;
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
