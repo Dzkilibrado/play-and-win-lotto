@@ -100,7 +100,8 @@
 - [x] Validar o cenário real, matriz de arquivos, temas, acessibilidade e resoluções solicitadas.
 - [x] Rodar testes, tipos e build; documentar causas, resultados e limitações para homologação.
 ## Domínio oficial com WWW
-- [ ] Centralizar a URL pública oficial
-- [ ] Aplicar a compartilhamentos, PDFs e metadados
-- [ ] Verificar Participantes, Jogos, Completo e ações de compartilhamento
-- [ ] Confirmar redirecionamento sem WWW preservando rota, parâmetros e token
+- [x] Centralizar a URL pública oficial
+- [x] Aplicar a compartilhamentos, PDFs e metadados
+- [x] Verificar Participantes, Jogos, Completo e ações de compartilhamento
+- [x] Implementar redirecionamento permanente sem WWW preservando rota, parâmetros e token
+- [ ] Confirmar o redirecionamento na publicação final após a nova versão entrar no ar
