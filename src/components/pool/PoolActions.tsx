@@ -30,7 +30,7 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
     void queryClient.invalidateQueries({ queryKey: ["pool", pool.id, "participants"] });
     void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
     void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
-    void queryClient.invalidateQueries({ queryKey: ["pools", "all"] });
+    void queryClient.invalidateQueries({ queryKey: ["pools"] });
   };
 
   const statusMutation = useMutation({

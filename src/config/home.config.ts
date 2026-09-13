@@ -25,16 +25,16 @@ export interface HomeBlockDefinition {
 
 export const homeBlockDefinitions: HomeBlockDefinition[] = [
   {
-    key: "indicators",
-    label: "Indicadores dos jogos",
-    description: "Total salvos, aguardando sorteio, a conferir e premiados.",
+    key: "pools",
+    label: "Meus bolões",
+    description: "Resumo dos bolões ativos, próximo sorteio e pagamentos pendentes.",
     lotteryScoped: false,
     defaultEnabled: true,
   },
   {
-    key: "pools",
-    label: "Meus bolões",
-    description: "Resumo dos bolões ativos, próximo sorteio e pagamentos pendentes.",
+    key: "indicators",
+    label: "Indicadores dos jogos",
+    description: "Total salvos, aguardando sorteio, a conferir e premiados.",
     lotteryScoped: false,
     defaultEnabled: true,
   },
@@ -79,7 +79,7 @@ export const defaultHomeBlocks: HomeBlockPreference[] = homeBlockDefinitions.map
 }));
 
 export function getHomeBlockDefinition(key: HomeBlockKey) {
-  return homeBlockDefinitions.find((block) => block.key === key)!;
+  return homeBlockDefinitions.find((block) => block.key === key);
 }
 
 /**
@@ -122,7 +122,8 @@ export function moveBlock(
   if (index < 0 || target < 0 || target >= blocks.length) return blocks;
   const next = [...blocks];
   const [item] = next.splice(index, 1);
-  next.splice(target, 0, item!);
+  if (!item) return blocks;
+  next.splice(target, 0, item);
   return next;
 }
 

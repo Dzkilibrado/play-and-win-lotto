@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: `Entrar | ${appConfig.name}` },
@@ -30,11 +34,13 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => { supabase.auth.getSession().then(({ data }) => { if (data.session) navigate({ to: "/dashboard", replace: true }); }); }, [navigate]);
+  const explicitSubmit = useRef(false);
 
   async function handleSignIn(event: React.FormEvent) {
-    event.preventDefault(); setLoading(true);
+    event.preventDefault();
+    if (!explicitSubmit.current) return;
+    explicitSubmit.current = false;
+    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) { toast.error("E-mail ou senha incorretos"); return; }
@@ -50,10 +56,10 @@ function LoginPage() {
   }
 
   return <AuthLayout title="Entrar" description={appConfig.tagline}>
-    <form onSubmit={handleSignIn} className="space-y-4">
+    <form onSubmit={handleSignIn} onKeyDown={(event) => { if (event.key === "Enter") explicitSubmit.current = true; }} className="space-y-4">
       <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} className="h-11" /></div>
       <div className="space-y-1.5"><div className="flex items-center justify-between gap-3"><Label htmlFor="password">Senha</Label><Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Esqueci minha senha</Link></div><Input id="password" type="password" autoComplete="current-password" required maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} className="h-11" /></div>
-      <Button type="submit" className="h-11 w-full" disabled={loading}>{loading ? "Entrando…" : "Entrar"}</Button>
+      <Button type="submit" className="h-11 w-full" disabled={loading} onClick={() => { explicitSubmit.current = true; }}>{loading ? "Entrando…" : "Entrar"}</Button>
     </form>
     <div className="my-5 flex items-center gap-3 text-xs text-text-secondary"><span className="h-px flex-1 bg-border" />ou<span className="h-px flex-1 bg-border" /></div>
     <Button variant="outline" className="h-11 w-full" onClick={handleGoogle} disabled={loading}>Continuar com Google</Button>

@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { getLotteryConfig } from "@/config/lotteries";
 import { poolNotices } from "@/config/pools.config";
-import { useIsAdmin, useSession } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useAuth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   noQuotaLimitLabel,
@@ -62,18 +62,24 @@ function PoolDetailPage() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { user } = useSession();
+  const { user } = Route.useRouteContext();
   const admin = useIsAdmin(user);
   const [payTarget, setPayTarget] = useState<PoolParticipantRow | null>(null);
   const [editing, setEditing] = useState(false);
 
-  const pool = useQuery({ queryKey: ["pool", id], queryFn: () => poolService.get(id) });
+  const pool = useQuery({
+    queryKey: ["pool", id],
+    queryFn: () => poolService.get(id),
+    refetchOnMount: "always",
+  });
   const participants = useQuery({
     queryKey: ["pool", id, "participants"],
     queryFn: () => poolService.participants(id),
   });
 
-  if (pool.isLoading) return <LoadingState rows={4} label="Carregando bolão…" />;
+  if (pool.isPending || (pool.isFetching && pool.data == null)) {
+    return <LoadingState rows={4} label="Carregando bolão…" />;
+  }
   if (pool.isError) return <ErrorState onRetry={() => void pool.refetch()} />;
   if (!pool.data) {
     return (

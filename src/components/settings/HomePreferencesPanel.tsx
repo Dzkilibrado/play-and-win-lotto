@@ -77,6 +77,7 @@ export function HomePreferencesPanel() {
         <ul className="space-y-2">
           {prefs.blocks.map((block, index) => {
             const definition = getHomeBlockDefinition(block.key);
+            if (!definition) return null;
             return (
               <li
                 key={block.key}
