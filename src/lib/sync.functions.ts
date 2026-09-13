@@ -32,7 +32,7 @@ export const getSyncOverview = createServerFn({ method: "GET" })
 
     const rows = await Promise.all(
       lotteries.map(async (lottery) => {
-        const [{ count }, first, last, job, errors] = await Promise.all([
+        const [{ count }, first, last, job, errors, state, runs] = await Promise.all([
           admin
             .from("lottery_draws")
             .select("id", { count: "exact", head: true })
@@ -63,6 +63,17 @@ export const getSyncOverview = createServerFn({ method: "GET" })
             .select("id", { count: "exact", head: true })
             .eq("lottery_id", lottery.id)
             .is("resolved_at", null),
+          admin
+            .from("lottery_sync_state")
+            .select("enabled, status, expected_contest_number, expected_draw_at, last_attempt_at, last_success_at, last_error_at, next_attempt_at, consecutive_failures, last_error_type, last_error_message")
+            .eq("lottery_id", lottery.id)
+            .maybeSingle(),
+          admin
+            .from("lottery_sync_runs")
+            .select("id, contest_number, trigger_source, status, outcome, attempt_number, started_at, finished_at, next_action_at, error_type, error_message")
+            .eq("lottery_id", lottery.id)
+            .order("started_at", { ascending: false })
+            .limit(5),
         ]);
 
         return {
@@ -75,6 +86,22 @@ export const getSyncOverview = createServerFn({ method: "GET" })
           lastContestDate: last.data?.draw_date ?? null,
           lastSyncAt: last.data?.source_updated_at ?? null,
           pendingErrors: errors.count ?? 0,
+          automation: state.data
+            ? {
+                enabled: state.data.enabled,
+                status: state.data.status,
+                expectedContest: state.data.expected_contest_number,
+                expectedDrawAt: state.data.expected_draw_at,
+                lastAttemptAt: state.data.last_attempt_at,
+                lastSuccessAt: state.data.last_success_at,
+                lastErrorAt: state.data.last_error_at,
+                nextAttemptAt: state.data.next_attempt_at,
+                consecutiveFailures: state.data.consecutive_failures,
+                lastErrorType: state.data.last_error_type,
+                lastErrorMessage: state.data.last_error_message,
+              }
+            : null,
+          runs: runs.data ?? [],
           job: job.data
             ? {
                 id: job.data.id,
@@ -111,6 +138,7 @@ export const startSync = createServerFn({ method: "POST" })
       listLotteryRows,
       createJob,
       syncSingleContest,
+      runLotteryAutomation,
       fetchLatestContestNumber,
       runJobBatch,
     } = await import("./sync/lotterySync.server");
@@ -120,7 +148,10 @@ export const startSync = createServerFn({ method: "POST" })
     if (!lottery) throw new Error("Modalidade não encontrada.");
 
     if (data.type === "LATEST") {
-      const result = await syncSingleContest(admin, lottery, null, null);
+      const result = await runLotteryAutomation(admin, lottery, {
+        force: true,
+        trigger: "MANUAL",
+      });
       return { kind: "single" as const, ok: result.ok, contest: result.contest };
     }
 
