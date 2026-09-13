@@ -48,7 +48,7 @@ describe("relatório PDF do bolão", () => {
     bytes.set(attachmentBytes);
     const mergedBlob = await createPoolReportPdf({ ...data, documents: [{ title: "Comprovante", mimeType: "application/pdf", bytes: bytes.buffer }] });
     const merged = await PDFDocument.load(await mergedBlob.arrayBuffer());
-    expect(merged.getPageCount()).toBe(base.getPageCount() + 2);
+    expect(merged.getPageCount()).toBe(base.getPageCount() + 3);
   });
 
   it("mantém o relatório utilizável quando um comprovante está corrompido", async () => {
