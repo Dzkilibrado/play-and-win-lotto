@@ -67,13 +67,13 @@ export const uploadPoolDocument = createServerFn({ method: "POST" })
       _sort_order: sortOrder,
       _mime_type: mimeType,
       _file_size: file.size,
-      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
       if (cleanupError) console.error("pool_document_upload_cleanup_failed", { path, message: cleanupError.message });
       throw new Error("Não foi possível salvar o comprovante. Tente novamente.");
     }
+    if (document) await supabaseAdmin.from("pool_documents").update({ original_file_name: originalFileName }).eq("id", document.id);
     return document;
   });
 
@@ -104,13 +104,13 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
       _storage_path: path,
       _mime_type: mimeType,
       _file_size: file.size,
-      _original_file_name: originalFileName,
     });
     if (error) {
       const { error: cleanupError } = await supabaseAdmin.storage.from(DOCUMENT_BUCKET).remove([path]);
       if (cleanupError) console.error("pool_document_replace_cleanup_failed", { path, message: cleanupError.message });
       throw new Error("Não foi possível substituir o arquivo. Tente novamente.");
     }
+    await supabaseAdmin.from("pool_documents").update({ original_file_name: originalFileName }).eq("id", documentId);
     return updated;
   });
 

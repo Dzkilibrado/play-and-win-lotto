@@ -25,9 +25,10 @@ export function DocumentViewer({ open, onOpenChange, document }: { open: boolean
   useEffect(() => {
     if (!open || !document) { setUrl(null); setFailed(false); return; }
     let active = true;
+    let resolvedUrl: string | null = null;
     setLoading(true); setFailed(false); setUrl(null);
-    void document.getUrl().then((nextUrl) => { if (active) setUrl(nextUrl); }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; if (url?.startsWith("blob:")) URL.revokeObjectURL(url); };
+    void document.getUrl().then((nextUrl) => { resolvedUrl = nextUrl; if (active) setUrl(nextUrl); else if (nextUrl.startsWith("blob:")) URL.revokeObjectURL(nextUrl); }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; if (resolvedUrl?.startsWith("blob:")) URL.revokeObjectURL(resolvedUrl); };
   }, [open, document, attempt]);
 
   const retry = () => setAttempt((value) => value + 1);
