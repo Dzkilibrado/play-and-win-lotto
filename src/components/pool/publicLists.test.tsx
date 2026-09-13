@@ -3,7 +3,7 @@
  * Comportamento das listas públicas com volumes grandes:
  * 50/100/200 participantes e 30/50/100 jogos.
  */
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { PublicGameList } from "./PublicGameList";
@@ -34,33 +34,37 @@ describe("lista pública de participantes", () => {
 
   it.each([23, 50, 100, 200])("mostra a prévia e permite ver todos com %i pessoas", (total) => {
     render(<PublicParticipantList participants={people(total)} />);
-    expect(screen.getAllByText(/^Participante \d+$/)).toHaveLength(
+    const list = screen.getByRole("list", { name: "Participantes confirmados" });
+    expect(within(list).getAllByText(/^Participante \d+$/)).toHaveLength(
       publicPreviewSize.participants,
     );
     fireEvent.click(screen.getByRole("button", { name: `Ver todos os ${total} participantes` }));
-    expect(screen.getAllByText(/^Participante \d+$/)).toHaveLength(total);
+    expect(within(list).getAllByText(/^Participante \d+$/)).toHaveLength(total);
   });
 
   it("usa singular correto e o selo Pago", () => {
     render(<PublicParticipantList participants={[{ ordinal: 1, name: "Gilber", quotas: 1, paymentStatus: "PAID" }]} />);
-    expect(screen.getByText("1 cota")).toBeTruthy();
-    expect(screen.getByText("✓ Pago")).toBeTruthy();
+    const list = screen.getByRole("list", { name: "Participantes confirmados" });
+    expect(within(list).getByText("1 cota")).toBeTruthy();
+    expect(within(list).getByText("✓ Pago")).toBeTruthy();
   });
 
   it("mantém nomes longos em uma coluna truncável sem perder cotas e status", () => {
     const name = "Participante com um nome excepcionalmente longo para validar a coluna";
     render(<PublicParticipantList participants={[{ ordinal: 1, name, quotas: 2, paymentStatus: "PAID" }]} />);
-    const cell = screen.getByTitle(name);
+    const list = screen.getByRole("list", { name: "Participantes confirmados" });
+    const cell = within(list).getByTitle(name);
     expect(cell.className).toContain("truncate");
-    expect(screen.getByText("2 cotas")).toBeTruthy();
-    expect(screen.getByText("✓ Pago")).toBeTruthy();
+    expect(within(list).getByText("2 cotas")).toBeTruthy();
+    expect(within(list).getByText("✓ Pago")).toBeTruthy();
   });
 
   it("busca por nome, sem diferenciar acentos", () => {
     render(<PublicParticipantList participants={[...people(20), { ordinal: 21, name: "Íris", quotas: 2, paymentStatus: "PAID" }]} />);
     fireEvent.change(screen.getByLabelText("Buscar participante"), { target: { value: "iris" } });
-    expect(screen.getByText("Íris")).toBeTruthy();
-    expect(screen.queryByText("Participante 1")).toBeNull();
+    const list = screen.getByRole("list", { name: "Participantes confirmados" });
+    expect(within(list).getByText("Íris")).toBeTruthy();
+    expect(within(list).queryByText("Participante 1")).toBeNull();
   });
 });
 
