@@ -118,7 +118,7 @@ function DashboardPage() {
     switch (key) {
       case "indicators":
         return (
-          <section key={key} aria-labelledby="my-numbers" className="space-y-3">
+          <section key={key} aria-labelledby="my-numbers" className="space-y-2 sm:space-y-3">
             <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
               Seus jogos
             </h2>
@@ -157,7 +157,7 @@ function DashboardPage() {
 
       case "pools":
         return (
-          <section key={key} aria-labelledby="home-pools" className="space-y-3">
+          <section key={key} aria-labelledby="home-pools" className="space-y-2 sm:space-y-3">
             <h2 id="home-pools" className="font-display text-base font-semibold text-text-primary">
               Meus bolões
             </h2>
@@ -214,7 +214,7 @@ function DashboardPage() {
       case "next_draws":
         if (!showsLotteryBlocks) return null;
         return (
-          <section key={key} aria-labelledby="next-contests" className="space-y-3">
+          <section key={key} aria-labelledby="next-contests" className="space-y-2 sm:space-y-3">
             <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
               Próximos sorteios
             </h2>
@@ -262,7 +262,7 @@ function DashboardPage() {
       case "recent_results":
         if (!showsLotteryBlocks || !resultsLottery) return null;
         return (
-          <section key={key} aria-labelledby="recent-results" className="space-y-3">
+          <section key={key} aria-labelledby="recent-results" className="space-y-2 sm:space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
                 id="recent-results"
@@ -329,7 +329,7 @@ function DashboardPage() {
 
       case "awaiting_check":
         return (
-          <section key={key} className="space-y-3">
+          <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">
               Aguardando conferência
             </h2>
@@ -350,7 +350,7 @@ function DashboardPage() {
 
       case "prized":
         return (
-          <section key={key} className="space-y-3">
+          <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">Premiados</h2>
             <div className="surface-card flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="min-w-0 text-sm text-text-secondary">
@@ -373,7 +373,7 @@ function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Início"
         description="O essencial primeiro: seus jogos, os próximos sorteios e os últimos resultados."
@@ -387,7 +387,7 @@ function DashboardPage() {
         }
       />
 
-      <section aria-labelledby="shortcuts" className="space-y-3">
+      <section aria-labelledby="shortcuts" className="space-y-2 sm:space-y-3">
         <h2 id="shortcuts" className="sr-only">
           Atalhos
         </h2>
@@ -441,7 +441,7 @@ function Shortcut({
     <Link
       to={to}
       className={cn(
-        "surface-card flex min-h-[5.5rem] min-w-0 flex-col justify-between gap-2 p-3 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary",
+        "surface-card flex min-h-[4.5rem] sm:min-h-[5.5rem] min-w-0 flex-col justify-between gap-2 p-3 transition-colors hover:bg-surface-secondary focus-visible:bg-surface-secondary",
         primary && "border-primary/40",
       )}
     >
