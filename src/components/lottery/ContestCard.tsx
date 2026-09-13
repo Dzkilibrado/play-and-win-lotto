@@ -28,7 +28,7 @@ export function ContestCard({
       data-lottery={config?.colorKey}
       aria-label={`Abrir concurso ${contest.contestNumber} da ${contest.lotteryName ?? "loteria"}`}
       className={cn(
-        "tappable block rounded-xl border border-border bg-surface p-4 hover:border-lottery/60",
+        "tappable block rounded-xl border border-border bg-surface p-3 sm:p-4 hover:border-lottery/60",
         className,
       )}
     >
