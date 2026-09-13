@@ -1015,48 +1015,60 @@ export type Database = {
       lottery_sync_state: {
         Row: {
           consecutive_failures: number
+          consistency_contest_number: number | null
           enabled: boolean
           expected_contest_number: number | null
           expected_draw_at: string | null
           last_attempt_at: string | null
+          last_consistency_check_at: string | null
           last_error_at: string | null
           last_error_message: string | null
           last_error_type: string | null
+          last_health_check_at: string | null
           last_success_at: string | null
           locked_at: string | null
           lottery_id: string
+          next_action_kind: string
           next_attempt_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
           consecutive_failures?: number
+          consistency_contest_number?: number | null
           enabled?: boolean
           expected_contest_number?: number | null
           expected_draw_at?: string | null
           last_attempt_at?: string | null
+          last_consistency_check_at?: string | null
           last_error_at?: string | null
           last_error_message?: string | null
           last_error_type?: string | null
+          last_health_check_at?: string | null
           last_success_at?: string | null
           locked_at?: string | null
           lottery_id: string
+          next_action_kind?: string
           next_attempt_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           consecutive_failures?: number
+          consistency_contest_number?: number | null
           enabled?: boolean
           expected_contest_number?: number | null
           expected_draw_at?: string | null
           last_attempt_at?: string | null
+          last_consistency_check_at?: string | null
           last_error_at?: string | null
           last_error_message?: string | null
           last_error_type?: string | null
+          last_health_check_at?: string | null
           last_success_at?: string | null
           locked_at?: string | null
           lottery_id?: string
+          next_action_kind?: string
           next_attempt_at?: string | null
           status?: string
           updated_at?: string
@@ -1921,16 +1933,20 @@ export type Database = {
         Args: { _force?: boolean; _lottery_id: string; _stale_after?: string }
         Returns: {
           consecutive_failures: number
+          consistency_contest_number: number | null
           enabled: boolean
           expected_contest_number: number | null
           expected_draw_at: string | null
           last_attempt_at: string | null
+          last_consistency_check_at: string | null
           last_error_at: string | null
           last_error_message: string | null
           last_error_type: string | null
+          last_health_check_at: string | null
           last_success_at: string | null
           locked_at: string | null
           lottery_id: string
+          next_action_kind: string
           next_attempt_at: string | null
           status: string
           updated_at: string
@@ -1953,40 +1969,87 @@ export type Database = {
           resumed: boolean
         }[]
       }
-      complete_lottery_sync: {
-        Args: {
-          _error_message?: string
-          _error_type?: string
-          _expected_contest_number: number
-          _expected_draw_at: string
-          _lottery_id: string
-          _next_attempt_at: string
-          _status: string
-          _success: boolean
-        }
-        Returns: {
-          consecutive_failures: number
-          enabled: boolean
-          expected_contest_number: number | null
-          expected_draw_at: string | null
-          last_attempt_at: string | null
-          last_error_at: string | null
-          last_error_message: string | null
-          last_error_type: string | null
-          last_success_at: string | null
-          locked_at: string | null
-          lottery_id: string
-          next_attempt_at: string | null
-          status: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "lottery_sync_state"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      complete_lottery_sync:
+        | {
+            Args: {
+              _error_message?: string
+              _error_type?: string
+              _expected_contest_number: number
+              _expected_draw_at: string
+              _lottery_id: string
+              _next_attempt_at: string
+              _status: string
+              _success: boolean
+            }
+            Returns: {
+              consecutive_failures: number
+              consistency_contest_number: number | null
+              enabled: boolean
+              expected_contest_number: number | null
+              expected_draw_at: string | null
+              last_attempt_at: string | null
+              last_consistency_check_at: string | null
+              last_error_at: string | null
+              last_error_message: string | null
+              last_error_type: string | null
+              last_health_check_at: string | null
+              last_success_at: string | null
+              locked_at: string | null
+              lottery_id: string
+              next_action_kind: string
+              next_attempt_at: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "lottery_sync_state"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _consistency_checked?: boolean
+              _consistency_contest_number?: number
+              _error_message?: string
+              _error_type?: string
+              _expected_contest_number: number
+              _expected_draw_at: string
+              _health_checked?: boolean
+              _lottery_id: string
+              _next_action_kind?: string
+              _next_attempt_at: string
+              _status: string
+              _success: boolean
+            }
+            Returns: {
+              consecutive_failures: number
+              consistency_contest_number: number | null
+              enabled: boolean
+              expected_contest_number: number | null
+              expected_draw_at: string | null
+              last_attempt_at: string | null
+              last_consistency_check_at: string | null
+              last_error_at: string | null
+              last_error_message: string | null
+              last_error_type: string | null
+              last_health_check_at: string | null
+              last_success_at: string | null
+              locked_at: string | null
+              lottery_id: string
+              next_action_kind: string
+              next_attempt_at: string | null
+              status: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "lottery_sync_state"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       complete_profile_onboarding: {
         Args: {
           _accepted_document_ids: string[]
