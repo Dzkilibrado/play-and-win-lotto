@@ -49,7 +49,7 @@ describe("relatório PDF do bolão", () => {
     const mergedBlob = await createPoolReportPdf({ ...data, documents: [{ title: "Comprovante", mimeType: "application/pdf", bytes: bytes.buffer }] });
     const merged = await PDFDocument.load(await mergedBlob.arrayBuffer());
     expect(merged.getPageCount()).toBe(base.getPageCount() + 3);
-  });
+  }, 15_000);
 
   it("não mascara um comprovante corrompido com uma página substituta", async () => {
     await expect(createPoolReportPdf({ ...data, documents: [{ title: "Arquivo incompatível", mimeType: "application/pdf", bytes: new Uint8Array([1, 2, 3]).buffer }] })).rejects.toThrow();

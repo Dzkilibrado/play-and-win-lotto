@@ -125,4 +125,4 @@
 - [x] Corrigir a incorporação de PDF e imagens sem mascarar falhas.
 - [x] Adicionar seleção de participantes, jogos e comprovantes na geração do PDF.
 - [x] Refinar a opção Completo e sua contagem de comprovantes publicados.
-- [ ] Validar os três links, sete resoluções, testes, tipos e compilação.
+- [x] Validar os três links, sete resoluções, testes, tipos e compilação.
