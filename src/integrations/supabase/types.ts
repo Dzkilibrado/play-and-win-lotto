@@ -985,6 +985,33 @@ export type Database = {
           },
         ]
       }
+      lottery_sync_scheduler_config: {
+        Row: {
+          enabled: boolean
+          endpoint: string
+          scheduler_token: string
+          singleton: boolean
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          endpoint: string
+          scheduler_token: string
+          singleton?: boolean
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          endpoint?: string
+          scheduler_token?: string
+          singleton?: boolean
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lottery_sync_state: {
         Row: {
           consecutive_failures: number
@@ -2029,6 +2056,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      invoke_lottery_sync_scheduler: { Args: never; Returns: number }
       is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
       is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
       log_pool_event: {
@@ -2362,6 +2390,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["game_status"]
         }
         Returns: Database["public"]["Enums"]["game_status"]
+      }
+      verify_sync_scheduler_token: {
+        Args: { _token: string }
+        Returns: boolean
       }
     }
     Enums: {
