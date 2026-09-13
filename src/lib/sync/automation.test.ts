@@ -10,6 +10,7 @@ import {
   retryDelayMinutes,
   waitingStatus,
 } from "./automation";
+import { recoveryContestRange } from "./lotterySync.server";
 
 describe("automação de concursos", () => {
   it("interpreta o horário previsto em America/Sao_Paulo", () => {
@@ -61,5 +62,11 @@ describe("automação de concursos", () => {
     expect(waitingStatus("UNAVAILABLE", 2)).toBe("WAITING_PUBLICATION");
     expect(waitingStatus("VALIDATION", 1)).toBe("ATTENTION");
     expect(waitingStatus("UNAVAILABLE", 8)).toBe("ATTENTION");
+  });
+
+  it("recupera lacunas em ordem e nunca pula o primeiro concurso ausente", () => {
+    expect(recoveryContestRange(3050, 3056)).toEqual({ start: 3051, end: 3055 });
+    expect(recoveryContestRange(3055, 3056)).toEqual({ start: 3056, end: 3056 });
+    expect(recoveryContestRange(3056, 3056)).toBeNull();
   });
 });

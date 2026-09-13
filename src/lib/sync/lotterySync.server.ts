@@ -308,13 +308,15 @@ export async function runLotteryAutomation(
 
   try {
     const isConsistencyCheck = state.next_action_kind === "CONSISTENCY_CHECK";
+    const isCalendarCheck =
+      state.next_action_kind === "HEALTH_CHECK" || state.next_action_kind === "PRE_DRAW_CHECK";
     const latest = await fetchOfficialDraw(
       lottery.slug as LotterySlug,
       isConsistencyCheck && state.consistency_contest_number
         ? state.consistency_contest_number
         : undefined,
     );
-    if (contest && latest.contestNumber < contest) {
+    if (contest && latest.contestNumber < contest && !isCalendarCheck) {
       throw new SyncError("NOT_FOUND", `Concurso ${contest} ainda não foi publicado.`);
     }
     const { data: localLatest } = await admin
@@ -351,7 +353,9 @@ export async function runLotteryAutomation(
       ? { action: "RETRY" as const, at: now.toISOString() }
       : isConsistencyCheck
         ? nextPreDrawAction(now, expectedAt)
-        : { action: "CONSISTENCY_CHECK" as const, at: consistencyCheckAt(now) };
+        : isCalendarCheck && contest && latest.contestNumber < contest
+          ? nextPreDrawAction(now, expectedAt)
+          : { action: "CONSISTENCY_CHECK" as const, at: consistencyCheckAt(now) };
     const status: AutomationStatus = recoveryPending
       ? "WAITING_PUBLICATION"
       : expectedAt && Date.parse(expectedAt) > now.getTime()
@@ -368,7 +372,10 @@ export async function runLotteryAutomation(
       nextActionKind: next.action,
       healthChecked: state.next_action_kind === "HEALTH_CHECK",
       consistencyChecked: isConsistencyCheck,
-      consistencyContest: isConsistencyCheck ? null : latest.contestNumber,
+      consistencyContest:
+        isConsistencyCheck || (isCalendarCheck && contest && latest.contestNumber < contest)
+          ? null
+          : latest.contestNumber,
     });
     await finishAutomationRun(admin, runId, {
       status: "SUCCEEDED",

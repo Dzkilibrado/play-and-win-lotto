@@ -65,7 +65,7 @@ export const getSyncOverview = createServerFn({ method: "GET" })
             .is("resolved_at", null),
           admin
             .from("lottery_sync_state")
-            .select("enabled, status, expected_contest_number, expected_draw_at, last_attempt_at, last_success_at, last_error_at, next_attempt_at, consecutive_failures, last_error_type, last_error_message")
+            .select("enabled, status, expected_contest_number, expected_draw_at, last_attempt_at, last_success_at, last_error_at, next_attempt_at, next_action_kind, last_health_check_at, last_consistency_check_at, consecutive_failures, last_error_type, last_error_message")
             .eq("lottery_id", lottery.id)
             .maybeSingle(),
           admin
@@ -96,6 +96,9 @@ export const getSyncOverview = createServerFn({ method: "GET" })
                 lastSuccessAt: state.data.last_success_at,
                 lastErrorAt: state.data.last_error_at,
                 nextAttemptAt: state.data.next_attempt_at,
+                nextActionKind: state.data.next_action_kind,
+                lastHealthCheckAt: state.data.last_health_check_at,
+                lastConsistencyCheckAt: state.data.last_consistency_check_at,
                 consecutiveFailures: state.data.consecutive_failures,
                 lastErrorType: state.data.last_error_type,
                 lastErrorMessage: state.data.last_error_message,

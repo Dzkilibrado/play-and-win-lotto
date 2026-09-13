@@ -353,7 +353,7 @@ function SyncPanel() {
           Atualização automática
         </h2>
         <p className="mt-1 text-xs text-text-secondary">
-          Ativa no servidor a cada {syncConfig.schedulerMinutes} minutos · Fonte: {syncConfig.sourceLabel}
+          Ativa no servidor · verifica somente quando necessário · Fonte: {syncConfig.sourceLabel}
         </p>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
@@ -414,6 +414,12 @@ function SyncPanel() {
                 <dt className="text-text-secondary">Último sucesso</dt>
                 <dd className="font-medium text-text-primary">
                   {formatDateTime(row.automation?.lastSuccessAt)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Última verificação</dt>
+                <dd className="font-medium text-text-primary">
+                  {formatDateTime(row.automation?.lastHealthCheckAt ?? row.automation?.lastAttemptAt)}
                 </dd>
               </div>
               <div>
