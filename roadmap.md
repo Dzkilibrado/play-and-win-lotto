@@ -6,3 +6,4 @@
 - [ ] Publicar e validar no domínio final; a automação já está ativa e aponta para o domínio publicado.
 - [x] Refinar Criar jogo, separar Bolões em hub/listagem e tornar Organização visível.
 - [x] Tornar Organização integralmente textual e remover ações de ciclo de vida do menu de três pontos.
+- [ ] Eliminar falsos estados vazios e isolar consultas privadas por sessão/usuário.
