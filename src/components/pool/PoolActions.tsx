@@ -1,20 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
-import { Archive, ArchiveRestore, MoreHorizontal, Share2, Trash2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { PoolShareDialog } from "@/components/pool/PoolShareDialog";
-import { PoolDeleteDialog } from "@/components/pool/PoolDeleteDialog";
 import { usePoolOrganizationActions } from "@/components/pool/usePoolOrganizationActions";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { poolNotices, poolStatusAction, poolStatusRequiresReason, poolStatusTransitions } from "@/config/pools.config";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { poolStatusLabel, type PoolStatus } from "@/types/domain";
@@ -23,9 +16,8 @@ import { userErrorMessage } from "@/lib/user-error";
 export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [reasonTarget, setReasonTarget] = useState<PoolStatus | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { archiveMutation, invalidate } = usePoolOrganizationActions(pool.id);
+  const { invalidate } = usePoolOrganizationActions(pool.id);
 
   const statusMutation = useMutation({
     mutationFn: ({ status, reason }: { status: PoolStatus; reason?: string }) =>
@@ -78,8 +70,6 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
         </DropdownMenu>
       ) : null}
 
-      {canManage ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="size-11" aria-label="Mais ações"><MoreHorizontal /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Organização</DropdownMenuLabel><DropdownMenuItem onSelect={() => archiveMutation.mutate(!pool.archived_at)}>{pool.archived_at ? <ArchiveRestore /> : <Archive />}{pool.archived_at ? "Restaurar bolão" : "Arquivar bolão"}</DropdownMenuItem><DropdownMenuItem className="text-danger focus:text-danger" onSelect={() => setDeleteOpen(true)}><Trash2 />Excluir definitivamente</DropdownMenuItem></DropdownMenuContent></DropdownMenu> : null}
-
       <PoolShareDialog
         pool={pool}
         open={shareOpen}
@@ -102,8 +92,6 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
           reasonTarget ? statusMutation.mutate({ status: reasonTarget, reason }) : undefined
         }
       />
-      <PoolDeleteDialog pool={pool} open={deleteOpen} onOpenChange={setDeleteOpen} />
-
     </div>
   );
 }
