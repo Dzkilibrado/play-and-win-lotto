@@ -29,6 +29,12 @@ Rolagem **vertical** continua normal e necessária.
 Exceções: nenhuma hoje. Qualquer exceção futura (por exemplo um carrossel cujo
 propósito é a navegação horizontal) deve ser documentada aqui com justificativa.
 
+## Descoberta de funções importantes
+
+Ações importantes e áreas funcionais devem ter um caminho textual na navegação
+normal. Menus de overflow ("...") ficam reservados a ações secundárias e nunca
+podem ser o único caminho para funções de ciclo de vida ou exclusão.
+
 ### Teste de regressão
 
 `python3 scripts/overflow-audit.py` percorre as rotas principais nos seis

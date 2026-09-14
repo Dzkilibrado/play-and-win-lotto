@@ -256,7 +256,7 @@ function PoolDetailPage() {
         {section === "documents" ? <DocumentsPanel poolId={data.id} canManage={canManage} readOnly={readOnly} /> : null}
         {section === "history" ? <HistoryPanel poolId={data.id} /> : null}
         {section === "organization" ? (
-          <PoolOrganizationPanel pool={data} canManage={canManage} />
+          <PoolOrganizationPanel pool={data} canManage={canManage} onBack={() => setSection("overview")} />
         ) : null}
       </div>
 
