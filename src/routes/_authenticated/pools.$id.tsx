@@ -121,7 +121,7 @@ function PoolDetailPage() {
   const section = search.tab ?? "overview";
   const setSection = (value: string) =>
     navigate({ search: (prev) => ({ ...prev, tab: value }) });
-  const { tab: _tab, ...listSearch } = search;
+  const listSearch = { ...search, tab: undefined };
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden" data-lottery={config?.colorKey}>

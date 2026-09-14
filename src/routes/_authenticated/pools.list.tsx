@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Archive, Clock, Trophy, Users, Wallet } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
-import { StatCard } from "@/components/common/Cards";
 import { ActiveFilterChip, FilterBar } from "@/components/common/Filters";
 import { SearchInput } from "@/components/common/SearchInput";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
@@ -19,7 +18,6 @@ import {
   poolGroupLabel,
   poolGroupOf,
   poolGroups,
-  poolHasPendingPayment,
   poolSortLabel,
   poolSortOf,
   poolSortOptions,
@@ -135,9 +133,6 @@ function PoolsListPage() {
   const { visible, hasMore, nextPage } = paginatePools(rows, page, poolConfig.pageSize);
   const single = rows.length === 1;
 
-  const countByStatus = (status: string) => all.filter((pool) => pool.status === status).length;
-  const pendingPayments = all.filter(poolHasPendingPayment).length;
-
   const group = poolGroupOf(search.group);
   const detailStatuses = statusesForGroup(group) ?? (Object.keys(poolStatusLabel) as string[]);
 
@@ -171,49 +166,17 @@ function PoolsListPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Bolões"
-        description="Organize participantes, cotas e pagamentos por concurso."
+        title={poolGroupLabel(search.group)}
+        description="Busque, filtre e escolha o bolão que deseja abrir."
         actions={
-          <Button asChild size="sm" className="h-11">
-            <Link to="/pools/new">Novo bolão</Link>
+          <Button asChild variant="outline" size="sm" className="h-11">
+            <Link to="/pools">
+              <ArrowLeft aria-hidden />
+              Bolões
+            </Link>
           </Button>
         }
       />
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatCard
-          label="Abertos"
-          value={countByStatus("OPEN")}
-          icon={Users}
-          to="/pools"
-          search={{ status: "OPEN" }}
-        />
-        <StatCard label="Arquivados" value={all.filter((pool) => pool.archived_at).length} icon={Archive} to="/pools" search={{ archived: "yes" }} />
-        <StatCard
-          label="Aguardando sorteio"
-          value={countByStatus("AWAITING_DRAW")}
-          icon={Clock}
-          tone="info"
-          to="/pools"
-          search={{ status: "AWAITING_DRAW" }}
-        />
-        <StatCard
-          label="Pagamentos pendentes"
-          value={pendingPayments}
-          icon={Wallet}
-          tone="warning"
-          to="/pools"
-          search={{ payment: "PENDING" }}
-        />
-        <StatCard
-          label="Premiados"
-          value={countByStatus("PRIZED")}
-          icon={Trophy}
-          tone="success"
-          to="/pools"
-          search={{ prize: "PRIZED" }}
-        />
-      </div>
 
       <FilterBar
         resultCount={pools.isLoading ? null : rows.length}
@@ -414,6 +377,7 @@ function PoolsListPage() {
               <PoolCard
                 key={pool.id}
                 pool={pool}
+                listSearch={search}
                 {...(single ? { className: "border-lottery lg:col-span-2" } : {})}
               />
             ))}
