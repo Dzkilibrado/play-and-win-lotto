@@ -21,6 +21,21 @@ export const poolGroups: { id: PoolGroup; label: string; statuses: PoolStatus[] 
   { id: "finished", label: "Finalizados", statuses: ["FINISHED", "CANCELLED"] },
 ];
 
+export const operationalPoolStatuses: PoolStatus[] = [
+  "FORMING",
+  "OPEN",
+  "CLOSED",
+  "AWAITING_DRAW",
+  "AWAITING_CHECK",
+];
+
+/** Mesma definição usada pela Home e pela categoria Em andamento. */
+export function activeOperationalPools(rows: PoolRow[]): PoolRow[] {
+  return rows.filter(
+    (pool) => pool.archived_at === null && operationalPoolStatuses.includes(pool.status),
+  );
+}
+
 export function poolGroupOf(value: string | undefined): PoolGroup {
   return poolGroups.some((group) => group.id === value) ? (value as PoolGroup) : "all";
 }

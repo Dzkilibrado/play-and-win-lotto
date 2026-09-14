@@ -1,30 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+import { getRouteApi } from "@tanstack/react-router";
+import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 
+const authenticatedRoute = getRouteApi("/_authenticated");
+
+/** A rota protegida já validou esta identidade; não resolvemos uma segunda sessão concorrente. */
 export function useSession() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  return { session, user: session?.user ?? null, loading };
+  const { user } = authenticatedRoute.useRouteContext();
+  return { session: null, user, loading: false };
 }
 
 export function useProfile(user: User | null) {

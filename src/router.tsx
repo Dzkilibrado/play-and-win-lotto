@@ -25,7 +25,8 @@ export const getRouter = () => {
     /** Pré-carrega a próxima tela no toque/hover, antes mesmo do clique. */
     defaultPreload: "intent",
     defaultPreloadDelay: 30,
-    defaultPreloadStaleTime: 30 * 1000,
+    // O cache e a atualização dos dados pertencem ao TanStack Query.
+    defaultPreloadStaleTime: 0,
   });
 
   return router;

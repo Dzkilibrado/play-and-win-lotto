@@ -3,7 +3,7 @@ import { Calculator, CheckCircle2, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 import { MetricCard } from "@/components/common/Cards";
-import { EmptyState } from "@/components/common/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { distributionStatusLabel, poolNotices } from "@/config/pools.config";
@@ -11,6 +11,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
 import { userErrorMessage } from "@/lib/user-error";
 import type { StatusTone } from "@/types/domain";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 const statusTone: Record<string, StatusTone> = {
   CALCULATED: "info",
@@ -65,6 +66,13 @@ export function DistributionPanel({
   const current = (distributions.data ?? [])[0] ?? null;
   const nameOf = (id: string) => participants.find((p) => p.id === id)?.name ?? "Participante";
   const totalPrize = prize.data ?? 0;
+  const loading = resolveQueryState(prize) === "loading" || resolveQueryState(distributions) === "loading";
+  const failed = resolveQueryState(prize) === "error" || resolveQueryState(distributions) === "error";
+
+  if (loading) return <LoadingState rows={3} label="Carregando resultado do bolão…" />;
+  if (failed) {
+    return <ErrorState onRetry={() => void Promise.all([prize.refetch(), distributions.refetch()])} />;
+  }
 
   return (
     <div className="space-y-4">

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { filterPools } from "@/lib/pools/poolFilters";
 import { poolService } from "@/lib/services/poolService";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/pools/")({
   head: () => ({
@@ -25,8 +27,10 @@ export const Route = createFileRoute("/_authenticated/pools/")({
 });
 
 function PoolsHubPage() {
-  const pools = useQuery({ queryKey: ["pools", "all"], queryFn: () => poolService.list({}) });
-  const all = pools.data ?? [];
+  const { user } = Route.useRouteContext();
+  const pools = useQuery({ queryKey: privateQueryKeys.poolsAll(user.id), queryFn: () => poolService.list({}) });
+  const queryState = resolveQueryState(pools);
+  const all = queryState === "success" ? (pools.data ?? []) : [];
   const active = all.filter((pool) => !pool.archived_at);
   const categories = [
     { label: "Todos", value: active.length, icon: Layers3, search: {} },
@@ -76,9 +80,9 @@ function PoolsHubPage() {
         }
       />
 
-      {pools.isLoading ? (
+      {queryState === "loading" ? (
         <LoadingState rows={3} label="Organizando bolões…" />
-      ) : pools.isError ? (
+      ) : queryState === "error" ? (
         <ErrorState onRetry={() => void pools.refetch()} />
       ) : (
         <nav aria-label="Categorias de bolões" className="grid grid-cols-2 gap-3 lg:grid-cols-3">

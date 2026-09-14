@@ -40,6 +40,8 @@ import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
 import { rowAnalysis } from "@/routes/_authenticated/games.index";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/games/$id")({
   head: () => ({
@@ -76,16 +78,18 @@ function originFacts(notes: string | null): string[] {
 
 function GameDetailPage() {
   const { id } = Route.useParams();
+  const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const runCheck = useServerFn(checkMyGame);
 
   const query = useQuery({
-    queryKey: ["game", id],
+    queryKey: privateQueryKeys.game(user.id, id),
     queryFn: () => gameService.getGame(id),
   });
   const game = query.data ?? null;
+  const queryState = resolveQueryState(query);
 
   const contest = useQuery({
     queryKey: ["game-contest", game?.lotteries?.slug, game?.contest_number],
@@ -167,10 +171,10 @@ function GameDetailPage() {
         }
       />
 
-      {query.isLoading ? <LoadingState /> : null}
-      {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
+      {queryState === "loading" ? <LoadingState /> : null}
+      {queryState === "error" ? <ErrorState onRetry={() => void query.refetch()} /> : null}
 
-      {!query.isLoading && !query.isError && !game ? (
+      {queryState === "success" && !game ? (
         <EmptyState
           title="Jogo não encontrado"
           description="Ele pode ter sido excluído ou pertence a outra conta."

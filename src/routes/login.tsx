@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) { toast.error("E-mail ou senha incorretos"); return; }
+    await queryClient.invalidateQueries();
     navigate({ to: "/dashboard", replace: true });
   }
 
@@ -53,7 +56,10 @@ function LoginPage() {
     const { lovable } = await import("@/integrations/lovable/index");
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/login` });
     if (result.error) { setLoading(false); toast.error("Não foi possível entrar com o Google"); return; }
-    if (!result.redirected) navigate({ to: "/dashboard", replace: true });
+    if (!result.redirected) {
+      await queryClient.invalidateQueries();
+      navigate({ to: "/dashboard", replace: true });
+    }
   }
 
   return <AuthLayout title="Entrar" description={appConfig.tagline}>

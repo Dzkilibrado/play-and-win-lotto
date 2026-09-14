@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeProvider, themeInitScript } from "@/lib/theme";
 import { appConfig } from "@/config/app.config";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -114,6 +115,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthCacheBoundary queryClient={queryClient} />
       <ThemeProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
@@ -121,4 +123,26 @@ function RootComponent() {
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+/** Mantém dados privados vinculados à mesma identidade durante todo o ciclo da sessão. */
+function AuthCacheBoundary({ queryClient }: { queryClient: QueryClient }) {
+  const identity = useRef<string | null>(null);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) return;
+      const nextIdentity = session?.user.id ?? null;
+      const changedUser = identity.current !== null && nextIdentity !== null && identity.current !== nextIdentity;
+      identity.current = nextIdentity;
+      if (event === 'SIGNED_OUT' || changedUser) {
+        void queryClient.cancelQueries().then(() => queryClient.clear());
+      } else if (nextIdentity) {
+        void queryClient.invalidateQueries({ queryKey: ["pools"] });
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [queryClient]);
+
+  return null;
 }

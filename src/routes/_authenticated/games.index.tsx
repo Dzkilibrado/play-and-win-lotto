@@ -21,6 +21,8 @@ import { checkService } from "@/lib/services/checkService";
 import { gameService, type GameRow } from "@/lib/services/gameService";
 import { gameStatusLabel, type GameStatus } from "@/types/domain";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/games/")({
   validateSearch: validateListSearch,
@@ -59,6 +61,7 @@ export function rowAnalysis(row: GameRow): GameAnalysisResult {
 }
 
 function GamesPage() {
+  const { user } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
@@ -66,7 +69,7 @@ function GamesPage() {
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const query = useQuery({
-    queryKey: ["games", search],
+    queryKey: privateQueryKeys.games(user.id, search),
     queryFn: () =>
       gameService.listGames({
         lotterySlug: search.lottery ?? null,
@@ -94,12 +97,13 @@ function GamesPage() {
   }, [query.data, search.q]);
 
   const checks = useQuery({
-    queryKey: ["game-checks", rows.map((row) => row.id).join(",")],
+    queryKey: privateQueryKeys.gameChecks(user.id, rows.map((row) => row.id).join(",")),
     enabled: rows.length > 0,
     queryFn: () => checkService.getChecksForGames(rows.map((row) => row.id)),
   });
 
   const total = rows.length;
+  const queryState = resolveQueryState(query);
   const planned = rows.filter((row) => row.status === "PLANNED").length;
   const prized = rows.filter((row) => row.status === "PRIZED").length;
 
@@ -250,10 +254,10 @@ function GamesPage() {
         }
       />
 
-      {query.isLoading ? <LoadingState /> : null}
-      {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
+      {queryState === "loading" ? <LoadingState /> : null}
+      {queryState === "error" ? <ErrorState onRetry={() => void query.refetch()} /> : null}
 
-      {!query.isLoading && !query.isError && total === 0 ? (
+      {queryState === "success" && total === 0 ? (
         <EmptyState
           icon={ListChecks}
           title="Nenhum jogo encontrado com estes filtros"

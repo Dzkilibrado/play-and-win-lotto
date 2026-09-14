@@ -35,6 +35,8 @@ import {
 import { poolService, type PoolParticipantRow } from "@/lib/services/poolService";
 import { validateListSearch } from "@/lib/searchFilters";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 const sections = [
   { value: "overview", label: "Visão Geral" },
@@ -70,16 +72,16 @@ function PoolDetailPage() {
   const [editing, setEditing] = useState(false);
 
   const pool = useQuery({
-    queryKey: ["pool", id],
+    queryKey: privateQueryKeys.pool(user.id, id),
     queryFn: () => poolService.get(id),
     refetchOnMount: "always",
   });
   const participants = useQuery({
-    queryKey: ["pool", id, "participants"],
+    queryKey: privateQueryKeys.poolParticipants(user.id, id),
     queryFn: () => poolService.participants(id),
   });
 
-  if (pool.isPending || (pool.isFetching && pool.data == null)) {
+  if (resolveQueryState(pool) === "loading") {
     return <LoadingState rows={4} label="Carregando bolão…" />;
   }
   if (pool.isError) return <ErrorState onRetry={() => void pool.refetch()} />;
@@ -98,6 +100,7 @@ function PoolDetailPage() {
   }
 
   const data = pool.data;
+  const participantState = resolveQueryState(participants);
   const rows = participants.data ?? [];
   const config = getLotteryConfig(data.lotteries?.slug);
   const canManage = user?.id === data.owner_id || admin.data === true;
@@ -234,8 +237,10 @@ function PoolDetailPage() {
         ) : null}
 
         {section === "participants" ? (
-          participants.isLoading ? (
+          participantState === "loading" ? (
             <LoadingState rows={3} />
+          ) : participantState === "error" ? (
+            <ErrorState onRetry={() => void participants.refetch()} />
           ) : (
             <ParticipantsPanel
               pool={data}
@@ -247,10 +252,14 @@ function PoolDetailPage() {
         ) : null}
 
         {section === "games" ? <GamesPanel pool={data} canManage={canManage && !readOnly} /> : null}
-        {section === "finance" ? (
+        {section === "finance" && participantState === "loading" ? <LoadingState rows={3} /> : null}
+        {section === "finance" && participantState === "error" ? <ErrorState onRetry={() => void participants.refetch()} /> : null}
+        {section === "finance" && participantState === "success" ? (
           <FinancePanel pool={data} participants={rows} canManage={canManage && !readOnly} />
         ) : null}
-        {section === "result" ? (
+        {section === "result" && participantState === "loading" ? <LoadingState rows={3} /> : null}
+        {section === "result" && participantState === "error" ? <ErrorState onRetry={() => void participants.refetch()} /> : null}
+        {section === "result" && participantState === "success" ? (
           <DistributionPanel pool={data} participants={rows} canManage={canManage && !readOnly} />
         ) : null}
         {section === "documents" ? <DocumentsPanel poolId={data.id} canManage={canManage} readOnly={readOnly} /> : null}
