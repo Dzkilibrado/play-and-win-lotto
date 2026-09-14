@@ -88,7 +88,7 @@ function PoolsHubPage() {
               label={category.label}
               value={category.value}
               icon={category.icon}
-              tone={category.tone}
+              {...(category.tone ? { tone: category.tone } : {})}
               to="/pools/list"
               search={category.search}
             />
