@@ -31,7 +31,7 @@ export function PoolDeleteDialog({ pool, open, onOpenChange }: { pool: PoolRow; 
       queryClient.removeQueries({ queryKey: ["pool", pool.id] });
       toast.success(result.cleanupPending ? "Bolão excluído; a limpeza dos arquivos será concluída automaticamente." : "Bolão excluído definitivamente");
       onOpenChange(false);
-      navigate({ to: "/pools" });
+      navigate({ to: "/pools/list" });
     },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
   });

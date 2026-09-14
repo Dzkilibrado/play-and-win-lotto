@@ -101,7 +101,7 @@ function NewPoolPage() {
         description="Você poderá ajustar participantes, jogos e prazos depois de criar."
         actions={
           <Button asChild variant="outline" size="sm" className="h-11">
-            <Link to="/pools">Voltar</Link>
+            <Link to="/pools">Voltar aos bolões</Link>
           </Button>
         }
       />

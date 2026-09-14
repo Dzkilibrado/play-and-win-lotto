@@ -17,6 +17,7 @@ import { PaymentDialog } from "@/components/pool/PaymentDialog";
 import { PoolActions } from "@/components/pool/PoolActions";
 import { PoolCountdown } from "@/components/pool/PoolCountdown";
 import { PoolEditDialog } from "@/components/pool/PoolEditDialog";
+import { PoolOrganizationPanel } from "@/components/pool/PoolOrganizationPanel";
 import { PoolSectionNav } from "@/components/pool/PoolSectionNav";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
@@ -43,6 +44,7 @@ const sections = [
   { value: "result", label: "Resultado" },
   { value: "documents", label: "Comprovantes" },
   { value: "history", label: "Histórico" },
+  { value: "organization", label: "Organização" },
 ];
 
 export const Route = createFileRoute("/_authenticated/pools/$id")({
@@ -119,6 +121,7 @@ function PoolDetailPage() {
   const section = search.tab ?? "overview";
   const setSection = (value: string) =>
     navigate({ search: (prev) => ({ ...prev, tab: value }) });
+  const { tab: _tab, ...listSearch } = search;
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden" data-lottery={config?.colorKey}>
@@ -140,7 +143,7 @@ function PoolDetailPage() {
             ) : null}
             <PoolActions pool={data} canManage={canManage} />
             <Button asChild variant="outline" size="sm" className="h-11">
-              <Link to="/pools">Voltar</Link>
+              <Link to="/pools/list" search={listSearch}>Voltar à lista</Link>
             </Button>
           </>
         }
@@ -252,6 +255,9 @@ function PoolDetailPage() {
         ) : null}
         {section === "documents" ? <DocumentsPanel poolId={data.id} canManage={canManage} readOnly={readOnly} /> : null}
         {section === "history" ? <HistoryPanel poolId={data.id} /> : null}
+        {section === "organization" ? (
+          <PoolOrganizationPanel pool={data} canManage={canManage} />
+        ) : null}
       </div>
 
       <PaymentDialog poolId={data.id} participant={payTarget} onClose={() => setPayTarget(null)} />

@@ -8,13 +8,22 @@ import { noQuotaLimitLabel, quotaLabel, quotaProgress, remainingQuotas } from "@
 import { cn } from "@/lib/utils";
 import { poolStatusLabel, poolStatusTone } from "@/types/domain";
 import type { PoolRow } from "@/lib/services/poolService";
+import type { ListSearch } from "@/lib/searchFilters";
 import { PoolCountdown } from "./PoolCountdown";
 
 /**
  * Card compacto do bolão. O card inteiro é o link para o detalhe — não há
  * ação concorrente dentro dele.
  */
-export function PoolCard({ pool, className }: { pool: PoolRow; className?: string }) {
+export function PoolCard({
+  pool,
+  className,
+  listSearch,
+}: {
+  pool: PoolRow;
+  className?: string;
+  listSearch?: ListSearch;
+}) {
   const config = getLotteryConfig(pool.lotteries?.slug);
   const active = pool.pool_participants.filter((p) => p.status === "ACTIVE");
   const confirmed = active.filter((p) => p.payment_status === "PAID").length;
@@ -32,6 +41,7 @@ export function PoolCard({ pool, className }: { pool: PoolRow; className?: strin
     <Link
       to="/pools/$id"
       params={{ id: pool.id }}
+      search={listSearch ?? {}}
       data-lottery={config?.colorKey}
       aria-label={`Abrir bolão ${pool.name}`}
       className={cn(
