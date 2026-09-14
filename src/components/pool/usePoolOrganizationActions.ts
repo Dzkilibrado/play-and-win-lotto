@@ -9,6 +9,8 @@ export function usePoolOrganizationActions(poolId: string) {
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["pool", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool", poolId, "participants"] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-games", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pools"] });
   };
