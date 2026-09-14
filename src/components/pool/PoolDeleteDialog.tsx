@@ -20,7 +20,7 @@ export function PoolDeleteDialog({ pool, open, onOpenChange }: { pool: PoolRow; 
   const navigate = useNavigate();
   const deleteFn = useServerFn(deletePoolPermanently);
   const summary = useQuery({
-    queryKey: ["pool-delete-summary", user.id, pool.id],
+    queryKey: ["pool-delete-summary", pool.id, user.id],
     queryFn: () => poolService.deleteSummary(pool.id),
     enabled: open,
   });

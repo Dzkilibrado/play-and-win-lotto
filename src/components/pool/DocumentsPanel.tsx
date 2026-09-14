@@ -31,13 +31,13 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
   const [viewing, setViewing] = useState<PoolDocumentRow | null>(null);
   const replacement = useRef<PoolDocumentRow | null>(null);
   const replaceInput = useRef<HTMLInputElement | null>(null);
-  const documents = useQuery({ queryKey: ["pool-documents", user.id, poolId], queryFn: () => poolService.activeDocuments(poolId) });
+  const documents = useQuery({ queryKey: ["pool-documents", poolId, user.id], queryFn: () => poolService.activeDocuments(poolId) });
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["pool-documents", user.id, poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-documents", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool-available-documents", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pools"] });
-    void queryClient.invalidateQueries({ queryKey: ["pool-events", user.id, poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["public-pool"] });
     void queryClient.invalidateQueries({ queryKey: ["public-pool-documents"] });
   };

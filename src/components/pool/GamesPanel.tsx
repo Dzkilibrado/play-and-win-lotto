@@ -46,19 +46,19 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   const contest = pool.contest_number ?? pool.contest_number_planned;
 
   const games = useQuery({
-    queryKey: ["pool-games", user.id, pool.id],
+    queryKey: ["pool-games", pool.id, user.id],
     queryFn: () => poolService.games(pool.id),
   });
 
   const candidates = useQuery({
-    queryKey: ["pool-game-candidates", user.id, pool.id],
+    queryKey: ["pool-game-candidates", pool.id, user.id],
     enabled: pickerOpen,
     queryFn: () => gameService.listGames({}),
   });
 
   const candidateIds = (candidates.data?.rows ?? []).slice(0, 200).map((game) => game.id);
   const classifications = useQuery({
-    queryKey: ["pool-game-eligibility", user.id, pool.id, candidateIds],
+    queryKey: ["pool-game-eligibility", pool.id, user.id, candidateIds],
     enabled: pickerOpen && candidateIds.length > 0,
     queryFn: () => poolService.classifyGames(pool.id, candidateIds),
   });

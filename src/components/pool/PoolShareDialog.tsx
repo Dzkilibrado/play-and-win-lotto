@@ -64,7 +64,7 @@ export function PoolShareDialog({
   const [reportSections, setReportSections] = useState<PoolReportSections>(defaultPoolReportSections);
   const [pdfSelectionError, setPdfSelectionError] = useState(false);
   const documentRows = useQuery({
-    queryKey: ["pool-available-documents", user.id, pool.id],
+    queryKey: ["pool-available-documents", pool.id, user.id],
     queryFn: () => getAvailableDocuments({ data: { poolId: pool.id } }),
     enabled: open,
     staleTime: 30_000,

@@ -28,7 +28,7 @@ export function FinancePanel({
   const queryClient = useQueryClient();
 
   const payments = useQuery({
-    queryKey: ["pool-payments", user.id, pool.id],
+    queryKey: ["pool-payments", pool.id, user.id],
     queryFn: () => poolService.payments(pool.id),
   });
 

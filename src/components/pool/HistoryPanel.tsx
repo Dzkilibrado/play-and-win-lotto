@@ -11,7 +11,7 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyl
 export function HistoryPanel({ poolId }: { poolId: string }) {
   const { user } = useSession();
   const events = useQuery({
-    queryKey: ["pool-events", user.id, poolId],
+    queryKey: ["pool-events", poolId, user.id],
     queryFn: () => poolService.events(poolId),
   });
 

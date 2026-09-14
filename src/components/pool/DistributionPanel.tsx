@@ -33,12 +33,12 @@ export function DistributionPanel({
   const queryClient = useQueryClient();
 
   const prize = useQuery({
-    queryKey: ["pool-prize", user.id, pool.id],
+    queryKey: ["pool-prize", pool.id, user.id],
     queryFn: () => poolService.prizeTotal(pool.id),
   });
 
   const distributions = useQuery({
-    queryKey: ["pool-distributions", user.id, pool.id],
+    queryKey: ["pool-distributions", pool.id, user.id],
     queryFn: () => poolService.distributions(pool.id),
   });
 
