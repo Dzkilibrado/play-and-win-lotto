@@ -12,6 +12,7 @@ import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/servic
 import { userErrorMessage } from "@/lib/user-error";
 import type { StatusTone } from "@/types/domain";
 import { resolveQueryState } from "@/lib/query/queryState";
+import { useSession } from "@/hooks/useAuth";
 
 const statusTone: Record<string, StatusTone> = {
   CALCULATED: "info",
@@ -28,15 +29,16 @@ export function DistributionPanel({
   participants: PoolParticipantRow[];
   canManage: boolean;
 }) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
 
   const prize = useQuery({
-    queryKey: ["pool-prize", pool.id],
+    queryKey: ["pool-prize", pool.id, user.id],
     queryFn: () => poolService.prizeTotal(pool.id),
   });
 
   const distributions = useQuery({
-    queryKey: ["pool-distributions", pool.id],
+    queryKey: ["pool-distributions", pool.id, user.id],
     queryFn: () => poolService.distributions(pool.id),
   });
 

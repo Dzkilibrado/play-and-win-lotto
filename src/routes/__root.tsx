@@ -131,6 +131,10 @@ function AuthCacheBoundary({ queryClient }: { queryClient: QueryClient }) {
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        identity.current = session?.user.id ?? null;
+        return;
+      }
       if (!['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) return;
       const nextIdentity = session?.user.id ?? null;
       const changedUser = identity.current !== null && nextIdentity !== null && identity.current !== nextIdentity;

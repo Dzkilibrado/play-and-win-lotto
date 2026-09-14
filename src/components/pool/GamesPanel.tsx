@@ -32,8 +32,10 @@ import { userErrorMessage } from "@/lib/user-error";
 import type { PoolGameEligibility } from "@/lib/services/poolService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
 import { resolveQueryState } from "@/lib/query/queryState";
+import { useSession } from "@/hooks/useAuth";
 
 export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -44,19 +46,19 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   const contest = pool.contest_number ?? pool.contest_number_planned;
 
   const games = useQuery({
-    queryKey: ["pool-games", pool.id],
+    queryKey: ["pool-games", pool.id, user.id],
     queryFn: () => poolService.games(pool.id),
   });
 
   const candidates = useQuery({
-    queryKey: ["pool-game-candidates", pool.id],
+    queryKey: ["pool-game-candidates", pool.id, user.id],
     enabled: pickerOpen,
     queryFn: () => gameService.listGames({}),
   });
 
   const candidateIds = (candidates.data?.rows ?? []).slice(0, 200).map((game) => game.id);
   const classifications = useQuery({
-    queryKey: ["pool-game-eligibility", pool.id, candidateIds],
+    queryKey: ["pool-game-eligibility", pool.id, user.id, candidateIds],
     enabled: pickerOpen && candidateIds.length > 0,
     queryFn: () => poolService.classifyGames(pool.id, candidateIds),
   });

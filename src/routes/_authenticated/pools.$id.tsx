@@ -168,20 +168,26 @@ function PoolDetailPage() {
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard
-            label={semLimite ? "Cotas atribuídas" : "Cotas"}
-            value={quotaLabel(data.total_quotas, finance.quotasTaken)}
-          />
-          <MetricCard
-            label={semLimite ? "Limite de cotas" : "Cotas livres"}
-            value={semLimite ? noQuotaLimitLabel : livres}
-          />
-          <MetricCard label="Recebido" value={formatCurrency(finance.totalPaid)} />
-          <MetricCard label="Em aberto" value={formatCurrency(finance.totalOutstanding)} />
-        </div>
+        {participantState === "loading" ? (
+          <LoadingState rows={1} label="Carregando resumo financeiro…" />
+        ) : participantState === "error" ? (
+          <ErrorState onRetry={() => void participants.refetch()} />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MetricCard
+              label={semLimite ? "Cotas atribuídas" : "Cotas"}
+              value={quotaLabel(data.total_quotas, finance.quotasTaken)}
+            />
+            <MetricCard
+              label={semLimite ? "Limite de cotas" : "Cotas livres"}
+              value={semLimite ? noQuotaLimitLabel : livres}
+            />
+            <MetricCard label="Recebido" value={formatCurrency(finance.totalPaid)} />
+            <MetricCard label="Em aberto" value={formatCurrency(finance.totalOutstanding)} />
+          </div>
+        )}
 
-        {semLimite ? null : (
+        {participantState !== "success" || semLimite ? null : (
           <div
             className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
             role="progressbar"

@@ -94,6 +94,8 @@ function DashboardPage() {
   });
 
   const byStatus = counts.data?.counts ?? {};
+  const countsState = resolveQueryState(counts);
+  const checkState = resolveQueryState(checkSummary);
   const awaitingCheck = byStatus.AWAITING_CHECK ?? 0;
   const prized = byStatus.PRIZED ?? 0;
 
@@ -120,6 +122,8 @@ function DashboardPage() {
   const renderBlock = (key: HomeBlockKey) => {
     switch (key) {
       case "indicators":
+        if (countsState === "loading") return <LoadingState key={key} rows={2} label="Carregando seus jogos…" />;
+        if (countsState === "error") return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
         return (
           <section key={key} aria-labelledby="my-numbers" className="space-y-2 sm:space-y-3">
             <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
@@ -236,7 +240,7 @@ function DashboardPage() {
                       key={lottery.slug}
                       data-lottery={lottery.config.colorKey}
                       className={cn(
-                        "surface-card flex items-center gap-2 p-2",
+                        "surface-card flex min-w-0 items-center gap-2 p-2",
                         lottery.id === prefs.favoriteId && "ring-1 ring-lottery",
                       )}
                     >
@@ -251,7 +255,7 @@ function DashboardPage() {
                             : "Sem data disponível"}
                         </p>
                       </div>
-                      <span className="shrink-0 font-display text-sm font-semibold text-lottery">
+                      <span className="shrink-0 font-display text-xs font-semibold text-lottery sm:text-sm">
                         {formatCurrency(draw?.estimated_next_prize ?? null)}
                       </span>
                     </li>
@@ -331,6 +335,8 @@ function DashboardPage() {
         );
 
       case "awaiting_check":
+        if (countsState === "loading") return <LoadingState key={key} rows={1} label="Carregando conferências…" />;
+        if (countsState === "error") return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
         return (
           <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">
@@ -352,6 +358,8 @@ function DashboardPage() {
         );
 
       case "prized":
+        if (checkState === "loading") return <LoadingState key={key} rows={1} label="Carregando premiações…" />;
+        if (checkState === "error") return <ErrorState key={key} onRetry={() => void checkSummary.refetch()} />;
         return (
           <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">Premiados</h2>
