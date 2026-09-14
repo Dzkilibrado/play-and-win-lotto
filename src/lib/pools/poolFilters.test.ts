@@ -181,6 +181,14 @@ describe("carregamento progressivo", () => {
     expect(paginatePools(rows, 0, 20).visible).toHaveLength(20);
     expect(paginatePools(rows, Number.NaN, 20).visible).toHaveLength(20);
   });
+
+  it.each([5, 20, 50, 100, 200])("mantém listas de %i itens previsíveis", (total) => {
+    const items = Array.from({ length: total }, (_, index) => index);
+    const pages = Math.max(1, Math.ceil(total / 20));
+    const result = paginatePools(items, pages, 20);
+    expect(result.visible).toHaveLength(total);
+    expect(result.hasMore).toBe(false);
+  });
 });
 
 describe("visão combinada", () => {

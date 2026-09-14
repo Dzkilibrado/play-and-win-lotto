@@ -162,11 +162,12 @@ function PoolsListPage() {
     ));
 
   const clearAll = () => navigate({ search: {} });
+  const pageTitle = search.archived === "yes" ? "Arquivados" : poolGroupLabel(search.group);
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title={poolGroupLabel(search.group)}
+        title={pageTitle}
         description="Busque, filtre e escolha o bolão que deseja abrir."
         actions={
           <Button asChild variant="outline" size="sm" className="h-11">
