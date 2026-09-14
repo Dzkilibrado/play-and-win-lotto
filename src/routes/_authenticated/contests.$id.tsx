@@ -12,6 +12,8 @@ import { getLotteryConfig } from "@/config/lotteries";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { checkService } from "@/lib/services/checkService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/contests/$id")({
   head: () => ({
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/contests/$id")({
 
 function ContestDetailPage() {
   const { id } = Route.useParams();
+  const { user } = Route.useRouteContext();
   const contest = useQuery({
     queryKey: ["contest", id],
     queryFn: () => lotteryDataService.getContestById(id),
@@ -39,10 +42,11 @@ function ContestDetailPage() {
   const prizes = [...(draw?.draw_prizes ?? [])].sort((a, b) => b.hits - a.hits);
 
   const myChecks = useQuery({
-    queryKey: ["contest-checks", id],
+    queryKey: privateQueryKeys.contestChecks(user.id, id),
     queryFn: () => checkService.getChecksForDraw(id),
   });
   const myGames = myChecks.data ?? [];
+  const checksState = resolveQueryState(myChecks);
 
   return (
     <div className="space-y-4" data-lottery={config?.colorKey}>
@@ -127,7 +131,11 @@ function ContestDetailPage() {
             <h2 className="font-display text-sm font-semibold text-text-primary">
               Seus jogos neste concurso
             </h2>
-            {myGames.length === 0 ? (
+            {checksState === "loading" ? (
+              <div className="mt-3"><LoadingState rows={1} label="Carregando seus jogos…" /></div>
+            ) : checksState === "error" ? (
+              <div className="mt-3"><ErrorState onRetry={() => void myChecks.refetch()} /></div>
+            ) : myGames.length === 0 ? (
               <p className="mt-2 text-xs text-text-secondary">
                 Você não tem jogos conferidos neste concurso.
               </p>

@@ -5,13 +5,14 @@ import { toast } from "sonner";
 
 import { MetricCard } from "@/components/common/Cards";
 import { ReasonDialog } from "@/components/common/ReasonDialog";
-import { EmptyState } from "@/components/common/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { Button } from "@/components/ui/button";
 import { describePaymentMethod, type PaymentMethod } from "@/config/pools.config";
 
 import { formatCurrency, formatDate } from "@/lib/format";
 import { summarizeFinance } from "@/lib/pools/poolMath";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export function FinancePanel({
   pool,
@@ -58,6 +59,7 @@ export function FinancePanel({
   );
 
   const rows = (payments.data ?? []).filter((row) => row.cancelled_at === null);
+  const paymentsState = resolveQueryState(payments);
   const nameOf = (participantId: string) =>
     participants.find((p) => p.id === participantId)?.name ?? "Participante";
 
@@ -95,7 +97,11 @@ export function FinancePanel({
 
       <div className="surface-card p-4">
         <h2 className="font-display text-sm font-semibold text-text-primary">Pagamentos registrados</h2>
-        {rows.length === 0 ? (
+        {paymentsState === "loading" ? (
+          <div className="mt-3"><LoadingState rows={2} label="Carregando pagamentos…" /></div>
+        ) : paymentsState === "error" ? (
+          <div className="mt-3"><ErrorState onRetry={() => void payments.refetch()} /></div>
+        ) : rows.length === 0 ? (
           <EmptyState
             className="mt-3 border-0 bg-transparent p-0 shadow-none"
             icon={Wallet}

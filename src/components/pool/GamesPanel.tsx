@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { NumberBall } from "@/components/lottery/NumberBall";
-import { EmptyState } from "@/components/common/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { userErrorMessage } from "@/lib/user-error";
 import type { PoolGameEligibility } from "@/lib/services/poolService";
 import { gameStatusLabel, gameStatusTone, type GameStatus } from "@/types/domain";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
   const queryClient = useQueryClient();
@@ -107,6 +108,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
   });
 
   const rows = games.data ?? [];
+  const gamesState = resolveQueryState(games);
   const totalCost = rows.reduce((sum, row) => sum + Number(row.generated_games?.cost ?? 0), 0);
   const classificationById = new Map((classifications.data ?? []).map((item) => [item.game_id, item]));
   const candidateRows = (candidates.data?.rows ?? []).slice(0, 200);
@@ -189,7 +191,11 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
         </p>
       ) : null}
 
-      {rows.length === 0 ? (
+      {gamesState === "loading" ? (
+        <LoadingState rows={3} label="Carregando jogos do bolão…" />
+      ) : gamesState === "error" ? (
+        <ErrorState onRetry={() => void games.refetch()} />
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={Ticket}
           title="Nenhum jogo neste bolão ainda"
