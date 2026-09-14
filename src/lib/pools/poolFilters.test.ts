@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activeOperationalPools,
   applyPoolView,
   filterPools,
   paginatePools,
@@ -63,6 +64,15 @@ describe("grupos de situação", () => {
     expect(poolGroupOf("ongoing")).toBe("ongoing");
     expect(poolGroupOf("qualquer")).toBe("all");
     expect(poolGroupOf(undefined)).toBe("all");
+  });
+
+  it("usa a mesma definição operacional da Home e exclui arquivados", () => {
+    const active = pool({ status: "AWAITING_DRAW", archived_at: null });
+    const archived = pool({ status: "OPEN", archived_at: "2026-09-14T00:00:00Z" });
+    const finished = pool({ status: "FINISHED", archived_at: null });
+    const rows = [active, archived, finished];
+    expect(activeOperationalPools(rows)).toEqual([active]);
+    expect(filterPools(rows, { group: "ongoing" })).toEqual([active]);
   });
 
   it("mapeia cada grupo para as situações reais", () => {

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
 import { poolConfig } from "@/config/pools.config";
-import { useSession } from "@/hooks/useAuth";
 import {
   applyPoolView,
   paginatePools,
@@ -27,6 +26,8 @@ import { normalizeName } from "@/lib/pools/publicPool";
 import { poolService } from "@/lib/services/poolService";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
 import { poolStatusLabel } from "@/types/domain";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/pools/list")({
   validateSearch: validateListSearch,
@@ -78,7 +79,7 @@ function chipLabel(key: keyof ListSearch, value: string, lotteryName: (slug: str
 function PoolsListPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { user } = useSession();
+  const { user } = Route.useRouteContext();
 
   // Ao mudar qualquer filtro, o carregamento progressivo volta ao início.
   const setFilter = (patch: Partial<ListSearch>) =>
@@ -90,8 +91,9 @@ function PoolsListPage() {
    * continuam contando o total mesmo com a listagem filtrada, sem uma segunda
    * consulta ao banco a cada abertura da tela.
    */
-  const pools = useQuery({ queryKey: ["pools", "all"], queryFn: () => poolService.list({}) });
-  const all = pools.data ?? [];
+  const pools = useQuery({ queryKey: privateQueryKeys.poolsAll(user.id), queryFn: () => poolService.list({}) });
+  const queryState = resolveQueryState(pools);
+  const all = queryState === "success" ? (pools.data ?? []) : [];
 
   const lotteryName = (slug: string) =>
     activeLotteries.find((lottery) => lottery.slug === slug)?.name ?? slug;
@@ -125,7 +127,7 @@ function PoolsListPage() {
     prize: search.prize,
     scope: search.scope,
     sort: search.sort,
-    userId: user?.id ?? null,
+    userId: user.id,
     archived: search.archived,
   });
 
@@ -180,7 +182,7 @@ function PoolsListPage() {
       />
 
       <FilterBar
-        resultCount={pools.isLoading ? null : rows.length}
+        resultCount={queryState === "success" ? rows.length : null}
         onClearAll={clearAll}
         activeChips={chips.length ? chips : undefined}
         search={
@@ -350,9 +352,9 @@ function PoolsListPage() {
         }
       />
 
-      {pools.isLoading ? (
+      {queryState === "loading" ? (
         <LoadingState rows={3} label="Carregando bolões…" />
-      ) : pools.isError ? (
+      ) : queryState === "error" ? (
         <ErrorState onRetry={() => void pools.refetch()} />
       ) : rows.length === 0 ? (
         <EmptyState

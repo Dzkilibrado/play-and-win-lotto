@@ -28,6 +28,9 @@ import { checkService } from "@/lib/services/checkService";
 import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { poolService } from "@/lib/services/poolService";
+import { activeOperationalPools } from "@/lib/pools/poolFilters";
+import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
+import { resolveQueryState } from "@/lib/query/queryState";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -42,9 +45,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-const finishedPoolStatuses = new Set(["FINISHED", "CANCELLED"]);
-
 function DashboardPage() {
+  const { user } = Route.useRouteContext();
   const prefs = useHomePreferences();
   const followedSlugs = prefs.followedSlugs;
   const [resultsLottery, setResultsLottery] = useState<LotterySlug | null>(null);
@@ -64,12 +66,12 @@ function DashboardPage() {
   const showsLotteryBlocks = followedSlugs.length > 0;
 
   const counts = useQuery({
-    queryKey: ["game-status-counts"],
+    queryKey: privateQueryKeys.gameStatusCounts(user.id),
     queryFn: () => gameService.statusCounts(),
   });
 
   const checkSummary = useQuery({
-    queryKey: ["check-summary"],
+    queryKey: privateQueryKeys.checkSummary(user.id),
     queryFn: () => checkService.summary(),
   });
 
@@ -86,7 +88,7 @@ function DashboardPage() {
   });
 
   const pools = useQuery({
-    queryKey: ["pools", "home-summary"],
+    queryKey: privateQueryKeys.poolsHome(user.id),
     queryFn: () => poolService.list(),
     enabled: enabled.has("pools"),
   });
@@ -95,8 +97,9 @@ function DashboardPage() {
   const awaitingCheck = byStatus.AWAITING_CHECK ?? 0;
   const prized = byStatus.PRIZED ?? 0;
 
-  const poolRows = pools.data ?? [];
-  const activePools = poolRows.filter((pool) => !finishedPoolStatuses.has(pool.status));
+  const poolState = resolveQueryState(pools);
+  const poolRows = poolState === "success" ? (pools.data ?? []) : [];
+  const activePools = activeOperationalPools(poolRows);
   const pendingPayments = activePools.reduce(
     (total, pool) =>
       total +
@@ -161,9 +164,9 @@ function DashboardPage() {
             <h2 id="home-pools" className="font-display text-base font-semibold text-text-primary">
               Meus bolões
             </h2>
-            {pools.isLoading ? (
+            {poolState === "loading" ? (
               <LoadingState rows={1} />
-            ) : pools.isError ? (
+            ) : poolState === "error" ? (
               <ErrorState onRetry={() => pools.refetch()} />
             ) : activePools.length === 0 ? (
               <EmptyState
