@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, MoreHorizontal, Share2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ReasonDialog } from "@/components/common/ReasonDialog";
 import { PoolShareDialog } from "@/components/pool/PoolShareDialog";
 import { PoolDeleteDialog } from "@/components/pool/PoolDeleteDialog";
+import { usePoolOrganizationActions } from "@/components/pool/usePoolOrganizationActions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,18 +21,11 @@ import { poolStatusLabel, type PoolStatus } from "@/types/domain";
 import { userErrorMessage } from "@/lib/user-error";
 
 export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
-  const queryClient = useQueryClient();
   const [shareOpen, setShareOpen] = useState(false);
   const [reasonTarget, setReasonTarget] = useState<PoolStatus | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
-    void queryClient.invalidateQueries({ queryKey: ["pool", pool.id, "participants"] });
-    void queryClient.invalidateQueries({ queryKey: ["pool-games", pool.id] });
-    void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
-    void queryClient.invalidateQueries({ queryKey: ["pools"] });
-  };
+  const { archiveMutation, invalidate } = usePoolOrganizationActions(pool.id);
 
   const statusMutation = useMutation({
     mutationFn: ({ status, reason }: { status: PoolStatus; reason?: string }) =>
@@ -41,11 +35,6 @@ export function PoolActions({ pool, canManage }: { pool: PoolRow; canManage: boo
       setReasonTarget(null);
       invalidate();
     },
-    onError: (error: Error) => toast.error(userErrorMessage(error)),
-  });
-  const archiveMutation = useMutation({
-    mutationFn: (archived: boolean) => poolService.setArchived(pool.id, archived),
-    onSuccess: (_data, archived) => { toast.success(archived ? "Bolão arquivado" : "Bolão restaurado"); invalidate(); },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
   });
 

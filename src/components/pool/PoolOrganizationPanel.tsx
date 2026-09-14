@@ -1,27 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, ShieldAlert, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { PoolDeleteDialog } from "@/components/pool/PoolDeleteDialog";
+import { usePoolOrganizationActions } from "@/components/pool/usePoolOrganizationActions";
 import { Button } from "@/components/ui/button";
-import { poolService, type PoolRow } from "@/lib/services/poolService";
-import { userErrorMessage } from "@/lib/user-error";
+import type { PoolRow } from "@/lib/services/poolService";
 
 export function PoolOrganizationPanel({ pool, canManage }: { pool: PoolRow; canManage: boolean }) {
-  const queryClient = useQueryClient();
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const archiveMutation = useMutation({
-    mutationFn: (archived: boolean) => poolService.setArchived(pool.id, archived),
-    onSuccess: (_data, archived) => {
-      toast.success(archived ? "Bolão arquivado" : "Bolão restaurado");
-      void queryClient.invalidateQueries({ queryKey: ["pool", pool.id] });
-      void queryClient.invalidateQueries({ queryKey: ["pool-events", pool.id] });
-      void queryClient.invalidateQueries({ queryKey: ["pools"] });
-    },
-    onError: (error: Error) => toast.error(userErrorMessage(error)),
-  });
+  const { archiveMutation } = usePoolOrganizationActions(pool.id);
 
   if (!canManage) {
     return (
