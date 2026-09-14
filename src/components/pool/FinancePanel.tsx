@@ -13,6 +13,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { summarizeFinance } from "@/lib/pools/poolMath";
 import { poolService, type PoolParticipantRow, type PoolRow } from "@/lib/services/poolService";
 import { resolveQueryState } from "@/lib/query/queryState";
+import { useSession } from "@/hooks/useAuth";
 
 export function FinancePanel({
   pool,
@@ -23,10 +24,11 @@ export function FinancePanel({
   participants: PoolParticipantRow[];
   canManage: boolean;
 }) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
 
   const payments = useQuery({
-    queryKey: ["pool-payments", pool.id],
+    queryKey: ["pool-payments", user.id, pool.id],
     queryFn: () => poolService.payments(pool.id),
   });
 

@@ -11,14 +11,16 @@ import { Label } from "@/components/ui/label";
 import { deletePoolPermanently } from "@/lib/pools/poolManagement.functions";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 import { userErrorMessage } from "@/lib/user-error";
+import { useSession } from "@/hooks/useAuth";
 
 export function PoolDeleteDialog({ pool, open, onOpenChange }: { pool: PoolRow; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { user } = useSession();
   const [confirmation, setConfirmation] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const deleteFn = useServerFn(deletePoolPermanently);
   const summary = useQuery({
-    queryKey: ["pool-delete-summary", pool.id],
+    queryKey: ["pool-delete-summary", user.id, pool.id],
     queryFn: () => poolService.deleteSummary(pool.id),
     enabled: open,
   });

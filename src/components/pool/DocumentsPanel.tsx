@@ -4,7 +4,9 @@ import { Eye, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { EmptyState, LoadingState } from "@/components/common/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
+import { useSession } from "@/hooks/useAuth";
+import { resolveQueryState } from "@/lib/query/queryState";
 import { DocumentViewer, type ViewableDocument } from "@/components/common/DocumentViewer";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { poolService, type PoolDocumentRow } from "@/lib/services/poolService";
 import { DOCUMENT_ACCEPT, documentTypeLabel, validateDocumentFile } from "@/lib/documents/documentFiles";
 
 export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string; canManage: boolean; readOnly: boolean }) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
   const replaceFile = useServerFn(replacePoolDocumentFile);
   const deleteDocument = useServerFn(deletePoolDocument);
@@ -28,13 +31,13 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
   const [viewing, setViewing] = useState<PoolDocumentRow | null>(null);
   const replacement = useRef<PoolDocumentRow | null>(null);
   const replaceInput = useRef<HTMLInputElement | null>(null);
-  const documents = useQuery({ queryKey: ["pool-documents", poolId], queryFn: () => poolService.activeDocuments(poolId) });
+  const documents = useQuery({ queryKey: ["pool-documents", user.id, poolId], queryFn: () => poolService.activeDocuments(poolId) });
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["pool-documents", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-documents", user.id, poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool-available-documents", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pools"] });
-    void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-events", user.id, poolId] });
     void queryClient.invalidateQueries({ queryKey: ["public-pool"] });
     void queryClient.invalidateQueries({ queryKey: ["public-pool-documents"] });
   };
@@ -59,7 +62,9 @@ export function DocumentsPanel({ poolId, canManage, readOnly }: { poolId: string
   };
   const viewerDocument = useMemo<ViewableDocument | null>(() => viewing ? { title: viewing.title, description: viewing.description, fileName: viewing.original_file_name || viewing.title, mimeType: viewing.mime_type, fileSize: viewing.file_size, getUrl: () => getDocumentUrl({ data: { documentId: viewing.id } }) } : null, [getDocumentUrl, viewing]);
 
-  if (documents.isLoading) return <LoadingState rows={3} />;
+  const state = resolveQueryState(documents);
+  if (state === "loading") return <LoadingState rows={3} />;
+  if (state === "error") return <ErrorState onRetry={() => void documents.refetch()} />;
   const rows = documents.data ?? [];
   return (
     <div className="space-y-3">

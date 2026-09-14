@@ -1,18 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { History } from "lucide-react";
 
-import { EmptyState, LoadingState } from "@/components/common/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
+import { useSession } from "@/hooks/useAuth";
+import { resolveQueryState } from "@/lib/query/queryState";
 import { poolService } from "@/lib/services/poolService";
 
 const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
 
 export function HistoryPanel({ poolId }: { poolId: string }) {
+  const { user } = useSession();
   const events = useQuery({
-    queryKey: ["pool-events", poolId],
+    queryKey: ["pool-events", user.id, poolId],
     queryFn: () => poolService.events(poolId),
   });
 
-  if (events.isLoading) return <LoadingState rows={3} />;
+  const state = resolveQueryState(events);
+  if (state === "loading") return <LoadingState rows={3} />;
+  if (state === "error") return <ErrorState onRetry={() => void events.refetch()} />;
   const rows = events.data ?? [];
 
   if (rows.length === 0) {

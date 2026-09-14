@@ -38,6 +38,7 @@ import { sniffDocumentMime } from "@/lib/documents/documentFiles";
 import { checkService } from "@/lib/services/checkService";
 import { poolService, type PoolRow, type PoolShareScope } from "@/lib/services/poolService";
 import { userErrorMessage } from "@/lib/user-error";
+import { useSession } from "@/hooks/useAuth";
 
 export function PoolShareDialog({
   pool,
@@ -50,6 +51,7 @@ export function PoolShareDialog({
   onOpenChange: (open: boolean) => void;
   canManage: boolean;
 }) {
+  const { user } = useSession();
   const queryClient = useQueryClient();
   const getDocumentUrl = useServerFn(getPoolDocumentUrl);
   const getAvailableDocuments = useServerFn(getAvailablePoolDocuments);
@@ -62,7 +64,7 @@ export function PoolShareDialog({
   const [reportSections, setReportSections] = useState<PoolReportSections>(defaultPoolReportSections);
   const [pdfSelectionError, setPdfSelectionError] = useState(false);
   const documentRows = useQuery({
-    queryKey: ["pool-available-documents", pool.id],
+    queryKey: ["pool-available-documents", user.id, pool.id],
     queryFn: () => getAvailableDocuments({ data: { poolId: pool.id } }),
     enabled: open,
     staleTime: 30_000,
