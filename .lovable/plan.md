@@ -2,12 +2,12 @@
 
 ## Diagnóstico confirmado
 
-- A Home transforma `pools.data` indefinido em `[]`, mas hoje seu ramo visual só é seguro enquanto a consulta está realmente marcada como carregando.
+- A Home transforma `pools.data` indefinido em `[]` e verifica apenas `isLoading`. Após limpeza/invalidação ampla, a consulta pode estar em `isFetching` sem dados; nesse intervalo, a interface interpreta `[]` como sucesso zero e mostra o falso vazio.
 - As consultas privadas principais usam chaves genéricas, como `pools/home-summary`, `pools/all`, `games`, `game-status-counts` e `check-summary`, sem a identidade do usuário.
 - O cache global considera esses dados atuais por 60 segundos. Após uma troca ou perda de sessão, uma resposta vazia anterior pode ser reutilizada como sucesso para outra sessão, sem nova consulta imediata. Assim, o estado transitório/cacheado vira indevidamente “Nenhum bolão ativo”.
 - O cache é limpo apenas pelo botão normal de sair. Encerramento remoto, expiração, troca de conta ou outro evento de autenticação não têm a mesma proteção.
 - A rota protegida já valida a identidade antes de abrir a Home; porém componentes também resolvem a sessão separadamente, criando fontes de identidade concorrentes.
-- O falso “Bolão não encontrado” anterior pertencia à mesma classe de falha — dados privados consultados/reutilizados fora de um ciclo autoritativo estável — embora o detalhe já tenha sido corrigido para buscar diretamente pelo ID e separar carregamento de ausência real.
+- O falso “Bolão não encontrado” anterior tinha a mesma causa de estado: o detalhe já evita ausência falsa com `isPending || (isFetching && data == null)`, mas essa proteção não foi aplicada à Home e à listagem.
 - No banco, “Bolão Galera Gmill” existe, está `AWAITING_DRAW`, não está arquivado e possui 23 participantes ativos. A regra atual da Home considera ativo todo bolão cujo status não seja `FINISHED` nem `CANCELLED`; hoje ela não exclui arquivados, ao contrário das listagens operacionais.
 
 ## Implementação
