@@ -240,7 +240,7 @@ function DashboardPage() {
                       key={lottery.slug}
                       data-lottery={lottery.config.colorKey}
                       className={cn(
-                        "surface-card flex items-center gap-2 p-2",
+                        "surface-card flex min-w-0 items-center gap-2 p-2",
                         lottery.id === prefs.favoriteId && "ring-1 ring-lottery",
                       )}
                     >
@@ -255,7 +255,7 @@ function DashboardPage() {
                             : "Sem data disponível"}
                         </p>
                       </div>
-                      <span className="shrink-0 font-display text-sm font-semibold text-lottery">
+                      <span className="shrink-0 font-display text-xs font-semibold text-lottery sm:text-sm">
                         {formatCurrency(draw?.estimated_next_prize ?? null)}
                       </span>
                     </li>
