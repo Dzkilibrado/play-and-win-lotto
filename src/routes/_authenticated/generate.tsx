@@ -398,7 +398,7 @@ function GeneratePage() {
   };
 
   return (
-    <div className="space-y-4 pb-28" data-lottery={rules.colorKey}>
+    <div className="space-y-4" data-lottery={rules.colorKey}>
       <PageHeader
         title="Criar jogo"
         description="Escolha a modalidade, as dezenas e gere quantos jogos quiser. Nada é salvo sem sua confirmação."
@@ -674,7 +674,10 @@ function GeneratePage() {
             colorKey={rules.colorKey}
           />
 
-          <section className="surface-card sticky bottom-20 z-10 space-y-3 p-4 sm:bottom-4">
+          <section className="surface-card space-y-4 p-4" aria-labelledby="generation-summary-title">
+            <h2 id="generation-summary-title" className="font-display text-base font-semibold text-text-primary">
+              Resumo
+            </h2>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-xs text-text-secondary">Valor por jogo</p>
@@ -683,9 +686,9 @@ function GeneratePage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-text-secondary">Jogos</p>
+                <p className="text-xs text-text-secondary">Quantidade</p>
                 <p className="font-display text-lg font-semibold text-text-primary">
-                  {formatNumber(gamesCount)}
+                  {formatNumber(gamesCount)} {gamesCount === 1 ? "jogo" : "jogos"}
                 </p>
               </div>
               <div>
@@ -777,7 +780,7 @@ function GeneratePage() {
                   Gerando jogos…
                 </span>
               ) : (
-                "Criar jogos"
+                gamesCount === 1 ? "Criar 1 jogo" : `Criar ${formatNumber(gamesCount)} jogos`
               )}
             </Button>
             {generating ? (
