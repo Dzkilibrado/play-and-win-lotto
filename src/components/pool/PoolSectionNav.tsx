@@ -24,7 +24,7 @@ export function PoolSectionNav({
   const current = sections.find((section) => section.value === value) ?? sections[0]!;
 
   return (
-    <nav aria-label="Áreas do bolão" className="min-w-0">
+    <nav aria-label="Áreas do bolão" className="min-w-0 pb-16 md:pb-0">
       <div className="mb-2 flex items-center justify-between gap-3 md:hidden">
         <p className="text-sm font-semibold text-text-primary">Áreas do bolão</p>
         <p className="truncate text-xs text-text-secondary">{current?.label}</p>
