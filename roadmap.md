@@ -13,3 +13,8 @@
 - [x] Garantir ciclo pós-sorteio e invalidações sem buracos
 - [x] Adicionar testes de cobertura e ciclo controlado
 - [x] Validar busca, mobile, overflow, testes e prévia
+## Etapa 1 — segregação ADMIN × USER
+- [x] Auditar roles, rotas, operações administrativas e RLS existentes
+- [x] Bloquear a rota administrativa antes do carregamento de dados
+- [x] Remover Administração dos menus de USER em desktop e mobile
+- [ ] Validar USER, ADMIN, troca de identidade, viewports, temas e segurança

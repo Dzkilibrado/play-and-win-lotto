@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
+import { ErrorState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
 import { syncConfig } from "@/config/sync.config";
-import { useIsAdmin, useSession } from "@/hooks/useAuth";
+import { useSession } from "@/hooks/useAuth";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { formatDate, formatNumber } from "@/lib/format";
 import { getSyncOverview, listSyncErrors, runSyncBatch, startSync } from "@/lib/sync.functions";
@@ -25,6 +25,9 @@ import {
 import type { StatusTone } from "@/types/domain";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  beforeLoad: ({ context }) => {
+    if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
+  },
   head: () => ({
     meta: [
       { title: `Administração — ${appConfig.name}` },
@@ -90,25 +93,13 @@ function formatDateTime(value: string | null | undefined) {
 
 function AdminPage() {
   const { user } = useSession();
-  const isAdmin = useIsAdmin(user);
-
-  if (isAdmin.isLoading) return <LoadingState rows={2} />;
-
-  if (!isAdmin.data) {
-    return (
-      <EmptyState
-        title="Acesso restrito"
-        description="Esta área é exclusiva para administradores. As regras de acesso também são aplicadas no banco de dados."
-      />
-    );
-  }
 
   return (
     <div className="space-y-4">
       <PageHeader title="Administração" description="Gestão de dados e recursos do sistema." />
-      <FeatureFlagsPanel />
-      <SyncPanel />
-      <CheckPanel />
+       <FeatureFlagsPanel userId={user.id} />
+       <SyncPanel userId={user.id} />
+       <CheckPanel userId={user.id} />
     </div>
   );
 }
@@ -120,7 +111,7 @@ const featureTone: Record<FeatureStatus, StatusTone> = {
   DISABLED: "neutral",
 };
 
-function FeatureFlagsPanel() {
+function FeatureFlagsPanel({ userId }: { userId: string }) {
   const flags = useFeatureFlags();
   if (flags.isLoading) return <LoadingState rows={1} />;
   if (flags.isError) return <ErrorState onRetry={() => flags.refetch()} />;
@@ -141,7 +132,7 @@ function FeatureFlagsPanel() {
 }
 
 /** Conferência automática: fila por concurso, reprocessamento e erros. */
-function CheckPanel() {
+function CheckPanel({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -153,13 +144,13 @@ function CheckPanel() {
   const reprocessFn = useServerFn(reprocessDrawCheck);
   const scanFn = useServerFn(scanPendingChecks);
 
-  const overview = useQuery({ queryKey: ["check-overview"], queryFn: () => overviewFn({}) });
-  const errors = useQuery({ queryKey: ["check-errors"], queryFn: () => errorsFn({}) });
+  const overview = useQuery({ queryKey: ["admin", userId, "check-overview"], queryFn: () => overviewFn({}) });
+  const errors = useQuery({ queryKey: ["admin", userId, "check-errors"], queryFn: () => errorsFn({}) });
 
   const refresh = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["check-overview"] }),
-      queryClient.invalidateQueries({ queryKey: ["check-errors"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", userId, "check-overview"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", userId, "check-errors"] }),
       queryClient.invalidateQueries({ queryKey: ["games"] }),
       queryClient.invalidateQueries({ queryKey: ["check-summary"] }),
     ]);
@@ -293,7 +284,7 @@ function CheckPanel() {
   );
 }
 
-function SyncPanel() {
+function SyncPanel({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
@@ -303,13 +294,13 @@ function SyncPanel() {
   const batchFn = useServerFn(runSyncBatch);
   const errorsFn = useServerFn(listSyncErrors);
 
-  const overview = useQuery({ queryKey: ["sync-overview"], queryFn: () => overviewFn({}) });
-  const errors = useQuery({ queryKey: ["sync-errors"], queryFn: () => errorsFn({}) });
+  const overview = useQuery({ queryKey: ["admin", userId, "sync-overview"], queryFn: () => overviewFn({}) });
+  const errors = useQuery({ queryKey: ["admin", userId, "sync-errors"], queryFn: () => errorsFn({}) });
 
   const refreshAll = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["sync-overview"] }),
-      queryClient.invalidateQueries({ queryKey: ["sync-errors"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-errors"] }),
       queryClient.invalidateQueries({ queryKey: ["latest-draws"] }),
       queryClient.invalidateQueries({ queryKey: ["recent-results"] }),
       queryClient.invalidateQueries({ queryKey: ["results"] }),
@@ -335,7 +326,7 @@ function SyncPanel() {
               step.inserted,
             )} novos · ${formatNumber(step.failed)} com erro`,
           );
-          await queryClient.invalidateQueries({ queryKey: ["sync-overview"] });
+          await queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] });
         }
       }
       return started;

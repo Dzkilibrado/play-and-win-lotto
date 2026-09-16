@@ -18,7 +18,8 @@ export const Route = createFileRoute("/_authenticated/more")({
 });
 
 function MorePage() {
-  const items = [...secondaryNav, ...adminNav];
+  const { isAdmin } = Route.useRouteContext();
+  const items = [...secondaryNav, ...(isAdmin ? adminNav : [])];
   return (
     <div className="space-y-4">
       <PageHeader title="Mais" description="Demais áreas do aplicativo." />
