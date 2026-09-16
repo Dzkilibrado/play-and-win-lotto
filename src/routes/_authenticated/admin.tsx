@@ -112,7 +112,7 @@ const featureTone: Record<FeatureStatus, StatusTone> = {
 };
 
 function FeatureFlagsPanel({ userId }: { userId: string }) {
-  const flags = useFeatureFlags();
+  const flags = useFeatureFlags(userId);
   if (flags.isLoading) return <LoadingState rows={1} />;
   if (flags.isError) return <ErrorState onRetry={() => flags.refetch()} />;
   return (

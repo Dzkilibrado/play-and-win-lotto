@@ -6,6 +6,7 @@ const authenticatedLayout = readFileSync("src/routes/_authenticated/route.tsx", 
 const moreRoute = readFileSync("src/routes/_authenticated/more.tsx", "utf8");
 const syncFunctions = readFileSync("src/lib/sync.functions.ts", "utf8");
 const checkFunctions = readFileSync("src/lib/check.functions.ts", "utf8");
+const featureFlagsHook = readFileSync("src/hooks/useFeatureFlags.tsx", "utf8");
 
 describe("segregação ADMIN e USER", () => {
   it("resolve ADMIN pela identidade autenticada e pela tabela de roles", () => {
@@ -30,5 +31,11 @@ describe("segregação ADMIN e USER", () => {
       expect(source).toContain('rpc("has_role"');
       expect(source).toContain("await assertAdmin(context as never)");
     }
+  });
+
+  it("isola todos os caches administrativos pela identidade", () => {
+    expect(adminRoute).toContain('["admin", userId, "sync-overview"]');
+    expect(adminRoute).toContain('["admin", userId, "check-overview"]');
+    expect(featureFlagsHook).toContain('["admin", userId, "feature-flags"]');
   });
 });

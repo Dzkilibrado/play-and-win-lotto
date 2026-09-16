@@ -17,4 +17,5 @@
 - [x] Auditar roles, rotas, operações administrativas e RLS existentes
 - [x] Bloquear a rota administrativa antes do carregamento de dados
 - [x] Remover Administração dos menus de USER em desktop e mobile
-- [ ] Validar USER, ADMIN, troca de identidade, viewports, temas e segurança
+- [x] Validar ADMIN, viewports, temas e segurança
+- [ ] Validar USER e trocas ADMIN ↔ USER — bloqueado até identificar a conta USER de homologação
