@@ -16,7 +16,7 @@ import type {
 
 
 const POOL_SELECT =
-  "*, lotteries!inner(slug, name, short_name, color_key), pool_participants(id, user_id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status)), pool_share_links(id, scope, token, revoked_at)";
+  "*, lotteries(slug, name, short_name, color_key), pool_participants(id, user_id, quotas, amount_due, total_paid, payment_status, status, eligible_for_prize_share), pool_games(id, generated_games(status, game_check_results(id, is_prized))), pool_share_links(id, scope, token, revoked_at)";
 
 export type PoolShareScope = Database["public"]["Enums"]["pool_share_scope"];
 
@@ -102,7 +102,13 @@ export interface PoolRow {
     | "status"
     | "eligible_for_prize_share"
   >[];
-  pool_games: { id: string; generated_games: { status: GameStatus } | null }[];
+  pool_games: {
+    id: string;
+    generated_games: {
+      status: GameStatus;
+      game_check_results: { id: string; is_prized: boolean } | null;
+    } | null;
+  }[];
   pool_share_links: PoolShareLinkRow[];
 }
 
@@ -120,6 +126,35 @@ export interface PoolFilters {
   dateFrom?: string | null;
   dateTo?: string | null;
   sort?: string | null;
+}
+
+export interface PoolHubCounts {
+  all: number;
+  ongoing: number;
+  awaiting_draw: number;
+  result: number;
+  finished: number;
+  archived: number;
+}
+
+export interface PoolResultSnapshot {
+  draw: {
+    contest_number: number;
+    draw_date: string | null;
+    draw_numbers: { number: number; position: number }[];
+  } | null;
+  games: {
+    id: string;
+    sequence_number: number | null;
+    status: GameStatus;
+    game_check_results: {
+      hits: number;
+      is_prized: boolean;
+      total_prize: number | null;
+      amount_pending: boolean;
+      prize_label: string | null;
+    } | null;
+  }[];
 }
 
 export interface CreatePoolInput {
@@ -172,6 +207,20 @@ export interface DistributionRow {
 }
 
 export const poolService = {
+  async hubCounts(): Promise<PoolHubCounts> {
+    const { data, error } = await supabase.rpc("pool_hub_counts");
+    if (error) throw error;
+    const value = (data ?? {}) as Record<string, unknown>;
+    return {
+      all: Number(value["all"] ?? 0),
+      ongoing: Number(value["ongoing"] ?? 0),
+      awaiting_draw: Number(value["awaiting_draw"] ?? 0),
+      result: Number(value["result"] ?? 0),
+      finished: Number(value["finished"] ?? 0),
+      archived: Number(value["archived"] ?? 0),
+    };
+  },
+
   async list(filters: PoolFilters = {}) {
     let query = supabase.from("pools").select(POOL_SELECT);
 
@@ -427,6 +476,35 @@ export const poolService = {
       .eq("pool_id", poolId);
     if (error) throw error;
     return data ?? [];
+  },
+
+  async resultSnapshot(poolId: string, drawId: string | null): Promise<PoolResultSnapshot> {
+    const [gamesResponse, drawResponse] = await Promise.all([
+      supabase
+        .from("pool_games")
+        .select(
+          "game_id, generated_games!inner(id, sequence_number, status, game_check_results(hits, is_prized, total_prize, amount_pending, prize_label))",
+        )
+        .eq("pool_id", poolId),
+      drawId
+        ? supabase
+            .from("lottery_draws")
+            .select("contest_number, draw_date, draw_numbers(number, position)")
+            .eq("id", drawId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    if (gamesResponse.error) throw gamesResponse.error;
+    if (drawResponse.error) throw drawResponse.error;
+
+    const games = (gamesResponse.data ?? []).flatMap((row) => {
+      const game = row.generated_games as unknown as PoolResultSnapshot["games"][number] | null;
+      return game ? [game] : [];
+    });
+    return {
+      draw: (drawResponse.data ?? null) as unknown as PoolResultSnapshot["draw"],
+      games,
+    };
   },
 
   async classifyGames(poolId: string, gameIds: string[]) {

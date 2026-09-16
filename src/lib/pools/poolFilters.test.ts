@@ -6,6 +6,7 @@ import {
   filterPools,
   paginatePools,
   poolGroupOf,
+  poolHasResult,
   poolSortOf,
   sortPools,
   statusesForGroup,
@@ -84,9 +85,48 @@ describe("grupos de situação", () => {
 
   it("filtra pela situação do grupo", () => {
     const rows = [pool({ status: "OPEN" }), pool({ status: "PRIZED" }), pool({ status: "FINISHED" })];
-    expect(filterPools(rows, { group: "result" }).map((p) => p.status)).toEqual(["PRIZED"]);
-    expect(filterPools(rows, { group: "ongoing" }).map((p) => p.status)).toEqual(["OPEN"]);
-    expect(filterPools(rows, {})).toHaveLength(3);
+    const withResult = pool({
+      status: "PRIZED",
+      pool_games: [{
+        id: "pg-result",
+        generated_games: { status: "PRIZED", game_check_results: { id: "r1", is_prized: true } },
+      }],
+    });
+    const open = pool({ status: "OPEN" });
+    const finished = pool({ status: "FINISHED" });
+    expect(filterPools([open, withResult, finished], { group: "result" })).toEqual([withResult]);
+    expect(filterPools([open, withResult, finished], { group: "ongoing" }).map((p) => p.status)).toEqual(["OPEN"]);
+    expect(filterPools([open, withResult, finished], {})).toHaveLength(3);
+  });
+
+  it("deriva Com resultado da conferência real, inclusive após finalização", () => {
+    const finishedWithResult = pool({
+      status: "FINISHED",
+      pool_games: [{
+        id: "pg-finished",
+        generated_games: { status: "NOT_PRIZED", game_check_results: { id: "r2", is_prized: false } },
+      }],
+    });
+    const staleStatusWithoutResult = pool({ status: "CHECKED" });
+    expect(poolHasResult(finishedWithResult)).toBe(true);
+    expect(filterPools([finishedWithResult, staleStatusWithoutResult], { group: "result" })).toEqual([
+      finishedWithResult,
+    ]);
+  });
+
+  it("mantém todo bolão não arquivado em Todos e dá cobertura a cada situação", () => {
+    const statuses: PoolStatus[] = [
+      "FORMING", "OPEN", "CLOSED", "AWAITING_DRAW", "AWAITING_CHECK",
+      "CHECKED", "PRIZED", "FINISHED", "CANCELLED",
+    ];
+    const rows = statuses.map((status) => pool({ status, archived_at: null }));
+    expect(filterPools(rows, { group: "all" })).toHaveLength(statuses.length);
+    for (const row of rows) {
+      const classified = ["ongoing", "result", "finished"].some((group) =>
+        filterPools([row], { group }).length === 1,
+      );
+      expect(classified || row.status === "CHECKED" || row.status === "PRIZED").toBe(true);
+    }
   });
 });
 

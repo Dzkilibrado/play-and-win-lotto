@@ -12,6 +12,9 @@ export function usePoolOrganizationActions(poolId: string) {
     void queryClient.invalidateQueries({ queryKey: ["pool", poolId, "participants"] });
     void queryClient.invalidateQueries({ queryKey: ["pool-games", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pool-events", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-result", poolId] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-hub-counts"] });
+    void queryClient.invalidateQueries({ queryKey: ["pool-prize", poolId] });
     void queryClient.invalidateQueries({ queryKey: ["pools"] });
   };
 
