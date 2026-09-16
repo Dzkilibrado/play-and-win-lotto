@@ -244,8 +244,8 @@ describe("carregamento progressivo", () => {
 describe("visão combinada", () => {
   it("filtra e ordena numa passada só", () => {
     const rows = [
-      pool({ name: "B", status: "PRIZED", created_at: "2026-01-01T00:00:00.000Z" }),
-      pool({ name: "A", status: "CHECKED", created_at: "2026-02-01T00:00:00.000Z" }),
+      pool({ name: "B", status: "PRIZED", created_at: "2026-01-01T00:00:00.000Z", pool_games: [{ id: "b", generated_games: { status: "PRIZED", game_check_results: { id: "rb", is_prized: true } } }] }),
+      pool({ name: "A", status: "CHECKED", created_at: "2026-02-01T00:00:00.000Z", pool_games: [{ id: "a", generated_games: { status: "NOT_PRIZED", game_check_results: { id: "ra", is_prized: false } } }] }),
       pool({ name: "C", status: "OPEN" }),
     ];
     expect(applyPoolView(rows, { group: "result", sort: "name" }).map((p) => p.name)).toEqual([

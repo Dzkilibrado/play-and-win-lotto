@@ -471,7 +471,7 @@ export const poolService = {
     const { data, error } = await supabase
       .from("pool_games")
       .select(
-        "id, game_id, generated_games(id, sequence_number, numbers_count, status, contest_number, cost, game_numbers(number, position))",
+        "id, game_id, generated_games(id, sequence_number, numbers_count, status, contest_number, cost, game_numbers(number, position), game_check_results(hits, is_prized, total_prize, amount_pending, prize_label))",
       )
       .eq("pool_id", poolId);
     if (error) throw error;

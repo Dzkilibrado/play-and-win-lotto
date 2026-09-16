@@ -27,13 +27,8 @@ export const Route = createFileRoute("/_authenticated/pools/")({
 
 function PoolsHubPage() {
   const { user } = Route.useRouteContext();
-  const pools = useQuery({ queryKey: privateQueryKeys.poolsAll(user.id), queryFn: () => poolService.list({}) });
   const counts = useQuery({ queryKey: ["pool-hub-counts", user.id], queryFn: () => poolService.hubCounts() });
-  const queryState = resolveQueryState(pools) === "error" || resolveQueryState(counts) === "error"
-    ? "error"
-    : resolveQueryState(pools) === "loading" || resolveQueryState(counts) === "loading"
-      ? "loading"
-      : "success";
+  const queryState = resolveQueryState(counts);
   const values = counts.data ?? { all: 0, ongoing: 0, awaiting_draw: 0, result: 0, finished: 0, archived: 0 };
   const categories = [
     { label: "Todos", value: values.all, icon: Layers3, search: {} },
@@ -86,7 +81,7 @@ function PoolsHubPage() {
       {queryState === "loading" ? (
         <LoadingState rows={3} label="Organizando bolões…" />
       ) : queryState === "error" ? (
-        <ErrorState onRetry={() => void Promise.all([pools.refetch(), counts.refetch()])} />
+        <ErrorState onRetry={() => void counts.refetch()} />
       ) : (
         <nav aria-label="Categorias de bolões" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {categories.map((category) => (
