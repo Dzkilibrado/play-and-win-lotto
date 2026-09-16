@@ -9,7 +9,7 @@ describe("menu móvel compartilhado", () => {
   });
 
   it("fecha todos os destinos finais, inclusive a página atual", () => {
-    expect(source).toContain("<SidebarNav onNavigate={closeMenu} />");
+    expect(source).toContain("<SidebarNav isAdmin={isAdmin} onNavigate={closeMenu} />");
     expect(source).toContain("onClick={onNavigate}");
   });
 
@@ -25,5 +25,10 @@ describe("menu móvel compartilhado", () => {
 
   it("mantém todos os destinos alcançáveis em telas baixas", () => {
     expect(source).toContain('className="w-72 overflow-y-auto p-0"');
+  });
+
+  it("remove itens e grupos administrativos para USER", () => {
+    expect(source).toContain("!item.adminOnly || isAdmin");
+    expect(source).toContain(".filter((group) => group.items.length > 0)");
   });
 });

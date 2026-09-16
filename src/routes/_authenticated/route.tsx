@@ -18,7 +18,15 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) throw redirect({ to: "/login" });
     const { data: status } = await supabase.rpc("profile_onboarding_status");
     if (!(status && typeof status === "object" && !Array.isArray(status) && status["complete"] === true)) throw redirect({ to: "/complete-profile" });
-    return { user: data.user };
+    const { data: roles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id);
+    if (rolesError) throw rolesError;
+    return {
+      user: data.user,
+      isAdmin: (roles ?? []).some((row) => row.role === "ADMIN"),
+    };
   },
   component: AuthenticatedLayout,
 });
@@ -26,6 +34,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdmin } = Route.useRouteContext();
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -40,7 +49,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <AppShell onSignOut={handleSignOut}>
+    <AppShell isAdmin={isAdmin} onSignOut={handleSignOut}>
       <Outlet />
     </AppShell>
   );

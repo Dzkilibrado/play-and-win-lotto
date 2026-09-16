@@ -8,8 +8,8 @@ const authenticatedRoute = getRouteApi("/_authenticated");
 
 /** A rota protegida já validou esta identidade; não resolvemos uma segunda sessão concorrente. */
 export function useSession() {
-  const { user } = authenticatedRoute.useRouteContext();
-  return { session: null, user, loading: false };
+  const { user, isAdmin } = authenticatedRoute.useRouteContext();
+  return { session: null, user, isAdmin, loading: false };
 }
 
 export function useProfile(user: User | null) {

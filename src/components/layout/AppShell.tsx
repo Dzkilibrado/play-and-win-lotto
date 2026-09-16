@@ -37,10 +37,23 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void
   );
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+function SidebarNav({
+  isAdmin,
+  onNavigate,
+}: {
+  isAdmin: boolean;
+  onNavigate?: (() => void) | undefined;
+}) {
+  const visibleGroups = desktopNav
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.adminOnly || isAdmin),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <nav className="space-y-5" aria-label="Navegação principal">
-      {desktopNav.map((group) => (
+      {visibleGroups.map((group) => (
         <div key={group.title} className="space-y-1">
           <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
             {group.title}
@@ -54,7 +67,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   );
 }
 
-export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined }) {
+export function AppHeader({
+  isAdmin,
+  onSignOut,
+}: {
+  isAdmin: boolean;
+  onSignOut?: (() => void) | undefined;
+}) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -92,7 +111,7 @@ export function AppHeader({ onSignOut }: { onSignOut?: (() => void) | undefined 
               </SheetTitle>
             </SheetHeader>
             <div className="p-3">
-              <SidebarNav onNavigate={closeMenu} />
+              <SidebarNav isAdmin={isAdmin} onNavigate={closeMenu} />
             </div>
           </SheetContent>
         </Sheet>
@@ -146,9 +165,11 @@ export function BottomNavigation() {
 
 export function AppShell({
   children,
+  isAdmin,
   onSignOut,
 }: {
   children: ReactNode;
+  isAdmin: boolean;
   onSignOut?: (() => void) | undefined;
 }) {
   return (
@@ -158,7 +179,7 @@ export function AppShell({
           <Brand to="/dashboard" />
         </div>
         <div className="flex-1 overflow-y-auto p-3">
-          <SidebarNav />
+          <SidebarNav isAdmin={isAdmin} />
         </div>
         <div className="border-t border-sidebar-border p-3 text-xs text-text-secondary">
           {appConfig.tagline}
@@ -166,7 +187,7 @@ export function AppShell({
       </aside>
 
       <div className="lg:pl-64">
-        <AppHeader onSignOut={onSignOut} />
+        <AppHeader isAdmin={isAdmin} onSignOut={onSignOut} />
         <main className="mx-auto w-full max-w-5xl px-4 pb-24 pt-4 lg:pb-10">{children}</main>
       </div>
 
