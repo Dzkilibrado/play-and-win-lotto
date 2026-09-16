@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const migrations = new URL("../../../supabase/migrations/", import.meta.url);
 const lifecycle = readFileSync(
-  new URL("20260916213656_26b72f5f-731e-476f-82af-c5040883db1e.sql", migrations),
+  new URL("20260916213627_6fb2d680-4c7e-41a0-b568-7a34db4ba43c.sql", migrations),
   "utf8",
 );
 const initial = readFileSync(
