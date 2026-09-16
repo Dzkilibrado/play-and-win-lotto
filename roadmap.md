@@ -12,4 +12,4 @@
 - [x] Corrigir cobertura do HUB/listagens e contadores autoritativos
 - [x] Garantir ciclo pós-sorteio e invalidações sem buracos
 - [x] Adicionar testes de cobertura e ciclo controlado
-- [ ] Validar busca, mobile, overflow, testes e prévia
+- [x] Validar busca, mobile, overflow, testes e prévia
