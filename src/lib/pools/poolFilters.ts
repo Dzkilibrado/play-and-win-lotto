@@ -100,7 +100,11 @@ export function poolHasPendingPayment(pool: PoolRow): boolean {
 
 /** Resultado oficial já processado em ao menos um jogo vinculado. */
 export function poolHasResult(pool: PoolRow): boolean {
-  return pool.pool_games.some((link) => Boolean(link.generated_games?.game_check_results));
+  return (
+    pool.status === "CHECKED" ||
+    pool.status === "PRIZED" ||
+    pool.pool_games.some((link) => Boolean(link.generated_games?.game_check_results))
+  );
 }
 
 export function poolQuotasTaken(pool: PoolRow): number {

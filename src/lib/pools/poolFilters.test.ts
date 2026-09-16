@@ -107,10 +107,11 @@ describe("grupos de situação", () => {
         generated_games: { status: "NOT_PRIZED", game_check_results: { id: "r2", is_prized: false } },
       }],
     });
-    const staleStatusWithoutResult = pool({ status: "CHECKED" });
+    const checkedStatusWithoutEmbeddedResult = pool({ status: "CHECKED" });
     expect(poolHasResult(finishedWithResult)).toBe(true);
-    expect(filterPools([finishedWithResult, staleStatusWithoutResult], { group: "result" })).toEqual([
+    expect(filterPools([finishedWithResult, checkedStatusWithoutEmbeddedResult], { group: "result" })).toEqual([
       finishedWithResult,
+      checkedStatusWithoutEmbeddedResult,
     ]);
   });
 
@@ -125,7 +126,7 @@ describe("grupos de situação", () => {
       const classified = ["ongoing", "result", "finished"].some((group) =>
         filterPools([row], { group }).length === 1,
       );
-      expect(classified || row.status === "CHECKED" || row.status === "PRIZED").toBe(true);
+      expect(classified).toBe(true);
     }
   });
 });

@@ -11,5 +11,5 @@
 - [x] Diagnosticar Bolão Galera Gmill sem alterar dados
 - [x] Corrigir cobertura do HUB/listagens e contadores autoritativos
 - [x] Garantir ciclo pós-sorteio e invalidações sem buracos
-- [ ] Adicionar testes de cobertura e ciclo controlado
+- [x] Adicionar testes de cobertura e ciclo controlado
 - [ ] Validar busca, mobile, overflow, testes e prévia

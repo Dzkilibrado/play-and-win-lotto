@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { poolService } from "@/lib/services/poolService";
-import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
 import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/pools/")({
