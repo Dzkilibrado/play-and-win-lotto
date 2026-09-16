@@ -18,4 +18,4 @@
 - [x] Bloquear a rota administrativa antes do carregamento de dados
 - [x] Remover Administração dos menus de USER em desktop e mobile
 - [x] Validar ADMIN, viewports, temas e segurança
-- [ ] Validar USER e trocas ADMIN ↔ USER — bloqueado até identificar a conta USER de homologação
+- [x] Validar USER e trocas ADMIN ↔ USER
