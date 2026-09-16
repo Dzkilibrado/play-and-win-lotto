@@ -2366,6 +2366,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pool_hub_counts: { Args: never; Returns: Json }
       pool_outdate_distributions: {
         Args: { _pool_id: string; _reason?: string }
         Returns: undefined
@@ -2477,6 +2478,7 @@ export type Database = {
         Args: { _participant_id: string }
         Returns: undefined
       }
+      reconcile_pool_lifecycle: { Args: { _draw_id: string }; Returns: number }
       record_password_changed: { Args: never; Returns: undefined }
       search_draws: {
         Args: {

@@ -8,8 +8,8 @@
 - [x] Tornar Organização integralmente textual e remover ações de ciclo de vida do menu de três pontos.
 - [x] Eliminar falsos estados vazios e isolar consultas privadas por sessão/usuário.
 ## Correção crítica — bolão após sorteio
-- [ ] Diagnosticar Bolão Galera Gmill sem alterar dados
-- [ ] Corrigir cobertura do HUB/listagens e contadores autoritativos
-- [ ] Garantir ciclo pós-sorteio e invalidações sem buracos
-- [ ] Adicionar testes de cobertura e ciclo controlado
+- [x] Diagnosticar Bolão Galera Gmill sem alterar dados
+- [x] Corrigir cobertura do HUB/listagens e contadores autoritativos
+- [x] Garantir ciclo pós-sorteio e invalidações sem buracos
+- [x] Adicionar testes de cobertura e ciclo controlado
 - [ ] Validar busca, mobile, overflow, testes e prévia

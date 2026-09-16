@@ -98,6 +98,15 @@ export function poolHasPendingPayment(pool: PoolRow): boolean {
   );
 }
 
+/** Resultado oficial já processado em ao menos um jogo vinculado. */
+export function poolHasResult(pool: PoolRow): boolean {
+  return (
+    pool.status === "CHECKED" ||
+    pool.status === "PRIZED" ||
+    pool.pool_games.some((link) => Boolean(link.generated_games?.game_check_results))
+  );
+}
+
 export function poolQuotasTaken(pool: PoolRow): number {
   return activeParticipants(pool).reduce((sum, participant) => sum + participant.quotas, 0);
 }
@@ -118,7 +127,9 @@ export function filterPools(rows: PoolRow[], options: PoolViewOptions): PoolRow[
   return rows.filter((pool) => {
     if (options.archived === "yes" && !pool.archived_at) return false;
     if (options.archived !== "yes" && pool.archived_at) return false;
-    if (groupStatuses && !groupStatuses.includes(pool.status)) return false;
+    if (group === "result") {
+      if (!poolHasResult(pool)) return false;
+    } else if (groupStatuses && !groupStatuses.includes(pool.status)) return false;
     if (options.status && pool.status !== options.status) return false;
     if (options.payment === "PENDING" && !poolHasPendingPayment(pool)) return false;
     if (options.games === "with" && pool.pool_games.length === 0) return false;

@@ -7,9 +7,7 @@ import { ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
-import { filterPools } from "@/lib/pools/poolFilters";
 import { poolService } from "@/lib/services/poolService";
-import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
 import { resolveQueryState } from "@/lib/query/queryState";
 
 export const Route = createFileRoute("/_authenticated/pools/")({
@@ -28,41 +26,40 @@ export const Route = createFileRoute("/_authenticated/pools/")({
 
 function PoolsHubPage() {
   const { user } = Route.useRouteContext();
-  const pools = useQuery({ queryKey: privateQueryKeys.poolsAll(user.id), queryFn: () => poolService.list({}) });
-  const queryState = resolveQueryState(pools);
-  const all = queryState === "success" ? (pools.data ?? []) : [];
-  const active = all.filter((pool) => !pool.archived_at);
+  const counts = useQuery({ queryKey: ["pool-hub-counts", user.id], queryFn: () => poolService.hubCounts() });
+  const queryState = resolveQueryState(counts);
+  const values = counts.data ?? { all: 0, ongoing: 0, awaiting_draw: 0, result: 0, finished: 0, archived: 0 };
   const categories = [
-    { label: "Todos", value: active.length, icon: Layers3, search: {} },
+    { label: "Todos", value: values.all, icon: Layers3, search: {} },
     {
       label: "Em andamento",
-      value: filterPools(all, { group: "ongoing" }).length,
+      value: values.ongoing,
       icon: Users,
       search: { group: "ongoing" },
     },
     {
       label: "Aguardando sorteio",
-      value: filterPools(all, { status: "AWAITING_DRAW" }).length,
+      value: values.awaiting_draw,
       icon: Clock,
       tone: "info" as const,
       search: { status: "AWAITING_DRAW" },
     },
     {
       label: "Com resultado",
-      value: filterPools(all, { group: "result" }).length,
+      value: values.result,
       icon: Trophy,
       tone: "success" as const,
       search: { group: "result" },
     },
     {
       label: "Finalizados",
-      value: filterPools(all, { group: "finished" }).length,
+      value: values.finished,
       icon: Flag,
       search: { group: "finished" },
     },
     {
       label: "Arquivados",
-      value: filterPools(all, { archived: "yes" }).length,
+      value: values.archived,
       icon: Archive,
       search: { archived: "yes" },
     },
@@ -83,7 +80,7 @@ function PoolsHubPage() {
       {queryState === "loading" ? (
         <LoadingState rows={3} label="Organizando bolões…" />
       ) : queryState === "error" ? (
-        <ErrorState onRetry={() => void pools.refetch()} />
+        <ErrorState onRetry={() => void counts.refetch()} />
       ) : (
         <nav aria-label="Categorias de bolões" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {categories.map((category) => (

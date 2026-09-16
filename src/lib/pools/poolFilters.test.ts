@@ -6,6 +6,7 @@ import {
   filterPools,
   paginatePools,
   poolGroupOf,
+  poolHasResult,
   poolSortOf,
   sortPools,
   statusesForGroup,
@@ -84,9 +85,49 @@ describe("grupos de situação", () => {
 
   it("filtra pela situação do grupo", () => {
     const rows = [pool({ status: "OPEN" }), pool({ status: "PRIZED" }), pool({ status: "FINISHED" })];
-    expect(filterPools(rows, { group: "result" }).map((p) => p.status)).toEqual(["PRIZED"]);
-    expect(filterPools(rows, { group: "ongoing" }).map((p) => p.status)).toEqual(["OPEN"]);
-    expect(filterPools(rows, {})).toHaveLength(3);
+    const withResult = pool({
+      status: "PRIZED",
+      pool_games: [{
+        id: "pg-result",
+        generated_games: { status: "PRIZED", game_check_results: { id: "r1", is_prized: true } },
+      }],
+    });
+    const open = pool({ status: "OPEN" });
+    const finished = pool({ status: "FINISHED" });
+    expect(filterPools([open, withResult, finished], { group: "result" })).toEqual([withResult]);
+    expect(filterPools([open, withResult, finished], { group: "ongoing" }).map((p) => p.status)).toEqual(["OPEN"]);
+    expect(filterPools([open, withResult, finished], {})).toHaveLength(3);
+  });
+
+  it("deriva Com resultado da conferência real, inclusive após finalização", () => {
+    const finishedWithResult = pool({
+      status: "FINISHED",
+      pool_games: [{
+        id: "pg-finished",
+        generated_games: { status: "NOT_PRIZED", game_check_results: { id: "r2", is_prized: false } },
+      }],
+    });
+    const checkedStatusWithoutEmbeddedResult = pool({ status: "CHECKED" });
+    expect(poolHasResult(finishedWithResult)).toBe(true);
+    expect(filterPools([finishedWithResult, checkedStatusWithoutEmbeddedResult], { group: "result" })).toEqual([
+      finishedWithResult,
+      checkedStatusWithoutEmbeddedResult,
+    ]);
+  });
+
+  it("mantém todo bolão não arquivado em Todos e dá cobertura a cada situação", () => {
+    const statuses: PoolStatus[] = [
+      "FORMING", "OPEN", "CLOSED", "AWAITING_DRAW", "AWAITING_CHECK",
+      "CHECKED", "PRIZED", "FINISHED", "CANCELLED",
+    ];
+    const rows = statuses.map((status) => pool({ status, archived_at: null }));
+    expect(filterPools(rows, { group: "all" })).toHaveLength(statuses.length);
+    for (const row of rows) {
+      const classified = ["ongoing", "result", "finished"].some((group) =>
+        filterPools([row], { group }).length === 1,
+      );
+      expect(classified).toBe(true);
+    }
   });
 });
 
@@ -204,8 +245,8 @@ describe("carregamento progressivo", () => {
 describe("visão combinada", () => {
   it("filtra e ordena numa passada só", () => {
     const rows = [
-      pool({ name: "B", status: "PRIZED", created_at: "2026-01-01T00:00:00.000Z" }),
-      pool({ name: "A", status: "CHECKED", created_at: "2026-02-01T00:00:00.000Z" }),
+      pool({ name: "B", status: "PRIZED", created_at: "2026-01-01T00:00:00.000Z", pool_games: [{ id: "b", generated_games: { status: "PRIZED", game_check_results: { id: "rb", is_prized: true } } }] }),
+      pool({ name: "A", status: "CHECKED", created_at: "2026-02-01T00:00:00.000Z", pool_games: [{ id: "a", generated_games: { status: "NOT_PRIZED", game_check_results: { id: "ra", is_prized: false } } }] }),
       pool({ name: "C", status: "OPEN" }),
     ];
     expect(applyPoolView(rows, { group: "result", sort: "name" }).map((p) => p.name)).toEqual([

@@ -207,6 +207,7 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
         <ul className="space-y-2">
           {rows.map((row) => {
             const game = row.generated_games;
+            const check = game?.game_check_results;
             const numbers = [...(game?.game_numbers ?? [])].sort((a, b) => a.number - b.number);
             return (
               <li key={row.id} className="surface-card space-y-2 p-3">
@@ -249,6 +250,16 @@ export function GamesPanel({ pool, canManage }: { pool: PoolRow; canManage: bool
                     <NumberBall key={item.number} value={item.number} size="sm" />
                   ))}
                 </div>
+                {check ? (
+                  <p className={check.is_prized ? "text-sm font-medium text-success" : "text-sm text-text-secondary"}>
+                    {check.hits} {check.hits === 1 ? "dezena acertada" : "dezenas acertadas"}
+                    {check.is_prized
+                      ? ` · ${check.prize_label ?? "Premiado"}${check.amount_pending ? " · valor pendente" : ` · ${formatCurrency(Number(check.total_prize ?? 0))}`}`
+                      : " · Não premiado"}
+                  </p>
+                ) : game?.status === "AWAITING_CHECK" ? (
+                  <p className="text-sm text-warning">Aguardando conferência automática</p>
+                ) : null}
                 <div className="flex flex-wrap gap-2">
                   <Button asChild variant="ghost" size="sm">
                     <Link to="/games/$id" params={{ id: row.game_id }}>

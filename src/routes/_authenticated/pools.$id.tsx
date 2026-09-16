@@ -18,6 +18,7 @@ import { PoolActions } from "@/components/pool/PoolActions";
 import { PoolCountdown } from "@/components/pool/PoolCountdown";
 import { PoolEditDialog } from "@/components/pool/PoolEditDialog";
 import { PoolOrganizationPanel } from "@/components/pool/PoolOrganizationPanel";
+import { PoolResultPanel } from "@/components/pool/PoolResultPanel";
 import { PoolSectionNav } from "@/components/pool/PoolSectionNav";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
@@ -266,7 +267,10 @@ function PoolDetailPage() {
         {section === "result" && participantState === "loading" ? <LoadingState rows={3} /> : null}
         {section === "result" && participantState === "error" ? <ErrorState onRetry={() => void participants.refetch()} /> : null}
         {section === "result" && participantState === "success" ? (
-          <DistributionPanel pool={data} participants={rows} canManage={canManage && !readOnly} />
+          <div className="space-y-4">
+            <PoolResultPanel pool={data} userId={user.id} />
+            <DistributionPanel pool={data} participants={rows} canManage={canManage && !readOnly} />
+          </div>
         ) : null}
         {section === "documents" ? <DocumentsPanel poolId={data.id} canManage={canManage} readOnly={readOnly} /> : null}
         {section === "history" ? <HistoryPanel poolId={data.id} /> : null}
