@@ -8,9 +8,9 @@ import {
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 
 /** Uso restrito à área administrativa; usuários comuns recebem apenas padrões locais. */
-export function useFeatureFlags() {
+export function useFeatureFlags(userId: string) {
   const query = useQuery({
-    queryKey: ["feature-flags"],
+    queryKey: ["admin", userId, "feature-flags"],
     queryFn: () => lotteryDataService.listFeatureFlags(),
     staleTime: 5 * 60 * 1000,
   });
