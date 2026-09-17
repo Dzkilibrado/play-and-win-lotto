@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const adminRoute = readFileSync("src/routes/_authenticated/admin.tsx", "utf8");
+const adminRoute = readFileSync("src/routes/_authenticated/admin.index.tsx", "utf8");
 const authenticatedLayout = readFileSync("src/routes/_authenticated/route.tsx", "utf8");
 const moreRoute = readFileSync("src/routes/_authenticated/more.tsx", "utf8");
 const syncFunctions = readFileSync("src/lib/sync.functions.ts", "utf8");
