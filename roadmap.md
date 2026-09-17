@@ -25,3 +25,9 @@
 - [ ] Adicionar rota e navegação Administração → Usuários
 - [ ] Implementar indicadores, filtros, ordenação e layouts responsivos
 - [ ] Validar privacidade, USER/ADMIN, temas, viewports e ausência de overflow
+
+## Etapa 3 — bloquear e desbloquear usuários
+- [ ] Validar modelo real de bloqueio, sessão ativa e proteções administrativas
+- [ ] Implementar operações protegidas de bloquear/desbloquear e auditoria
+- [ ] Integrar ações, confirmações, status, filtros, indicadores e invalidação na listagem
+- [ ] Validar ADMIN/USER, auto-bloqueio, responsável principal, sessão ativa e responsividade
