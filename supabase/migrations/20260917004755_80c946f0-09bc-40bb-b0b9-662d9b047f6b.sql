@@ -1,0 +1,2 @@
+REVOKE ALL ON FUNCTION public.admin_list_users(integer, integer, text, public.app_role, text, text, text, text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_users(integer, integer, text, public.app_role, text, text, text, text) TO service_role;

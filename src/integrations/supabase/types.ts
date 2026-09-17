@@ -1964,6 +1964,33 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_users: {
+        Args: {
+          _access_period?: string
+          _created_period?: string
+          _page?: number
+          _page_size?: number
+          _provider?: string
+          _role?: Database["public"]["Enums"]["app_role"]
+          _sort?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_list_users_v2: {
+        Args: {
+          _access_period?: string
+          _created_period?: string
+          _page?: number
+          _page_size?: number
+          _provider?: string
+          _requester_id: string
+          _role?: Database["public"]["Enums"]["app_role"]
+          _sort?: string
+          _status?: string
+        }
+        Returns: Json
+      }
       apply_game_check: {
         Args: { _draw_id: string; _game_id: string; _payload: Json }
         Returns: string

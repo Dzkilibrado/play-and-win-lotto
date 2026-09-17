@@ -49,6 +49,7 @@ export const secondaryNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { label: "Administração", to: "/admin", icon: Shield, adminOnly: true },
+  { label: "Usuários", to: "/admin/users", icon: Users, adminOnly: true },
 ];
 
 export const moreNavItem: NavItem = { label: "Mais", to: "/more", icon: LayoutGrid };

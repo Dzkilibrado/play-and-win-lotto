@@ -7,6 +7,8 @@ const moreRoute = readFileSync("src/routes/_authenticated/more.tsx", "utf8");
 const syncFunctions = readFileSync("src/lib/sync.functions.ts", "utf8");
 const checkFunctions = readFileSync("src/lib/check.functions.ts", "utf8");
 const featureFlagsHook = readFileSync("src/hooks/useFeatureFlags.tsx", "utf8");
+const usersRoute = readFileSync("src/routes/_authenticated/admin.users.tsx", "utf8");
+const usersFunctions = readFileSync("src/lib/admin/users.functions.ts", "utf8");
 
 describe("segregação ADMIN e USER", () => {
   it("resolve ADMIN pela identidade autenticada e pela tabela de roles", () => {
@@ -37,5 +39,16 @@ describe("segregação ADMIN e USER", () => {
     expect(adminRoute).toContain('["admin", userId, "sync-overview"]');
     expect(adminRoute).toContain('["admin", userId, "check-overview"]');
     expect(featureFlagsHook).toContain('["admin", userId, "feature-flags"]');
+    expect(usersRoute).toContain("privateQueryKeys.adminUsers(user.id");
+  });
+
+  it("protege rota e consulta de usuários sem expor campos pessoais", () => {
+    expect(usersRoute).toMatch(/beforeLoad: \(\{ context \}\) => \{\s*if \(!context\.isAdmin\)/);
+    expect(usersFunctions).toContain(".middleware([requireSupabaseAuth])");
+    expect(usersFunctions).toContain('rpc("has_role"');
+    expect(usersFunctions).toContain('rpc("admin_list_users_v2"');
+    for (const forbidden of ["phone", "birth_date", "access_token", "refresh_token"]) {
+      expect(usersFunctions).not.toContain(forbidden);
+    }
   });
 });
