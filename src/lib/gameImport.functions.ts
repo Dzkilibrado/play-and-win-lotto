@@ -10,7 +10,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
 
 export type PhotoDocumentKind = "TICKET" | "RECEIPT" | "UNKNOWN";
 
@@ -82,7 +82,7 @@ function parseSlug(value: unknown): string | null {
 }
 
 export const extractGameFromPhoto = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((data: { imageBase64: string; mimeType: string }) => {
     if (!data?.imageBase64 || typeof data.imageBase64 !== "string") {
       throw new Error("Imagem ausente.");

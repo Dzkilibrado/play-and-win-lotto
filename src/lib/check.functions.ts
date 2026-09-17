@@ -9,7 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
 
 type RpcClient = {
   rpc: (
@@ -37,7 +37,7 @@ async function assertOwnsGame(context: { supabase: unknown }, gameId: string) {
 
 /** Conferência sob demanda de um jogo do próprio usuário. */
 export const checkMyGame = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: { gameId: string }) => z.object({ gameId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertOwnsGame(context as never, data.gameId);
@@ -48,7 +48,7 @@ export const checkMyGame = createServerFn({ method: "POST" })
 
 /** Situação geral da conferência, por modalidade (administração). */
 export const getCheckOverview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { getAdminClient } = await import("./check/gameCheck.server");
@@ -106,7 +106,7 @@ export const getCheckOverview = createServerFn({ method: "GET" })
  * Sem `contestNumber`, usa o último concurso oficial da modalidade.
  */
 export const startDrawCheck = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: { slug: string; contestNumber?: number | null }) =>
     z
       .object({ slug: z.string(), contestNumber: z.number().int().positive().nullable().optional() })
@@ -137,7 +137,7 @@ export const startDrawCheck = createServerFn({ method: "POST" })
 
 /** Avança um lote da fila de conferência. */
 export const runCheckBatch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: { jobId: string; force?: boolean }) =>
     z.object({ jobId: z.string().uuid(), force: z.boolean().optional() }).parse(input),
   )
@@ -163,7 +163,7 @@ export const runCheckBatch = createServerFn({ method: "POST" })
 
 /** Reprocessa a conferência de um concurso já conferido (recalcula tudo). */
 export const reprocessDrawCheck = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: { slug: string; contestNumber?: number | null }) =>
     z
       .object({ slug: z.string(), contestNumber: z.number().int().positive().nullable().optional() })
@@ -198,7 +198,7 @@ export const reprocessDrawCheck = createServerFn({ method: "POST" })
 
 /** Procura concursos recentes com jogos ainda não conferidos. */
 export const scanPendingChecks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { getAdminClient, scanPendingChecks: scan, runOpenCheckJobs } = await import(
@@ -212,7 +212,7 @@ export const scanPendingChecks = createServerFn({ method: "POST" })
 
 /** Últimos erros de conferência (administração). */
 export const listCheckErrors = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { getAdminClient } = await import("./check/gameCheck.server");

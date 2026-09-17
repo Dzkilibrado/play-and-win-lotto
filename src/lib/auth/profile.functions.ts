@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
 import { profileSchema } from "./identity";
 
 export const completeProfile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => profileSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: profile, error } = await context.supabase.rpc("complete_profile_onboarding", {
