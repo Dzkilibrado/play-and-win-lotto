@@ -55,17 +55,18 @@ export const listAdminUsers = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Acesso restrito a administradores.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: result, error } = await supabaseAdmin.rpc("admin_list_users_v2", {
+    const rpcArgs = {
       _requester_id: context.userId,
       _page: data.page,
       _page_size: data.pageSize,
-      _status: data.status ?? undefined,
-      _role: data.role ?? undefined,
-      _provider: data.provider ?? undefined,
-      _created_period: data.createdPeriod ?? undefined,
-      _access_period: data.accessPeriod ?? undefined,
       _sort: data.sort,
-    });
+      ...(data.status ? { _status: data.status } : {}),
+      ...(data.role ? { _role: data.role } : {}),
+      ...(data.provider ? { _provider: data.provider } : {}),
+      ...(data.createdPeriod ? { _created_period: data.createdPeriod } : {}),
+      ...(data.accessPeriod ? { _access_period: data.accessPeriod } : {}),
+    };
+    const { data: result, error } = await supabaseAdmin.rpc("admin_list_users_v2", rpcArgs);
     if (error) throw new Error(error.message);
     return responseSchema.parse(result);
   });

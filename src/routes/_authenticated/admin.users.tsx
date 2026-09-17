@@ -26,12 +26,15 @@ const searchSchema = z.object({
   sort: z.enum(["CREATED_DESC", "CREATED_ASC", "ACCESS_DESC", "NAME_ASC", "NAME_DESC"]).optional().catch(undefined),
 });
 type Search = z.infer<typeof searchSchema>;
+function validateAdminUsersSearch(search: Record<string, unknown>): Search {
+  return searchSchema.parse(search);
+}
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   beforeLoad: ({ context }) => {
     if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
   },
-  validateSearch: (search) => searchSchema.parse(search),
+  validateSearch: validateAdminUsersSearch,
   head: () => ({ meta: [{ title: `Usuários — ${appConfig.name}` }] }),
   component: AdminUsersPage,
 });
@@ -78,6 +81,7 @@ function AdminUsersPage() {
   const page = search.page ?? 1;
   const filters = { page, pageSize, status: search.status ?? null, role: search.role ?? null, provider: search.provider ?? null, createdPeriod: search.created ?? null, accessPeriod: search.access ?? null, sort: search.sort ?? "CREATED_DESC" as const };
   const query = useQuery({ queryKey: privateQueryKeys.adminUsers(user.id, filters), queryFn: () => listAdminUsers({ data: filters }), staleTime: 30_000 });
+  const data = query.data;
   const setSearch = (patch: Partial<Search>) => navigate({ search: (previous) => ({ ...previous, ...patch, page: patch.page ?? undefined }) });
   const activeCount = [search.status, search.role, search.provider, search.created, search.access].filter(Boolean).length;
   const clearFilters = () => navigate({ search: { sort: search.sort } });
@@ -92,10 +96,10 @@ function AdminUsersPage() {
 
   return <div className="min-w-0 space-y-4">
     <PageHeader title="Usuários" description="Consulta administrativa de contas cadastradas." />
-    {query.isLoading ? <LoadingState rows={5} label="Carregando usuários" /> : query.isError ? <ErrorState onRetry={() => query.refetch()} /> : <>
+    {query.isLoading ? <LoadingState rows={5} label="Carregando usuários" /> : query.isError ? <ErrorState onRetry={() => query.refetch()} /> : !data ? <LoadingState rows={5} label="Carregando usuários" /> : <>
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Indicadores de usuários">
         {[
-          ["Total", query.data.summary.total, {}], ["Ativos", query.data.summary.active, { status: "ACTIVE" }], ["USER", query.data.summary.users, { role: "USER" }], ["ADMIN", query.data.summary.admins, { role: "ADMIN" }],
+          ["Total", data.summary.total, {}], ["Ativos", data.summary.active, { status: "ACTIVE" }], ["USER", data.summary.users, { role: "USER" }], ["ADMIN", data.summary.admins, { role: "ADMIN" }],
         ].map(([label, count, patch]) => <button key={String(label)} type="button" onClick={() => setSearch(patch as Partial<Search>)} className="surface-card tappable min-h-16 p-3 text-left hover:border-primary"><span className="block text-xs text-text-secondary">{label as string}</span><strong className="font-display text-xl text-text-primary">{count as number}</strong></button>)}
       </section>
 
