@@ -81,7 +81,7 @@ function AdminUsersPage() {
   const page = search.page ?? 1;
   const filters = { page, pageSize, status: search.status ?? null, role: search.role ?? null, provider: search.provider ?? null, createdPeriod: search.created ?? null, accessPeriod: search.access ?? null, sort: search.sort ?? "CREATED_DESC" as const };
   const query = useQuery({ queryKey: privateQueryKeys.adminUsers(user.id, filters), queryFn: () => listAdminUsers({ data: filters }), staleTime: 30_000 });
-  const data = data;
+  const data = query.data;
   const setSearch = (patch: Partial<Search>) => navigate({ search: (previous) => ({ ...previous, ...patch, page: patch.page ?? undefined }) });
   const activeCount = [search.status, search.role, search.provider, search.created, search.access].filter(Boolean).length;
   const clearFilters = () => navigate({ search: { sort: search.sort } });
