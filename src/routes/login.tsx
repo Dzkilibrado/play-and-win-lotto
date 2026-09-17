@@ -9,6 +9,12 @@ import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { supabase } from "@/integrations/supabase/client";
 import { shouldAuthenticatePassword } from "@/lib/auth/loginFlow";
+import { BLOCKED_LOGIN_MESSAGE, isBlockedAuthError } from "@/lib/auth/blockedAccount";
+import { z } from "zod";
+
+const loginSearchSchema = z.object({
+  access: z.literal("blocked").optional().catch(undefined),
+});
 
 export const Route = createFileRoute("/login")({
   ssr: false,
@@ -16,6 +22,7 @@ export const Route = createFileRoute("/login")({
     const { data } = await supabase.auth.getUser();
     if (data.user) throw redirect({ to: "/dashboard" });
   },
+  validateSearch: (search) => loginSearchSchema.parse(search),
   head: () => ({
     meta: [
       { title: `Entrar | ${appConfig.name}` },
@@ -32,6 +39,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
@@ -46,7 +54,10 @@ function LoginPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
-    if (error) { toast.error("E-mail ou senha incorretos"); return; }
+    if (error) {
+      toast.error(isBlockedAuthError(error) ? BLOCKED_LOGIN_MESSAGE : "E-mail ou senha incorretos");
+      return;
+    }
     await queryClient.invalidateQueries();
     navigate({ to: "/dashboard", replace: true });
   }
@@ -63,6 +74,7 @@ function LoginPage() {
   }
 
   return <AuthLayout title="Entrar" description={appConfig.tagline}>
+    {search.access === "blocked" && <p role="alert" className="mb-4 rounded-lg border border-warning/40 bg-warning-soft p-3 text-sm text-text-primary">{BLOCKED_LOGIN_MESSAGE}</p>}
     <form onSubmit={handleSignIn} onKeyDown={(event) => { if (event.key === "Enter") explicitSubmit.current = true; }} className="space-y-4">
       <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(event) => setEmail(event.target.value)} className="h-11" /></div>
       <div className="space-y-1.5"><div className="flex items-center justify-between gap-3"><Label htmlFor="password">Senha</Label><Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">Esqueci minha senha</Link></div><Input id="password" type="password" autoComplete="current-password" required maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} className="h-11" /></div>

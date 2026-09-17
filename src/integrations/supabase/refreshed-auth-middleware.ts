@@ -19,6 +19,15 @@ export const attachRefreshedSupabaseAuth = createMiddleware({ type: "function" }
     }
 
     const token = session?.access_token;
-    return next({ headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    try {
+      return await next({ headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("ACCOUNT_BLOCKED")) {
+        await supabase.auth.signOut({ scope: "local" });
+        window.dispatchEvent(new CustomEvent("gestor:account-blocked"));
+      }
+      throw error;
+    }
   },
 );

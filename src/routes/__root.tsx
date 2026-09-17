@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -128,6 +129,7 @@ function RootComponent() {
 /** Mantém dados privados vinculados à mesma identidade durante todo o ciclo da sessão. */
 function AuthCacheBoundary({ queryClient }: { queryClient: QueryClient }) {
   const identity = useRef<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -145,8 +147,18 @@ function AuthCacheBoundary({ queryClient }: { queryClient: QueryClient }) {
         void queryClient.invalidateQueries({ queryKey: ["pools"] });
       }
     });
-    return () => data.subscription.unsubscribe();
-  }, [queryClient]);
+    const handleBlocked = () => {
+      void queryClient.cancelQueries().then(() => {
+        queryClient.clear();
+        navigate({ to: "/login", search: { access: "blocked" }, replace: true });
+      });
+    };
+    window.addEventListener("gestor:account-blocked", handleBlocked);
+    return () => {
+      data.subscription.unsubscribe();
+      window.removeEventListener("gestor:account-blocked", handleBlocked);
+    };
+  }, [navigate, queryClient]);
 
   return null;
 }
