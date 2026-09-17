@@ -1964,6 +1964,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_active_count: { Args: never; Returns: number }
       admin_list_users: {
         Args: {
           _access_period?: string

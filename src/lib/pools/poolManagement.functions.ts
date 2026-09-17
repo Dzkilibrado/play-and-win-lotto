@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DOCUMENT_MAX_FILE_SIZE, documentExtension, sniffDocumentMime } from "@/lib/documents/documentFiles";
 
@@ -42,7 +42,7 @@ async function assertCanManagePool(
 }
 
 export const uploadPoolDocument = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator(requireFormData)
   .handler(async ({ data, context }) => {
     const poolId = z.string().uuid().parse(requiredText(data, "poolId"));
@@ -79,7 +79,7 @@ export const uploadPoolDocument = createServerFn({ method: "POST" })
   });
 
 export const replacePoolDocumentFile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator(requireFormData)
   .handler(async ({ data, context }) => {
     const documentId = z.string().uuid().parse(requiredText(data, "documentId"));
@@ -116,7 +116,7 @@ export const replacePoolDocumentFile = createServerFn({ method: "POST" })
   });
 
 export const deletePoolDocument = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => documentActionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: document, error: documentError } = await context.supabase
@@ -136,7 +136,7 @@ export const deletePoolDocument = createServerFn({ method: "POST" })
   });
 
 export const getPoolDocumentUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => documentActionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: document, error } = await context.supabase
@@ -154,7 +154,7 @@ export const getPoolDocumentUrl = createServerFn({ method: "POST" })
   });
 
 export const getAvailablePoolDocuments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => poolActionSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertCanManagePool(context.supabase, data.poolId);
@@ -182,7 +182,7 @@ type DeleteResult = {
 };
 
 export const deletePoolPermanently = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => deletePoolSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: raw, error } = await context.supabase.rpc("pool_delete_permanently", {

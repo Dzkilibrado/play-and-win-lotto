@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
 import type { LotterySlug } from "@/config/lotteries";
 
 async function assertAdmin(context: { supabase: { rpc: Function }; userId: string }) {
@@ -23,7 +23,7 @@ async function assertAdmin(context: { supabase: { rpc: Function }; userId: strin
 }
 
 export const getSyncOverview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { getAdminClient, listLotteryRows } = await import("./sync/lotterySync.server");
@@ -132,7 +132,7 @@ const startSchema = z.object({
 });
 
 export const startSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: unknown) => startSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
@@ -202,7 +202,7 @@ export const startSync = createServerFn({ method: "POST" })
   });
 
 export const runSyncBatch = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ jobId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as never);
@@ -221,7 +221,7 @@ export const runSyncBatch = createServerFn({ method: "POST" })
   });
 
 export const listSyncErrors = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
     const { getAdminClient } = await import("./sync/lotterySync.server");
