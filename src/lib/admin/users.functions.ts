@@ -59,11 +59,11 @@ export const listAdminUsers = createServerFn({ method: "GET" })
       _requester_id: context.userId,
       _page: data.page,
       _page_size: data.pageSize,
-      _status: data.status,
-      _role: data.role,
-      _provider: data.provider,
-      _created_period: data.createdPeriod,
-      _access_period: data.accessPeriod,
+      _status: data.status ?? undefined,
+      _role: data.role ?? undefined,
+      _provider: data.provider ?? undefined,
+      _created_period: data.createdPeriod ?? undefined,
+      _access_period: data.accessPeriod ?? undefined,
       _sort: data.sort,
     });
     if (error) throw new Error(error.message);
