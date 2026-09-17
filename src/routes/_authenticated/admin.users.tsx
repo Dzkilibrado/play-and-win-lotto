@@ -30,7 +30,7 @@ function validateAdminUsersSearch(search: Record<string, unknown>): Search {
   return searchSchema.parse(search);
 }
 
-export const Route = createFileRoute("/_authenticated/admin/users")({
+export const Route = createFileRoute("/_authenticated/admin-users")({
   beforeLoad: ({ context }) => {
     if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
   },

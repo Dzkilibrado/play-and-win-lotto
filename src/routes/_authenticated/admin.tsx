@@ -25,7 +25,7 @@ import {
 } from "@/lib/check.functions";
 import type { StatusTone } from "@/types/domain";
 
-export const Route = createFileRoute("/_authenticated/admin/")({
+export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: ({ context }) => {
     if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
   },
