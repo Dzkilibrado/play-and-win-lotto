@@ -21,13 +21,13 @@
 - [x] Validar USER e trocas ADMIN ↔ USER
 
 ## Etapa 2 — gestão básica de usuários
-- [ ] Criar consulta administrativa mínima, paginada e protegida
-- [ ] Adicionar rota e navegação Administração → Usuários
-- [ ] Implementar indicadores, filtros, ordenação e layouts responsivos
-- [ ] Validar privacidade, USER/ADMIN, temas, viewports e ausência de overflow
+- [x] Criar consulta administrativa mínima, paginada e protegida
+- [x] Adicionar rota e navegação Administração → Usuários
+- [x] Implementar indicadores, filtros, ordenação e layouts responsivos
+- [x] Validar privacidade, USER/ADMIN, temas, viewports e ausência de overflow
 
 ## Etapa 3 — bloquear e desbloquear usuários
-- [ ] Validar modelo real de bloqueio, sessão ativa e proteções administrativas
-- [ ] Implementar operações protegidas de bloquear/desbloquear e auditoria
-- [ ] Integrar ações, confirmações, status, filtros, indicadores e invalidação na listagem
-- [ ] Validar ADMIN/USER, auto-bloqueio, responsável principal, sessão ativa e responsividade
+- [x] Validar modelo real de bloqueio, sessão ativa e proteções administrativas
+- [x] Implementar operações protegidas de bloquear/desbloquear e auditoria
+- [x] Integrar ações, confirmações, status, filtros, indicadores e invalidação na listagem
+- [x] Validar ADMIN/USER, auto-bloqueio, responsável principal, sessão ativa e responsividade
