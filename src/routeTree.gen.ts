@@ -18,6 +18,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedLotteriesRouteImport } from './routes/_authenticated/lotteries'
@@ -28,7 +29,6 @@ import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
 import { Route as BTokenRouteImport } from './routes/b.$token'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedContestsIndexRouteImport } from './routes/_authenticated/contests.index'
 import { Route as AuthenticatedContestsIdRouteImport } from './routes/_authenticated/contests.$id'
@@ -86,6 +86,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -137,15 +142,10 @@ const BTokenRoute = BTokenRouteImport.update({
   path: '/b/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedContestsIndexRoute =
   AuthenticatedContestsIndexRouteImport.update({
@@ -215,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/lotteries': typeof AuthenticatedLotteriesRoute
@@ -232,7 +233,6 @@ export interface FileRoutesByFullPath {
   '/pools/$id': typeof AuthenticatedPoolsIdRoute
   '/pools/list': typeof AuthenticatedPoolsListRoute
   '/pools/new': typeof AuthenticatedPoolsNewRoute
-  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/contests/': typeof AuthenticatedContestsIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
   '/pools/': typeof AuthenticatedPoolsIndexRoute
@@ -248,6 +248,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/lotteries': typeof AuthenticatedLotteriesRoute
@@ -265,7 +266,6 @@ export interface FileRoutesByTo {
   '/pools/$id': typeof AuthenticatedPoolsIdRoute
   '/pools/list': typeof AuthenticatedPoolsListRoute
   '/pools/new': typeof AuthenticatedPoolsNewRoute
-  '/admin': typeof AuthenticatedAdminIndexRoute
   '/contests': typeof AuthenticatedContestsIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
   '/pools': typeof AuthenticatedPoolsIndexRoute
@@ -283,6 +283,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/lotteries': typeof AuthenticatedLotteriesRoute
@@ -300,7 +301,6 @@ export interface FileRoutesById {
   '/_authenticated/pools/$id': typeof AuthenticatedPoolsIdRoute
   '/_authenticated/pools/list': typeof AuthenticatedPoolsListRoute
   '/_authenticated/pools/new': typeof AuthenticatedPoolsNewRoute
-  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/contests/': typeof AuthenticatedContestsIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
   '/_authenticated/pools/': typeof AuthenticatedPoolsIndexRoute
@@ -318,6 +318,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/admin'
     | '/dashboard'
     | '/generate'
     | '/lotteries'
@@ -335,7 +336,6 @@ export interface FileRouteTypes {
     | '/pools/$id'
     | '/pools/list'
     | '/pools/new'
-    | '/admin/'
     | '/contests/'
     | '/games/'
     | '/pools/'
@@ -351,6 +351,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/admin'
     | '/dashboard'
     | '/generate'
     | '/lotteries'
@@ -368,7 +369,6 @@ export interface FileRouteTypes {
     | '/pools/$id'
     | '/pools/list'
     | '/pools/new'
-    | '/admin'
     | '/contests'
     | '/games'
     | '/pools'
@@ -385,6 +385,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/generate'
     | '/_authenticated/lotteries'
@@ -402,7 +403,6 @@ export interface FileRouteTypes {
     | '/_authenticated/pools/$id'
     | '/_authenticated/pools/list'
     | '/_authenticated/pools/new'
-    | '/_authenticated/admin/'
     | '/_authenticated/contests/'
     | '/_authenticated/games/'
     | '/_authenticated/pools/'
@@ -490,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -560,19 +567,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
-      path: '/admin/users'
+      path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/contests/': {
       id: '/_authenticated/contests/'
@@ -654,7 +654,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedLotteriesRoute: typeof AuthenticatedLotteriesRoute
@@ -664,20 +676,19 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
-  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedContestsIdRoute: typeof AuthenticatedContestsIdRoute
   AuthenticatedGamesIdRoute: typeof AuthenticatedGamesIdRoute
   AuthenticatedGamesImportarRoute: typeof AuthenticatedGamesImportarRoute
   AuthenticatedPoolsIdRoute: typeof AuthenticatedPoolsIdRoute
   AuthenticatedPoolsListRoute: typeof AuthenticatedPoolsListRoute
   AuthenticatedPoolsNewRoute: typeof AuthenticatedPoolsNewRoute
-  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedContestsIndexRoute: typeof AuthenticatedContestsIndexRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
   AuthenticatedPoolsIndexRoute: typeof AuthenticatedPoolsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedLotteriesRoute: AuthenticatedLotteriesRoute,
@@ -687,14 +698,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
-  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedContestsIdRoute: AuthenticatedContestsIdRoute,
   AuthenticatedGamesIdRoute: AuthenticatedGamesIdRoute,
   AuthenticatedGamesImportarRoute: AuthenticatedGamesImportarRoute,
   AuthenticatedPoolsIdRoute: AuthenticatedPoolsIdRoute,
   AuthenticatedPoolsListRoute: AuthenticatedPoolsListRoute,
   AuthenticatedPoolsNewRoute: AuthenticatedPoolsNewRoute,
-  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedContestsIndexRoute: AuthenticatedContestsIndexRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
   AuthenticatedPoolsIndexRoute: AuthenticatedPoolsIndexRoute,
