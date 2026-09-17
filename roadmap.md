@@ -19,3 +19,9 @@
 - [x] Remover Administração dos menus de USER em desktop e mobile
 - [x] Validar ADMIN, viewports, temas e segurança
 - [x] Validar USER e trocas ADMIN ↔ USER
+
+## Etapa 2 — gestão básica de usuários
+- [ ] Criar consulta administrativa mínima, paginada e protegida
+- [ ] Adicionar rota e navegação Administração → Usuários
+- [ ] Implementar indicadores, filtros, ordenação e layouts responsivos
+- [ ] Validar privacidade, USER/ADMIN, temas, viewports e ausência de overflow
