@@ -31,3 +31,9 @@
 - [x] Implementar operações protegidas de bloquear/desbloquear e auditoria
 - [x] Integrar ações, confirmações, status, filtros, indicadores e invalidação na listagem
 - [x] Validar ADMIN/USER, auto-bloqueio, responsável principal, sessão ativa e responsividade
+
+## Etapa 4 — recuperação e redefinição de senha
+- [ ] Corrigir o fluxo público com resposta neutra, domínio oficial e tratamento seguro do link
+- [ ] Implementar disparo administrativo protegido somente para contas com senha local
+- [ ] Registrar auditoria mínima e preservar bloqueio, providers e credenciais
+- [ ] Validar rate limit, e-mails, testes de segurança, temas e viewports
