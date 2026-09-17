@@ -1,7 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { ChevronRight, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { ErrorState, LoadingState } from "@/components/common/StateViews";
@@ -97,6 +98,19 @@ function AdminPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Administração" description="Gestão de dados e recursos do sistema." />
+      <Link
+        to="/admin/users"
+        className="surface-card tappable flex min-h-16 items-center gap-3 p-4 hover:border-primary"
+      >
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-info-soft text-info">
+          <Users className="size-5" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-display text-sm font-semibold text-text-primary">Usuários</span>
+          <span className="block text-xs text-text-secondary">Contas, acessos e perfis cadastrados.</span>
+        </span>
+        <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
+      </Link>
        <FeatureFlagsPanel userId={user.id} />
        <SyncPanel userId={user.id} />
        <CheckPanel userId={user.id} />

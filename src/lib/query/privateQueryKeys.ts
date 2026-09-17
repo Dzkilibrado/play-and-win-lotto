@@ -12,4 +12,5 @@ export const privateQueryKeys = {
   checkSummary: (userId: string) => ["check-summary", userId] as const,
   gameChecks: (userId: string, identity: string) => ["game-checks", userId, identity] as const,
   contestChecks: (userId: string, contestId: string) => ["contest-checks", userId, contestId] as const,
+  adminUsers: (userId: string, filters: unknown) => ["admin", userId, "users", filters] as const,
 };
