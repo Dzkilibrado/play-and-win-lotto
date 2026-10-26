@@ -32,11 +32,11 @@ export function recoveryError(error: { code?: unknown; status?: unknown } | null
   return "Não foi possível concluir a solicitação. Tente novamente em instantes.";
 }
 
-export async function requestRecovery(send: () => Promise<{ error: { code?: string; status?: number } | null }>) {
+export async function requestRecovery(send: () => Promise<{ error: { code?: unknown; status?: unknown } | null }>) {
   try {
     const { error } = await send();
     // Never expose account existence or its provider through the public result.
-    if (!error || ["user_not_found", "email_not_confirmed", "user_banned"].includes(error.code ?? "")) return { accepted: true as const };
+    if (!error || ["user_not_found", "email_not_confirmed", "user_banned"].includes(String(error.code))) return { accepted: true as const };
     return { accepted: false as const, message: recoveryError(error) };
   } catch {
     return { accepted: false as const, message: recoveryError(null) };
