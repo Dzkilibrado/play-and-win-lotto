@@ -21,6 +21,7 @@ import { appConfig } from "@/config/app.config";
 import { changeAdminUserAccess, listAdminUsers, type AdminUsersResult } from "@/lib/admin/users.functions";
 import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
 import { cn } from "@/lib/utils";
+import { AdminPasswordRecoveryAction } from "@/components/auth/AdminPasswordRecoveryAction";
 
 const searchSchema = z.object({
   page: z.coerce.number().int().positive().optional().catch(undefined),
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
     if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
   },
   validateSearch: validateAdminUsersSearch,
-  head: () => ({ meta: [{ title: `Usuários — ${appConfig.name}` }] }),
+  head: () => ({ meta: [{ title: `Usuários — ${appConfig.name}` }, { name: "description", content: "Administração segura de acesso e recuperação de contas do Gestor da Sorte." }, { property: "og:title", content: `Usuários — ${appConfig.name}` }, { property: "og:description", content: "Administração segura de acesso e recuperação de contas." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   component: AdminUsersPage,
 });
 
@@ -77,6 +78,10 @@ function UserBadges({ role, status }: { role: "USER" | "ADMIN"; status: keyof ty
 }
 
 type AdminUser = AdminUsersResult["items"][number];
+
+function UserActions({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
+  return <div className="flex min-w-0 flex-col items-start gap-1"><UserAccessAction item={item} currentUserId={currentUserId} /><AdminPasswordRecoveryAction id={item.id} providers={item.providers} /></div>;
+}
 
 function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
   const queryClient = useQueryClient();
