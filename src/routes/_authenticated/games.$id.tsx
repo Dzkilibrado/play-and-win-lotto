@@ -46,6 +46,8 @@ import { resolveQueryState } from "@/lib/query/queryState";
 export const Route = createFileRoute("/_authenticated/games/$id")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Detalhe do jogo — ${appConfig.name}` },
       { name: "description", content: "Dezenas, análise e situação de um jogo." },
       { property: "og:title", content: `Detalhe do jogo — ${appConfig.name}` },

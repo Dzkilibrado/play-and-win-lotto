@@ -18,6 +18,8 @@ import { resolveQueryState } from "@/lib/query/queryState";
 export const Route = createFileRoute("/_authenticated/contests/$id")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Detalhe do concurso — ${appConfig.name}` },
       { name: "description", content: "Dezenas sorteadas, rateio e premiação do concurso." },
       { property: "og:title", content: `Detalhe do concurso — ${appConfig.name}` },

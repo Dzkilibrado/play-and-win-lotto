@@ -8,6 +8,8 @@ import { adminNav, secondaryNav } from "@/config/navigation";
 export const Route = createFileRoute("/_authenticated/more")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Mais — ${appConfig.name}` },
       { name: "description", content: "Resultados, concursos, estatísticas, perfil e ajustes." },
       { property: "og:title", content: `Mais — ${appConfig.name}` },

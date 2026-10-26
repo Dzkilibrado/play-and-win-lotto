@@ -33,6 +33,8 @@ export const Route = createFileRoute("/_authenticated/pools/list")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Lista de bolões — ${appConfig.name}` },
       { name: "description", content: "Bolões, participantes, cotas e pagamentos." },
       { property: "og:title", content: `Lista de bolões — ${appConfig.name}` },

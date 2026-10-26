@@ -33,7 +33,9 @@
 - [x] Validar ADMIN/USER, auto-bloqueio, responsável principal, sessão ativa e responsividade
 
 ## Etapa 4 — recuperação e redefinição de senha
-- [ ] Corrigir o fluxo público com resposta neutra, domínio oficial e tratamento seguro do link
-- [ ] Implementar disparo administrativo protegido somente para contas com senha local
-- [ ] Registrar auditoria mínima e preservar bloqueio, providers e credenciais
-- [ ] Validar rate limit, e-mails, testes de segurança, temas e viewports
+- [x] Corrigir o fluxo público com resposta neutra, domínio oficial e tratamento seguro do link
+- [x] Implementar disparo administrativo protegido somente para contas com senha local
+- [x] Registrar auditoria mínima e preservar bloqueio, providers e credenciais
+- [x] Validar limites e regras em testes, telas públicas, confirmação ADMIN, temas e viewports
+- [ ] Homologar e-mail recebido e link oficial com conta de teste — depende de mensagem recebida e publicação
+- [ ] Confirmar política hospedada, remetente e limites exatos — configurações não expostas pelas ferramentas

@@ -26,6 +26,8 @@ import { gameStatusLabel, type GameStatus } from "@/types/domain";
 export const Route = createFileRoute("/_authenticated/games/importar")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Importar jogo por foto — ${appConfig.name}` },
       {
         name: "description",

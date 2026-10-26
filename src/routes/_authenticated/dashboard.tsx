@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Início — ${appConfig.name}` },
       { name: "description", content: "Próximos concursos, seus jogos e bolões em um só lugar." },
       { property: "og:title", content: `Início — ${appConfig.name}` },
