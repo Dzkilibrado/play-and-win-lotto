@@ -18,6 +18,8 @@ import { poolService } from "@/lib/services/poolService";
 export const Route = createFileRoute("/_authenticated/pools/new")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Novo bolão — ${appConfig.name}` },
       { name: "description", content: "Criação de bolão com cotas e prazo de pagamento." },
       { property: "og:title", content: `Novo bolão — ${appConfig.name}` },

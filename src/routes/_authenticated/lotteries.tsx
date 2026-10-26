@@ -12,6 +12,8 @@ import { lotteryDataService } from "@/lib/services/lotteryDataService";
 export const Route = createFileRoute("/_authenticated/lotteries")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Loterias — ${appConfig.name}` },
       {
         name: "description",

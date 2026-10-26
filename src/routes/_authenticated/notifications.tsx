@@ -8,6 +8,8 @@ import { appConfig } from "@/config/app.config";
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Notificações — ${appConfig.name}` },
       { name: "description", content: "Avisos de sorteios, prazos e conferências." },
       { property: "og:title", content: `Notificações — ${appConfig.name}` },

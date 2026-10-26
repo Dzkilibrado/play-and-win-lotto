@@ -54,6 +54,8 @@ export const Route = createFileRoute("/_authenticated/generate")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Criar jogo — ${appConfig.name}` },
       { name: "description", content: "Monte jogos com dezenas fixas, exclusões e análise." },
       { property: "og:title", content: `Criar jogo — ${appConfig.name}` },

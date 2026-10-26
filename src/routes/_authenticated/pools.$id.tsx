@@ -54,6 +54,8 @@ export const Route = createFileRoute("/_authenticated/pools/$id")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Detalhe do bolão — ${appConfig.name}` },
       { name: "description", content: "Participantes, cotas, pagamentos e documentos do bolão." },
       { property: "og:title", content: `Detalhe do bolão — ${appConfig.name}` },

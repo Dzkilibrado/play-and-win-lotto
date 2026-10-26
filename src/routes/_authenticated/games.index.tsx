@@ -28,6 +28,8 @@ export const Route = createFileRoute("/_authenticated/games/")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Meus Jogos — ${appConfig.name}` },
       { name: "description", content: "Todos os jogos salvos, com busca e filtros." },
       { property: "og:title", content: `Meus Jogos — ${appConfig.name}` },

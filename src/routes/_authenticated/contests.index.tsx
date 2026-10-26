@@ -31,6 +31,8 @@ export const Route = createFileRoute("/_authenticated/contests/")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Concursos e Resultados — ${appConfig.name}` },
       {
         name: "description",

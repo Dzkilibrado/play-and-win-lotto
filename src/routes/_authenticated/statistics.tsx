@@ -41,6 +41,8 @@ export const Route = createFileRoute("/_authenticated/statistics")({
   validateSearch: validateListSearch,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Estatísticas — ${appConfig.name}` },
       {
         name: "description",

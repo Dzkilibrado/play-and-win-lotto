@@ -31,6 +31,8 @@ export const Route = createFileRoute("/_authenticated/admin/")({
   },
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: `Administração — ${appConfig.name}` },
       { name: "description", content: "Área administrativa do aplicativo." },
       { property: "og:title", content: `Administração — ${appConfig.name}` },
