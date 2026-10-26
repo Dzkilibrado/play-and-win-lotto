@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireActiveSupabaseAuth } from "@/lib/auth/active-auth-middleware";
+import { performAdminRecovery } from "./password-recovery";
 
 const filtersSchema = z.object({
   page: z.number().int().positive().default(1),
@@ -55,6 +56,33 @@ const responseSchema = z.object({
 
 export type AdminUsersInput = z.infer<typeof filtersSchema>;
 export type AdminUsersResult = z.infer<typeof responseSchema>;
+
+export const sendAdminPasswordRecovery = createServerFn({ method: "POST" })
+  .middleware([requireActiveSupabaseAuth])
+  .inputValidator((input) => z.object({ targetUserId: z.string().uuid() }).strict().parse(input))
+  .handler(async ({ data, context }) => performAdminRecovery(data.targetUserId, {
+    authorize: async () => {
+      const { data: allowed, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "ADMIN" });
+      return !error && allowed === true;
+    },
+    target: async (id) => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: result, error } = await supabaseAdmin.auth.admin.getUserById(id);
+      return error ? null : result.user;
+    },
+    audit: async (id) => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin.from("audit_logs").insert({
+        user_id: context.userId, entity_id: id, entity_type: "USER_PASSWORD_RECOVERY",
+        action: "PASSWORD_RESET_REQUESTED_BY_ADMIN", metadata: null,
+      });
+      if (error) throw new Error("A solicitação não pôde ser registrada. Nenhum e-mail foi enviado.");
+    },
+    send: async (email) => {
+      const { sendOfficialRecovery } = await import("@/lib/auth/recovery.server");
+      await sendOfficialRecovery(email);
+    },
+  }));
 
 export const listAdminUsers = createServerFn({ method: "GET" })
   .middleware([requireActiveSupabaseAuth])
