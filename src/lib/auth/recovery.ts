@@ -12,7 +12,9 @@ export function hasLocalPassword(providers: readonly string[]) {
 
 export function isRecoveryClaims(claims: { amr?: unknown; exp?: unknown } | null | undefined, now = Date.now()) {
   if (!claims || typeof claims.exp !== "number" || claims.exp * 1000 <= now || !Array.isArray(claims.amr)) return false;
-  return claims.amr.some((entry: unknown) => typeof entry === "object" && entry !== null && "method" in entry && entry.method === "recovery");
+  // Default GoTrue implicit recovery issues an OTP authentication method.
+  // Query markers alone never authorize: require a verified, unexpired email-link session.
+  return claims.amr.some((entry: unknown) => typeof entry === "object" && entry !== null && "method" in entry && ["recovery", "otp"].includes(String(entry.method)));
 }
 
 export const recoveryPasswordSchema = z.object({
