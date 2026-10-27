@@ -2,6 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const adminRoute = readFileSync("src/routes/_authenticated/admin.index.tsx", "utf8");
+// As telas internas da Administração (cada função em sua rota) e os painéis
+// compartilhados também precisam respeitar a mesma segregação.
+const adminPanels = readFileSync("src/components/admin/AdminPanels.tsx", "utf8");
+const adminSubRoutes = ["atualizacao", "conferencia", "loterias", "recursos"].map((name) =>
+  readFileSync(`src/routes/_authenticated/admin.${name}.tsx`, "utf8"),
+);
 const authenticatedLayout = readFileSync("src/routes/_authenticated/route.tsx", "utf8");
 const moreRoute = readFileSync("src/routes/_authenticated/more.tsx", "utf8");
 const syncFunctions = readFileSync("src/lib/sync.functions.ts", "utf8");
@@ -24,6 +30,10 @@ describe("segregação ADMIN e USER", () => {
     expect(adminRoute).toMatch(/beforeLoad: \(\{ context \}\) => \{\s*if \(!context\.isAdmin\)/);
     expect(adminRoute).toContain('redirect({ to: "/dashboard", replace: true })');
     expect(adminRoute).not.toContain("useIsAdmin");
+    for (const source of adminSubRoutes) {
+      expect(source).toMatch(/beforeLoad: \(\{ context \}\) => \{\s*if \(!context\.isAdmin\)/);
+      expect(source).toContain('redirect({ to: "/dashboard", replace: true })');
+    }
   });
 
   it("não inclui Administração na tela Mais para USER", () => {
@@ -39,8 +49,8 @@ describe("segregação ADMIN e USER", () => {
   });
 
   it("isola todos os caches administrativos pela identidade", () => {
-    expect(adminRoute).toContain('["admin", userId, "sync-overview"]');
-    expect(adminRoute).toContain('["admin", userId, "check-overview"]');
+    expect(adminPanels).toContain('["admin", userId, "sync-overview"]');
+    expect(adminPanels).toContain('["admin", userId, "check-overview"]');
     expect(featureFlagsHook).toContain('["admin", userId, "feature-flags"]');
     expect(usersRoute).toContain("privateQueryKeys.adminUsers(user.id");
   });
@@ -77,6 +87,6 @@ describe("segregação ADMIN e USER", () => {
     expect(lotteriesFunctions).toContain('rpc("has_role"');
     expect(lotteriesFunctions).toContain("await assertAdmin(context as never)");
     expect(lotteriesFunctions).toContain('"admin_set_lottery_availability"');
-    expect(adminRoute).toContain("<LotteryAvailabilityPanel />");
+    expect(adminSubRoutes.join("\n")).toContain("<LotteryAvailabilityPanel />");
   });
 });

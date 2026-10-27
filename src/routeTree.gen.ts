@@ -29,6 +29,10 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
 import { Route as BTokenRouteImport } from './routes/b.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminAtualizacaoRouteImport } from './routes/_authenticated/admin.atualizacao'
+import { Route as AuthenticatedAdminConferenciaRouteImport } from './routes/_authenticated/admin.conferencia'
+import { Route as AuthenticatedAdminLoteriasRouteImport } from './routes/_authenticated/admin.loterias'
+import { Route as AuthenticatedAdminRecursosRouteImport } from './routes/_authenticated/admin.recursos'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedContestsIndexRouteImport } from './routes/_authenticated/contests.index'
 import { Route as AuthenticatedContestsIdRouteImport } from './routes/_authenticated/contests.$id'
@@ -142,6 +146,30 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminAtualizacaoRoute =
+  AuthenticatedAdminAtualizacaoRouteImport.update({
+    id: '/admin/atualizacao',
+    path: '/admin/atualizacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminConferenciaRoute =
+  AuthenticatedAdminConferenciaRouteImport.update({
+    id: '/admin/conferencia',
+    path: '/admin/conferencia',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminLoteriasRoute =
+  AuthenticatedAdminLoteriasRouteImport.update({
+    id: '/admin/loterias',
+    path: '/admin/loterias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRecursosRoute =
+  AuthenticatedAdminRecursosRouteImport.update({
+    id: '/admin/recursos',
+    path: '/admin/recursos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -225,6 +253,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
+  '/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
+  '/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
+  '/admin/recursos': typeof AuthenticatedAdminRecursosRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
@@ -258,6 +290,10 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
+  '/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
+  '/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
+  '/admin/recursos': typeof AuthenticatedAdminRecursosRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/contests/$id': typeof AuthenticatedContestsIdRoute
   '/games/$id': typeof AuthenticatedGamesIdRoute
@@ -293,6 +329,10 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/_authenticated/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
+  '/_authenticated/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
+  '/_authenticated/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
+  '/_authenticated/admin/recursos': typeof AuthenticatedAdminRecursosRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/contests/$id': typeof AuthenticatedContestsIdRoute
   '/_authenticated/games/$id': typeof AuthenticatedGamesIdRoute
@@ -328,6 +368,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/statistics'
     | '/b/$token'
+    | '/admin/atualizacao'
+    | '/admin/conferencia'
+    | '/admin/loterias'
+    | '/admin/recursos'
     | '/admin/users'
     | '/contests/$id'
     | '/games/$id'
@@ -361,6 +405,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/statistics'
     | '/b/$token'
+    | '/admin/atualizacao'
+    | '/admin/conferencia'
+    | '/admin/loterias'
+    | '/admin/recursos'
     | '/admin/users'
     | '/contests/$id'
     | '/games/$id'
@@ -395,6 +443,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/statistics'
     | '/b/$token'
+    | '/_authenticated/admin/atualizacao'
+    | '/_authenticated/admin/conferencia'
+    | '/_authenticated/admin/loterias'
+    | '/_authenticated/admin/recursos'
     | '/_authenticated/admin/users'
     | '/_authenticated/contests/$id'
     | '/_authenticated/games/$id'
@@ -567,6 +619,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/atualizacao': {
+      id: '/_authenticated/admin/atualizacao'
+      path: '/admin/atualizacao'
+      fullPath: '/admin/atualizacao'
+      preLoaderRoute: typeof AuthenticatedAdminAtualizacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/conferencia': {
+      id: '/_authenticated/admin/conferencia'
+      path: '/admin/conferencia'
+      fullPath: '/admin/conferencia'
+      preLoaderRoute: typeof AuthenticatedAdminConferenciaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/loterias': {
+      id: '/_authenticated/admin/loterias'
+      path: '/admin/loterias'
+      fullPath: '/admin/loterias'
+      preLoaderRoute: typeof AuthenticatedAdminLoteriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/recursos': {
+      id: '/_authenticated/admin/recursos'
+      path: '/admin/recursos'
+      fullPath: '/admin/recursos'
+      preLoaderRoute: typeof AuthenticatedAdminRecursosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/admin/users'
@@ -664,6 +744,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
+  AuthenticatedAdminAtualizacaoRoute: typeof AuthenticatedAdminAtualizacaoRoute
+  AuthenticatedAdminConferenciaRoute: typeof AuthenticatedAdminConferenciaRoute
+  AuthenticatedAdminLoteriasRoute: typeof AuthenticatedAdminLoteriasRoute
+  AuthenticatedAdminRecursosRoute: typeof AuthenticatedAdminRecursosRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedContestsIdRoute: typeof AuthenticatedContestsIdRoute
   AuthenticatedGamesIdRoute: typeof AuthenticatedGamesIdRoute
@@ -687,6 +771,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
+  AuthenticatedAdminAtualizacaoRoute: AuthenticatedAdminAtualizacaoRoute,
+  AuthenticatedAdminConferenciaRoute: AuthenticatedAdminConferenciaRoute,
+  AuthenticatedAdminLoteriasRoute: AuthenticatedAdminLoteriasRoute,
+  AuthenticatedAdminRecursosRoute: AuthenticatedAdminRecursosRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedContestsIdRoute: AuthenticatedContestsIdRoute,
   AuthenticatedGamesIdRoute: AuthenticatedGamesIdRoute,

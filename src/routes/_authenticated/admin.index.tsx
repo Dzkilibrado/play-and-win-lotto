@@ -1,31 +1,18 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ChevronRight, Users } from "lucide-react";
-import { toast } from "sonner";
-
-import { ErrorState, LoadingState } from "@/components/common/StateViews";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { LotteryAvailabilityPanel } from "@/components/admin/LotteryAvailabilityPanel";
-import { LotteryClubsPanel } from "@/components/admin/LotteryClubsPanel";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/button";
-import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
-import { syncConfig } from "@/config/sync.config";
-import { useSession } from "@/hooks/useAuth";
-import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { formatDate, formatNumber } from "@/lib/format";
-import { getSyncOverview, listSyncErrors, runSyncBatch, startSync } from "@/lib/sync.functions";
 import {
-  getCheckOverview,
-  listCheckErrors,
-  reprocessDrawCheck,
-  runCheckBatch,
-  scanPendingChecks,
-  startDrawCheck,
-} from "@/lib/check.functions";
-import type { StatusTone } from "@/types/domain";
+  ChevronRight,
+  ClipboardCheck,
+  RefreshCw,
+  SlidersHorizontal,
+  Ticket,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import { AdminMonitor } from "@/components/admin/AdminMonitor";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { appConfig } from "@/config/app.config";
+import { useSession } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   beforeLoad: ({ context }) => {
@@ -44,525 +31,84 @@ export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminPage,
 });
 
-const statusTone: Record<string, StatusTone> = {
-  pending: "info",
-  running: "info",
-  completed: "success",
-  completed_with_errors: "warning",
-  failed: "danger",
-};
-
-const statusLabel: Record<string, string> = {
-  pending: "Na fila",
-  running: "Em andamento",
-  completed: "Concluída",
-  completed_with_errors: "Concluída com erros",
-  failed: "Falhou",
-};
-
-const automationTone: Record<string, StatusTone> = {
-  UP_TO_DATE: "success",
-  WAITING_DRAW: "info",
-  WAITING_PUBLICATION: "warning",
-  SYNCING: "info",
-  ATTENTION: "danger",
-};
-
-const automationLabel: Record<string, string> = {
-  UP_TO_DATE: "Atualizado",
-  WAITING_DRAW: "Aguardando sorteio",
-  WAITING_PUBLICATION: "Aguardando publicação",
-  SYNCING: "Atualizando",
-  ATTENTION: "Requer atenção",
-};
-
-const runOutcomeLabel: Record<string, string> = {
-  inserted: "Resultado importado",
-  updated: "Resultado atualizado",
-  unchanged: "Sem alteração oficial",
-  RECTIFICATION_DETECTED: "Retificação detectada",
-  NOT_PUBLISHED: "Publicação ainda aguardada",
-  RETRY_SCHEDULED: "Nova verificação programada",
-};
-
-function formatDateTime(value: string | null | undefined) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "America/Sao_Paulo",
-  }).format(date);
+interface AdminCard {
+  to:
+    | "/admin/atualizacao"
+    | "/admin/conferencia"
+    | "/admin/loterias"
+    | "/admin/users"
+    | "/admin/recursos";
+  title: string;
+  description: string;
+  icon: LucideIcon;
 }
+
+const cards: AdminCard[] = [
+  {
+    to: "/admin/atualizacao",
+    title: "Atualização automática",
+    description: "Resultados e próximo sorteio da fonte oficial.",
+    icon: RefreshCw,
+  },
+  {
+    to: "/admin/conferencia",
+    title: "Conferência de jogos",
+    description: "Fila, reprocessamento e erros.",
+    icon: ClipboardCheck,
+  },
+  {
+    to: "/admin/loterias",
+    title: "Loterias",
+    description: "Disponibilidade e clubes da Timemania.",
+    icon: Ticket,
+  },
+  {
+    to: "/admin/users",
+    title: "Usuários",
+    description: "Contas, acessos e perfis cadastrados.",
+    icon: Users,
+  },
+  {
+    to: "/admin/recursos",
+    title: "Recursos do sistema",
+    description: "Liga e desliga funções para todos.",
+    icon: SlidersHorizontal,
+  },
+];
 
 function AdminPage() {
   const { user } = useSession();
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Administração" description="Gestão de dados e recursos do sistema." />
-      <Link
-        to="/admin/users"
-        className="surface-card tappable flex min-h-16 items-center gap-3 p-4 hover:border-primary"
-      >
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-info-soft text-info">
-          <Users className="size-5" aria-hidden />
-        </span>
-        <span className="min-w-0">
-          <span className="block font-display text-sm font-semibold text-text-primary">
-            Usuários
-          </span>
-          <span className="block text-xs text-text-secondary">
-            Contas, acessos e perfis cadastrados.
-          </span>
-        </span>
-        <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
-      </Link>
-      <LotteryAvailabilityPanel />
-      <LotteryClubsPanel />
-      <FeatureFlagsPanel userId={user.id} />
-      <SyncPanel userId={user.id} />
-      <CheckPanel userId={user.id} />
-    </div>
-  );
-}
-
-const featureTone: Record<FeatureStatus, StatusTone> = {
-  ACTIVE: "success",
-  BETA: "info",
-  MAINTENANCE: "warning",
-  DISABLED: "neutral",
-};
-
-function FeatureFlagsPanel({ userId }: { userId: string }) {
-  const flags = useFeatureFlags(userId);
-  if (flags.isLoading) return <LoadingState rows={1} />;
-  if (flags.isError) return <ErrorState onRetry={() => flags.refetch()} />;
-  return (
-    <section className="rounded-xl border border-border bg-surface p-4">
-      <h2 className="font-display text-sm font-semibold text-text-primary">Sistema · Recursos</h2>
-      <p className="mt-1 text-xs text-text-secondary">
-        Diagnóstico interno visível somente para administradores.
-      </p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-        {Object.entries(flags.flags).map(([key, status]) => (
-          <li
-            key={key}
-            className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm"
-          >
-            <code className="min-w-0 truncate text-text-primary">{key}</code>
-            <StatusBadge label={featureStatusLabel[status]} tone={featureTone[status]} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/** Conferência automática: fila por concurso, reprocessamento e erros. */
-function CheckPanel({ userId }: { userId: string }) {
-  const queryClient = useQueryClient();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [progress, setProgress] = useState<string | null>(null);
-
-  const overviewFn = useServerFn(getCheckOverview);
-  const errorsFn = useServerFn(listCheckErrors);
-  const startFn = useServerFn(startDrawCheck);
-  const batchFn = useServerFn(runCheckBatch);
-  const reprocessFn = useServerFn(reprocessDrawCheck);
-  const scanFn = useServerFn(scanPendingChecks);
-
-  const overview = useQuery({
-    queryKey: ["admin", userId, "check-overview"],
-    queryFn: () => overviewFn({}),
-  });
-  const errors = useQuery({
-    queryKey: ["admin", userId, "check-errors"],
-    queryFn: () => errorsFn({}),
-  });
-
-  const refresh = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["admin", userId, "check-overview"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", userId, "check-errors"] }),
-      queryClient.invalidateQueries({ queryKey: ["games"] }),
-      queryClient.invalidateQueries({ queryKey: ["check-summary"] }),
-    ]);
-  };
-
-  const action = useMutation({
-    mutationFn: async (input: { slug: string; kind: "latest" | "reprocess" | "scan" }) => {
-      if (input.kind === "scan") {
-        const result = await scanFn({});
-        setProgress(`${result.queued} concurso(s) na fila de conferência.`);
-        return;
-      }
-      if (input.kind === "reprocess") {
-        const result = await reprocessFn({ data: { slug: input.slug } });
-        setProgress(
-          `Concurso ${result.contestNumber}: ${result.processed} jogo(s) reconferido(s), ${result.prized} premiado(s).`,
-        );
-        return;
-      }
-      const started = await startFn({ data: { slug: input.slug } });
-      let guard = 0;
-      let status = "running";
-      while (!["completed", "completed_with_errors", "failed"].includes(status) && guard < 100) {
-        const step = await batchFn({ data: { jobId: started.jobId } });
-        status = step.status;
-        guard += 1;
-        setProgress(
-          `Concurso ${started.contestNumber}: ${step.processed} jogo(s) conferido(s), ${step.prized} premiado(s), ${step.failed} com erro.`,
-        );
-      }
-    },
-    onMutate: (input) => setBusy(`${input.slug}:${input.kind}`),
-    onSuccess: async () => {
-      toast.success("Conferência concluída.");
-      await refresh();
-    },
-    onError: (error: Error) => toast.error(error.message),
-    onSettled: () => setBusy(null),
-  });
-
-  if (overview.isLoading) return <LoadingState rows={2} />;
-  if (overview.isError) return <ErrorState onRetry={() => overview.refetch()} />;
-
-  return (
-    <section className="space-y-4">
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">
-          Conferência automática
+    <div className="space-y-5">
+      <PageHeader title="Administração" description="Acompanhe o sistema e abra cada função." />
+      <AdminMonitor userId={user.id} />
+      <section aria-labelledby="admin-functions" className="space-y-2">
+        <h2 id="admin-functions" className="font-display text-base font-semibold text-text-primary">
+          Funções
         </h2>
-        <p className="mt-1 text-xs text-text-secondary">
-          Compara os jogos dos usuários com o resultado oficial já validado no banco.
-        </p>
-        {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-3 h-11"
-          disabled={busy !== null}
-          onClick={() => action.mutate({ slug: "", kind: "scan" })}
-        >
-          {busy === ":scan" ? "Procurando…" : "Procurar jogos pendentes"}
-        </Button>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-3">
-        {(overview.data ?? []).map((row) => (
-          <article
-            key={row.lotteryId}
-            className="space-y-3 rounded-xl border border-border bg-surface p-4"
-          >
-            <h3 className="font-display text-sm font-semibold text-text-primary">{row.name}</h3>
-            <dl className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <dt className="text-text-secondary">A conferir</dt>
-                <dd className="font-medium text-text-primary">{formatNumber(row.pending)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Conferidos</dt>
-                <dd className="font-medium text-text-primary">{formatNumber(row.checked)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Premiados</dt>
-                <dd className="font-medium text-text-primary">{formatNumber(row.prized)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Último concurso</dt>
-                <dd className="font-medium text-text-primary">{row.lastContest ?? "—"}</dd>
-              </div>
-            </dl>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                className="h-11"
-                disabled={busy !== null}
-                onClick={() => action.mutate({ slug: row.slug, kind: "latest" })}
+        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {cards.map(({ to, title, description, icon: Icon }) => (
+            <li key={to}>
+              <Link
+                to={to}
+                className="surface-card tappable flex min-h-20 items-center gap-3 p-4 hover:border-primary"
               >
-                {busy === `${row.slug}:latest` ? "Conferindo…" : "Conferir último concurso"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-11"
-                disabled={busy !== null}
-                onClick={() => action.mutate({ slug: row.slug, kind: "reprocess" })}
-              >
-                {busy === `${row.slug}:reprocess` ? "Reprocessando…" : "Reprocessar"}
-              </Button>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">
-          Erros de conferência
-        </h2>
-        {(errors.data ?? []).length === 0 ? (
-          <p className="mt-2 text-xs text-text-secondary">Nenhum erro pendente.</p>
-        ) : (
-          <ul className="mt-3 space-y-2 text-xs">
-            {(errors.data ?? []).map((item) => (
-              <li key={item.id} className="rounded-lg bg-surface-secondary px-3 py-2">
-                <span className="font-medium text-text-primary">{item.error_type}</span>
-                <span className="block text-text-secondary">{item.message}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function SyncPanel({ userId }: { userId: string }) {
-  const queryClient = useQueryClient();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [progress, setProgress] = useState<string | null>(null);
-
-  const overviewFn = useServerFn(getSyncOverview);
-  const startFn = useServerFn(startSync);
-  const batchFn = useServerFn(runSyncBatch);
-  const errorsFn = useServerFn(listSyncErrors);
-
-  const overview = useQuery({
-    queryKey: ["admin", userId, "sync-overview"],
-    queryFn: () => overviewFn({}),
-  });
-  const errors = useQuery({
-    queryKey: ["admin", userId, "sync-errors"],
-    queryFn: () => errorsFn({}),
-  });
-
-  const refreshAll = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-errors"] }),
-      queryClient.invalidateQueries({ queryKey: ["latest-draws"] }),
-      queryClient.invalidateQueries({ queryKey: ["recent-results"] }),
-      queryClient.invalidateQueries({ queryKey: ["results"] }),
-      queryClient.invalidateQueries({ queryKey: ["contests"] }),
-    ]);
-  };
-
-  const action = useMutation({
-    mutationFn: async (input: {
-      slug: string;
-      type: "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS";
-    }) => {
-      const started = await startFn({ data: input });
-      if (started.kind === "job" && input.type === "HISTORICAL") {
-        let status = started.status;
-        let guard = 0;
-        while (
-          status !== "completed" &&
-          status !== "completed_with_errors" &&
-          status !== "failed" &&
-          guard < 500
-        ) {
-          const step = await batchFn({ data: { jobId: started.jobId } });
-          status = step.status;
-          guard += 1;
-          setProgress(
-            `${input.slug}: ${formatNumber(step.processed)} concursos processados · ${formatNumber(
-              step.inserted,
-            )} novos · ${formatNumber(step.failed)} com erro`,
-          );
-          await queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] });
-        }
-      }
-      return started;
-    },
-    onMutate: (input) => setBusy(`${input.slug}:${input.type}`),
-    onSuccess: async () => {
-      toast.success("Sincronização concluída.");
-      await refreshAll();
-    },
-    onError: (error: Error) => toast.error(error.message),
-    onSettled: () => {
-      setBusy(null);
-      setProgress(null);
-    },
-  });
-
-  if (overview.isLoading) return <LoadingState rows={3} />;
-  if (overview.isError) return <ErrorState onRetry={() => overview.refetch()} />;
-
-  return (
-    <section className="space-y-4">
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">
-          Atualização automática
-        </h2>
-        <p className="mt-1 text-xs text-text-secondary">
-          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte:{" "}
-          {syncConfig.sourceLabel}
-        </p>
-        {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-3">
-        {(overview.data ?? []).map((row) => (
-          <article
-            key={row.lotteryId}
-            className="space-y-3 rounded-xl border border-border bg-surface p-4"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-display text-sm font-semibold text-text-primary">{row.name}</h3>
-                <p className="text-xs text-text-secondary">
-                  {formatNumber(row.totalContests)} concursos no banco
-                </p>
-              </div>
-              {row.automation ? (
-                <StatusBadge
-                  tone={automationTone[row.automation.status] ?? "neutral"}
-                  label={automationLabel[row.automation.status] ?? row.automation.status}
-                />
-              ) : row.job ? (
-                <StatusBadge
-                  tone={statusTone[row.job.status] ?? "neutral"}
-                  label={statusLabel[row.job.status] ?? row.job.status}
-                />
-              ) : null}
-            </div>
-
-            <dl className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <dt className="text-text-secondary">Primeiro concurso</dt>
-                <dd className="font-medium text-text-primary">{row.firstContest ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Último concurso</dt>
-                <dd className="font-medium text-text-primary">{row.lastContest ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Data do último</dt>
-                <dd className="font-medium text-text-primary">{formatDate(row.lastContestDate)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Concursos com erro</dt>
-                <dd className="font-medium text-text-primary">{formatNumber(row.pendingErrors)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Próximo concurso</dt>
-                <dd className="font-medium text-text-primary">
-                  {row.automation?.expectedContest ?? "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Sorteio previsto</dt>
-                <dd className="font-medium text-text-primary">
-                  {formatDateTime(row.automation?.expectedDrawAt)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Último sucesso</dt>
-                <dd className="font-medium text-text-primary">
-                  {formatDateTime(row.automation?.lastSuccessAt)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Última verificação</dt>
-                <dd className="font-medium text-text-primary">
-                  {formatDateTime(
-                    row.automation?.lastHealthCheckAt ?? row.automation?.lastAttemptAt,
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-secondary">Próxima verificação</dt>
-                <dd className="font-medium text-text-primary">
-                  {formatDateTime(row.automation?.nextAttemptAt)}
-                </dd>
-              </div>
-            </dl>
-
-            {row.automation && row.automation.consecutiveFailures > 0 ? (
-              <p className="rounded-lg bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
-                {row.automation.consecutiveFailures} tentativa(s) sem sucesso
-                {row.automation.lastErrorMessage ? ` · ${row.automation.lastErrorMessage}` : ""}
-              </p>
-            ) : null}
-
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ["LATEST", "Sincronizar último"],
-                  ["RECENT", "Atualizar recentes"],
-                  ["HISTORICAL", "Importação histórica"],
-                  ["REPROCESS", "Reprocessar falhas"],
-                ] as const
-              ).map(([type, label]) => (
-                <Button
-                  key={type}
-                  size="sm"
-                  variant={type === "HISTORICAL" ? "default" : "outline"}
-                  className="h-11"
-                  disabled={busy !== null}
-                  onClick={() => action.mutate({ slug: row.slug, type })}
-                >
-                  {busy === `${row.slug}:${type}` ? "Executando…" : label}
-                </Button>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">
-          Histórico recente da automação
-        </h2>
-        {(overview.data ?? []).every((row) => row.runs.length === 0) ? (
-          <p className="mt-2 text-xs text-text-secondary">
-            A primeira execução será registrada no próximo ciclo.
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-2 text-xs">
-            {(overview.data ?? []).flatMap((row) =>
-              row.runs.map((run) => (
-                <li
-                  key={run.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2"
-                >
-                  <span className="font-medium text-text-primary">
-                    {row.name} · concurso {run.contest_number ?? "—"}
-                  </span>
-                  <span className="text-text-secondary">
-                    {runOutcomeLabel[run.outcome ?? ""] ?? "Verificação concluída"} ·{" "}
-                    {formatDateTime(run.started_at)}
-                  </span>
-                </li>
-              )),
-            )}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="font-display text-sm font-semibold text-text-primary">
-          Últimos erros de sincronização
-        </h2>
-        {(errors.data ?? []).length === 0 ? (
-          <p className="mt-2 text-xs text-text-secondary">Nenhum erro pendente.</p>
-        ) : (
-          <ul className="mt-3 space-y-2 text-xs">
-            {(errors.data ?? []).map((item) => (
-              <li key={item.id} className="rounded-lg bg-surface-secondary px-3 py-2">
-                <span className="font-medium text-text-primary">
-                  Concurso {item.contest_number ?? "—"} · {item.error_type}
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-info-soft text-info">
+                  <Icon className="size-5" aria-hidden />
                 </span>
-                <span className="block text-text-secondary">{item.message}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
+                <span className="min-w-0">
+                  <span className="block font-display text-sm font-semibold text-text-primary">
+                    {title}
+                  </span>
+                  <span className="block text-xs text-text-secondary">{description}</span>
+                </span>
+                <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }

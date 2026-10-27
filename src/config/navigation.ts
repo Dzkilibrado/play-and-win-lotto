@@ -2,7 +2,6 @@ import {
   BarChart3,
   Bell,
   Camera,
-
   Home,
   LayoutGrid,
   ListChecks,
@@ -40,7 +39,6 @@ export const secondaryNav: NavItem[] = [
   { label: "Concursos e Resultados", to: "/contests", icon: Trophy },
   { label: "Loterias", to: "/lotteries", icon: Ticket },
 
-
   { label: "Estatísticas", to: "/statistics", icon: BarChart3, feature: "statistics" },
   { label: "Notificações", to: "/notifications", icon: Bell, feature: "notifications" },
   { label: "Perfil", to: "/profile", icon: User },
@@ -49,7 +47,6 @@ export const secondaryNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { label: "Administração", to: "/admin", icon: Shield, adminOnly: true },
-  { label: "Usuários", to: "/admin/users", icon: Users, adminOnly: true },
 ];
 
 export const moreNavItem: NavItem = { label: "Mais", to: "/more", icon: LayoutGrid };
