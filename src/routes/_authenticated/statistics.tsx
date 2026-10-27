@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries, getLotteryConfig, type LotteryConfig } from "@/config/lotteries";
-import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { formatDate } from "@/lib/format";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
 import {
@@ -66,8 +65,8 @@ function StatisticsPage() {
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const tab = tabs.find((item) => item.id === search.tab)?.id ?? "overview";
-  const { visibleLotteries } = useLotteryAvailability();
-  const slug = search.lottery ?? visibleLotteries[0]?.slug ?? activeLotteries[0]!.slug;
+  // Estatísticas são só consulta: loterias desabilitadas continuam disponíveis aqui.
+  const slug = search.lottery ?? activeLotteries[0]!.slug;
   const config = getLotteryConfig(slug)!;
   const window = windowOf(search.status);
 
@@ -106,7 +105,7 @@ function StatisticsPage() {
               value={slug}
               onChange={(event) => setSearch({ lottery: event.target.value, numbers: undefined })}
             >
-              {visibleLotteries.map((lottery) => (
+              {activeLotteries.map((lottery) => (
                 <option key={lottery.slug} value={lottery.slug}>
                   {lottery.name}
                 </option>
@@ -219,7 +218,12 @@ function OverviewTab({
   const [expanded, setExpanded] = useState<string | null>(null);
   const blocks = [
     { id: "most", title: "Mais sorteados", data: mostDrawn(rows), metric: "occurrences" as const },
-    { id: "least", title: "Menos sorteados", data: leastDrawn(rows), metric: "occurrences" as const },
+    {
+      id: "least",
+      title: "Menos sorteados",
+      data: leastDrawn(rows),
+      metric: "occurrences" as const,
+    },
     { id: "delay", title: "Maior atraso atual", data: mostDelayed(rows), metric: "delay" as const },
   ];
 
@@ -357,7 +361,9 @@ function CombinationTab({
 
   const toggle = (value: number) =>
     setSelected((prev) =>
-      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value].sort((a, b) => a - b),
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value].sort((a, b) => a - b),
     );
 
   return (
@@ -505,7 +511,10 @@ function ResultPanel({
       <Button asChild variant="outline" size="sm" className="h-11 w-full">
         <Link
           to="/contests"
-          search={{ lottery: slug, ...(serializeNumbers(numbers) ? { numbers: serializeNumbers(numbers)! } : {}) }}
+          search={{
+            lottery: slug,
+            ...(serializeNumbers(numbers) ? { numbers: serializeNumbers(numbers)! } : {}),
+          }}
         >
           Ver concursos
         </Link>
