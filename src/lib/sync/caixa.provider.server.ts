@@ -3,7 +3,7 @@
  * Único ponto do sistema que fala com a rede externa. Devolve sempre um
  * objeto normalizado e já validado, ou lança um SyncError classificado.
  */
-import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
+import { getLotteryConfig, type JointTierDef, type LotterySlug } from "@/config/lotteries";
 import { providerPath, syncConfig } from "@/config/sync.config";
 import { clubKey, monthKeyFromName } from "@/lib/secondaryKeys";
 
@@ -136,6 +136,35 @@ function parseHits(
   return null;
 }
 
+/**
+ * Faixa conjunta ("5 acertos + 2 trevos", "4 acertos + 1 ou nenhum trevo"):
+ * devolve a chave da faixa configurada ou null se a descrição não casa
+ * exatamente com nenhuma — nunca se aproxima.
+ */
+function parseJointKey(description: string, defs: JointTierDef[]): number | null {
+  const match =
+    /(\d+)\s*acertos?\s*\+\s*(2\s*trevos?|1\s*ou\s*nenhum\s*trevo|1\s*trevo|nenhum\s*trevo|0\s*trevo)/.exec(
+      plain(description),
+    );
+  if (!match) return null;
+  const numberHits = Number.parseInt(match[1]!, 10);
+  const phrase = match[2]!;
+  const cloverHits = phrase.startsWith("2")
+    ? [2]
+    : /ou\s*nenhum/.test(phrase)
+      ? [0, 1]
+      : phrase.startsWith("1")
+        ? [1]
+        : [0];
+  const def = defs.find(
+    (item) =>
+      item.numberHits === numberHits &&
+      item.cloverHits.length === cloverHits.length &&
+      item.cloverHits.every((value) => cloverHits.includes(value)),
+  );
+  return def ? def.key : null;
+}
+
 /** Faixa própria do Mês da Sorte / Time do Coração dentro do rateio oficial. */
 const SECONDARY_PRIZE_MARK = /\b(?:mes\s+(?:de|da)\s+sorte|time\s+(?:do|de)\s+coracao)\b/;
 
@@ -193,7 +222,7 @@ function validate(slug: LotterySlug, draw: NormalizedDraw): void {
   const config = getLotteryConfig(slug);
   if (!config) throw new SyncError("VALIDATION", `Modalidade desconhecida: ${slug}.`);
 
-  const expectsSecondary = !!config.secondary && config.secondary.kind !== "trevo";
+  const expectsSecondary = !!config.secondary;
   if (expectsSecondary && !draw.secondary) {
     throw new SyncError(
       "VALIDATION",
@@ -294,10 +323,13 @@ function toNumberList(value: unknown): number[] {
 function normalizePrizes(
   items: Record<string, unknown>[],
   tierLabels: { hits: number; label: string }[],
+  jointTiers?: JointTierDef[],
 ): NormalizedPrize[] {
   const prizes: NormalizedPrize[] = items.map((item, index) => {
     const description = cleanText(item["descricaoFaixa"]) ?? "";
-    const hits = parseHits(description, item["faixa"], tierLabels);
+    const hits = jointTiers
+      ? parseJointKey(description, jointTiers)
+      : parseHits(description, item["faixa"], tierLabels);
     if (hits === null) {
       // Faixa devolvida pela fonte e não interpretável: nunca descartar em silêncio.
       throw new SyncError(
@@ -410,7 +442,27 @@ function normalize(payload: Record<string, unknown>, slug: LotterySlug): Normali
       prizes: normalizePrizes(secondItems, tierLabels),
     };
   } else {
-    prizes = normalizePrizes(rateio, tierLabels);
+    prizes = normalizePrizes(rateio, tierLabels, config?.jointTiers);
+  }
+
+  // +Milionária: os 2 trevos sorteados (sem faixa própria — entram nas conjuntas).
+  if (config?.secondary?.kind === "trevo") {
+    const clovers = Array.isArray(payload["trevosSorteados"])
+      ? (payload["trevosSorteados"] as unknown[]).map((item) => Number.parseInt(String(item), 10))
+      : [];
+    const { min, max } = config.secondary.universe;
+    const valid =
+      clovers.length === config.secondary.selectable.base &&
+      new Set(clovers).size === clovers.length &&
+      clovers.every((value) => Number.isInteger(value) && value >= min && value <= max);
+    if (!valid) {
+      throw new SyncError(
+        "VALIDATION",
+        `${config.secondary.label}: trevos sorteados ausentes ou inválidos na resposta oficial.`,
+        JSON.stringify(payload["trevosSorteados"] ?? null).slice(0, 120),
+      );
+    }
+    secondary = { result: clovers.map(String).sort(), prize: null };
   }
 
   const municipio = cleanText(payload["nomeMunicipioUFSorteio"]);

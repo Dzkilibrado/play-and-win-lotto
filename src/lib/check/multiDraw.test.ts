@@ -98,6 +98,7 @@ describe("payload da conferência", () => {
     tiers: tiers({ 4: 100, 3: 10 }),
     secondDraw: null,
     secondary: null,
+    joint: null,
     sourceUpdatedAt: null,
     tiersFromOfficialSource: true,
   };

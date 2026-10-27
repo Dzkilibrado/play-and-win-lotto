@@ -61,7 +61,11 @@ const profileOptions: { value: BudgetStrategyProfile; label: string; hint: strin
 
 export function BudgetStrategyPanel({ onApprove }: BudgetStrategyPanelProps) {
   const [budgetInput, setBudgetInput] = useState("");
-  const { enabledLotteries: activeLotteries } = useLotteryAvailability();
+  const availability = useLotteryAvailability();
+  // A estratégia por orçamento ainda não escolhe Mês/Time/Trevos: jogo salvo sem
+  // essa escolha perderia o prêmio dela em silêncio, então essas modalidades
+  // ficam de fora até esse fluxo suportá-la.
+  const activeLotteries = availability.enabledLotteries.filter((lottery) => !lottery.secondary);
   const [selectedRaw, setSelectedModalities] = useState<LotterySlug[]>([]);
   // Modalidade que ficou indisponível depois de marcada sai da conta.
   const selectedModalities = useMemo(

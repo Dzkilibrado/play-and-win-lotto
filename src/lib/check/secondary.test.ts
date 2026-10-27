@@ -139,6 +139,7 @@ describe("conferência do concurso com seleção secundária", () => {
     tiers: tiers({ 7: 1000, 4: 10 }),
     secondDraw: null,
     secondary: { label: "Mês da Sorte", result: ["03"], prize: monthPrize },
+    joint: null,
     sourceUpdatedAt: null,
     tiersFromOfficialSource: true,
   };
