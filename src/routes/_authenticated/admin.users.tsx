@@ -9,14 +9,32 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateV
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter,
-  DrawerHeader, DrawerTitle, DrawerTrigger,
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   accessRoleLabel,
   accessRoles,
@@ -26,7 +44,11 @@ import {
 } from "@/config/accessModules";
 import { appConfig } from "@/config/app.config";
 import { changeAdminUserRole } from "@/lib/admin/access.functions";
-import { changeAdminUserAccess, listAdminUsers, type AdminUsersResult } from "@/lib/admin/users.functions";
+import {
+  changeAdminUserAccess,
+  listAdminUsers,
+  type AdminUsersResult,
+} from "@/lib/admin/users.functions";
 import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
 import { cn } from "@/lib/utils";
 import { AdminPasswordRecoveryAction } from "@/components/auth/AdminPasswordRecoveryAction";
@@ -38,7 +60,10 @@ const searchSchema = z.object({
   provider: z.enum(["email", "google"]).optional().catch(undefined),
   created: z.enum(["TODAY", "7D", "30D", "90D"]).optional().catch(undefined),
   access: z.enum(["TODAY", "7D", "30D", "STALE", "NEVER"]).optional().catch(undefined),
-  sort: z.enum(["CREATED_DESC", "CREATED_ASC", "ACCESS_DESC", "NAME_ASC", "NAME_DESC"]).optional().catch(undefined),
+  sort: z
+    .enum(["CREATED_DESC", "CREATED_ASC", "ACCESS_DESC", "NAME_ASC", "NAME_DESC"])
+    .optional()
+    .catch(undefined),
 });
 type Search = z.infer<typeof searchSchema>;
 function validateAdminUsersSearch(search: Record<string, unknown>): Search {
@@ -50,7 +75,23 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
     if (!context.isAdmin) throw redirect({ to: "/dashboard", replace: true });
   },
   validateSearch: validateAdminUsersSearch,
-  head: () => ({ meta: [{ title: `Usuários — ${appConfig.name}` }, { name: "description", content: "Administração segura de acesso e recuperação de contas do Gestor da Sorte." }, { property: "og:title", content: `Usuários — ${appConfig.name}` }, { property: "og:description", content: "Administração segura de acesso e recuperação de contas." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [
+      { title: `Usuários — ${appConfig.name}` },
+      {
+        name: "description",
+        content: "Administração segura de acesso e recuperação de contas do Gestor da Sorte.",
+      },
+      { property: "og:title", content: `Usuários — ${appConfig.name}` },
+      {
+        property: "og:description",
+        content: "Administração segura de acesso e recuperação de contas.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: AdminUsersPage,
 });
 
@@ -59,7 +100,9 @@ const providerLabel: Record<string, string> = { email: "E-mail/Senha", google: "
 const pageSize = 20;
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date(value));
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(
+    new Date(value),
+  );
 }
 
 function formatAccess(value: string | null) {
@@ -67,7 +110,11 @@ function formatAccess(value: string | null) {
   const date = new Date(value);
   const now = new Date();
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
-  const time = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }).format(date);
+  const time = new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
   const current = day.format(now);
   const target = day.format(date);
   if (target === current) return `Hoje, ${time}`;
@@ -76,9 +123,27 @@ function formatAccess(value: string | null) {
   return formatDate(value);
 }
 
-function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "success" | "warning" | "danger" | "info" }) {
-  const tones = { neutral: "bg-surface-secondary text-text-primary", success: "bg-success-soft text-success", warning: "bg-warning-soft text-warning", danger: "bg-danger-soft text-danger", info: "bg-info-soft text-info" };
-  return <span className={cn("inline-flex rounded-full px-2 py-1 text-[11px] font-semibold", tones[tone])}>{children}</span>;
+function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "success" | "warning" | "danger" | "info";
+}) {
+  const tones = {
+    neutral: "bg-surface-secondary text-text-primary",
+    success: "bg-success-soft text-success",
+    warning: "bg-warning-soft text-warning",
+    danger: "bg-danger-soft text-danger",
+    info: "bg-info-soft text-info",
+  };
+  return (
+    <span
+      className={cn("inline-flex rounded-full px-2 py-1 text-[11px] font-semibold", tones[tone])}
+    >
+      {children}
+    </span>
+  );
 }
 
 function roleTone(role: AccessRole) {
@@ -86,13 +151,26 @@ function roleTone(role: AccessRole) {
 }
 
 function UserBadges({ role, status }: { role: AccessRole; status: keyof typeof statusLabel }) {
-  return <div className="flex flex-wrap gap-1.5"><Badge tone={roleTone(role)}>{accessRoleLabel[role]}</Badge><Badge tone={status === "ACTIVE" ? "success" : status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[status]}</Badge></div>;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <Badge tone={roleTone(role)}>{accessRoleLabel[role]}</Badge>
+      <Badge tone={status === "ACTIVE" ? "success" : status === "BLOCKED" ? "danger" : "warning"}>
+        {statusLabel[status]}
+      </Badge>
+    </div>
+  );
 }
 
 type AdminUser = AdminUsersResult["items"][number];
 
 function UserActions({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
-  return <div className="flex min-w-0 flex-col items-start gap-1"><UserRoleAction item={item} currentUserId={currentUserId} /><UserAccessAction item={item} currentUserId={currentUserId} /><AdminPasswordRecoveryAction id={item.id} providers={item.providers} /></div>;
+  return (
+    <div className="flex min-w-0 flex-col items-start gap-1">
+      <UserRoleAction item={item} currentUserId={currentUserId} />
+      <UserAccessAction item={item} currentUserId={currentUserId} />
+      <AdminPasswordRecoveryAction id={item.id} providers={item.providers} />
+    </div>
+  );
 }
 
 function UserRoleAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
@@ -104,12 +182,15 @@ function UserRoleAction({ item, currentUserId }: { item: AdminUser; currentUserI
   const protectedAccount = item.id === currentUserId || item.isSystemOwner;
   const options = accessRoles.filter((value) => value !== item.role);
   const mutation = useMutation({
-    mutationFn: () => changeAdminUserRole({ data: {
-      targetUserId: item.id,
-      role: role as AccessRole,
-      reason: reason || null,
-      reasonDetails: details.trim() || null,
-    } }),
+    mutationFn: () =>
+      changeAdminUserRole({
+        data: {
+          targetUserId: item.id,
+          role: role as AccessRole,
+          reason: reason || null,
+          reasonDetails: details.trim() || null,
+        },
+      }),
     onSuccess: async () => {
       setOpen(false);
       setRole("");
@@ -118,41 +199,85 @@ function UserRoleAction({ item, currentUserId }: { item: AdminUser; currentUserI
       await queryClient.invalidateQueries({ queryKey: ["admin", currentUserId, "users"] });
       toast.success("Tipo de acesso alterado.");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível alterar o tipo de acesso."),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível alterar o tipo de acesso.",
+      ),
   });
 
   if (item.status === "PENDING" || protectedAccount) return null;
 
-  return <>
-    <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Alterar tipo de acesso</Button>
-    <Dialog open={open} onOpenChange={(next) => { if (!mutation.isPending) setOpen(next); }}>
-      <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Alterar tipo de acesso</DialogTitle>
-          <DialogDescription>
-            Tipo atual: {accessRoleLabel[item.role]}. A mudança vale na próxima vez que a pessoa abrir o aplicativo e fica registrada na auditoria.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <SelectField label="Novo tipo de acesso" value={role} onChange={(value) => setRole(value as AccessRole | "")}>
-            <option value="">Escolha uma opção</option>
-            {options.map((value) => <option key={value} value={value}>{accessRoleLabel[value]}</option>)}
-          </SelectField>
-          <SelectField label="Motivo (opcional)" value={reason} onChange={(value) => setReason(value as RoleChangeReason | "")}>
-            <option value="">Não informar</option>
-            {roleChangeReasons.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </SelectField>
-          {reason === "OTHER" && <label className="block space-y-1.5 text-sm"><span className="text-text-secondary">Descrição curta</span><Input value={details} onChange={(event) => setDetails(event.target.value)} maxLength={160} required /></label>}
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>Cancelar</Button>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || !role || (reason === "OTHER" && !details.trim())}>
-            {mutation.isPending ? "Salvando…" : "Confirmar alteração"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  </>;
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        Alterar tipo de acesso
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!mutation.isPending) setOpen(next);
+        }}
+      >
+        <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar tipo de acesso</DialogTitle>
+            <DialogDescription>
+              Tipo atual: {accessRoleLabel[item.role]}. A mudança vale na próxima vez que a pessoa
+              abrir o aplicativo e fica registrada na auditoria.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <SelectField
+              label="Novo tipo de acesso"
+              value={role}
+              onChange={(value) => setRole(value as AccessRole | "")}
+            >
+              <option value="">Escolha uma opção</option>
+              {options.map((value) => (
+                <option key={value} value={value}>
+                  {accessRoleLabel[value]}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              label="Motivo (opcional)"
+              value={reason}
+              onChange={(value) => setReason(value as RoleChangeReason | "")}
+            >
+              <option value="">Não informar</option>
+              {roleChangeReasons.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectField>
+            {reason === "OTHER" && (
+              <label className="block space-y-1.5 text-sm">
+                <span className="text-text-secondary">Descrição curta</span>
+                <Input
+                  value={details}
+                  onChange={(event) => setDetails(event.target.value)}
+                  maxLength={160}
+                  required
+                />
+              </label>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending || !role || (reason === "OTHER" && !details.trim())}
+            >
+              {mutation.isPending ? "Salvando…" : "Confirmar alteração"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
@@ -163,12 +288,15 @@ function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUse
   const isBlocking = item.status === "ACTIVE";
   const protectedAccount = item.id === currentUserId || item.isSystemOwner;
   const mutation = useMutation({
-    mutationFn: () => changeAdminUserAccess({ data: {
-      targetUserId: item.id,
-      action: isBlocking ? "BLOCK" : "UNBLOCK",
-      reason: reason || null,
-      reasonDetails: details.trim() || null,
-    } }),
+    mutationFn: () =>
+      changeAdminUserAccess({
+        data: {
+          targetUserId: item.id,
+          action: isBlocking ? "BLOCK" : "UNBLOCK",
+          reason: reason || null,
+          reasonDetails: details.trim() || null,
+        },
+      }),
     onSuccess: async () => {
       setOpen(false);
       setReason("");
@@ -176,51 +304,110 @@ function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUse
       await queryClient.invalidateQueries({ queryKey: ["admin", currentUserId, "users"] });
       toast.success(isBlocking ? "Acesso bloqueado." : "Acesso restaurado.");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o acesso."),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o acesso."),
   });
 
   if (item.status === "PENDING") return null;
   if (protectedAccount && isBlocking) {
-    return <span className="text-xs text-text-secondary">{item.isSystemOwner ? "Responsável principal" : "Conta atual"}</span>;
+    return (
+      <span className="text-xs text-text-secondary">
+        {item.isSystemOwner ? "Responsável principal" : "Conta atual"}
+      </span>
+    );
   }
 
-  return <>
-    <Button variant={isBlocking ? "outline" : "secondary"} size="sm" onClick={() => setOpen(true)}>
-      {isBlocking ? "Bloquear acesso" : "Desbloquear acesso"}
-    </Button>
-    <Dialog open={open} onOpenChange={(next) => { if (!mutation.isPending) setOpen(next); }}>
-      <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isBlocking ? "Bloquear acesso deste usuário?" : "Restaurar acesso deste usuário?"}</DialogTitle>
-          <DialogDescription>
-            {isBlocking
-              ? "O usuário não poderá entrar no Gestor da Sorte enquanto estiver bloqueado. Seus dados e registros serão preservados."
-              : "O usuário poderá entrar novamente com as credenciais já existentes."}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <SelectField label="Motivo (opcional)" value={reason} onChange={(value) => setReason(value as typeof reason)}>
-            <option value="">Não informar</option>
-            <option value="ADMIN_REQUEST">Solicitação do administrador</option>
-            <option value="SECURITY">Segurança</option>
-            <option value="MISUSE">Uso indevido</option>
-            <option value="OTHER">Outro</option>
-          </SelectField>
-          {reason === "OTHER" && <label className="block space-y-1.5 text-sm"><span className="text-text-secondary">Descrição curta</span><Input value={details} onChange={(event) => setDetails(event.target.value)} maxLength={160} required /></label>}
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>Cancelar</Button>
-          <Button variant={isBlocking ? "destructive" : "default"} onClick={() => mutation.mutate()} disabled={mutation.isPending || (reason === "OTHER" && !details.trim())}>
-            {mutation.isPending ? "Salvando…" : isBlocking ? "Bloquear acesso" : "Desbloquear"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  </>;
+  return (
+    <>
+      <Button
+        variant={isBlocking ? "outline" : "secondary"}
+        size="sm"
+        onClick={() => setOpen(true)}
+      >
+        {isBlocking ? "Bloquear acesso" : "Desbloquear acesso"}
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!mutation.isPending) setOpen(next);
+        }}
+      >
+        <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {isBlocking ? "Bloquear acesso deste usuário?" : "Restaurar acesso deste usuário?"}
+            </DialogTitle>
+            <DialogDescription>
+              {isBlocking
+                ? "O usuário não poderá entrar no Gestor da Sorte enquanto estiver bloqueado. Seus dados e registros serão preservados."
+                : "O usuário poderá entrar novamente com as credenciais já existentes."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <SelectField
+              label="Motivo (opcional)"
+              value={reason}
+              onChange={(value) => setReason(value as typeof reason)}
+            >
+              <option value="">Não informar</option>
+              <option value="ADMIN_REQUEST">Solicitação do administrador</option>
+              <option value="SECURITY">Segurança</option>
+              <option value="MISUSE">Uso indevido</option>
+              <option value="OTHER">Outro</option>
+            </SelectField>
+            {reason === "OTHER" && (
+              <label className="block space-y-1.5 text-sm">
+                <span className="text-text-secondary">Descrição curta</span>
+                <Input
+                  value={details}
+                  onChange={(event) => setDetails(event.target.value)}
+                  maxLength={160}
+                  required
+                />
+              </label>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              variant={isBlocking ? "destructive" : "default"}
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending || (reason === "OTHER" && !details.trim())}
+            >
+              {mutation.isPending ? "Salvando…" : isBlocking ? "Bloquear acesso" : "Desbloquear"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
-function SelectField({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: React.ReactNode }) {
-  return <label className="block min-w-0 space-y-1.5 text-sm"><span className="text-text-secondary">{label}</span><select className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-primary" value={value} onChange={(event) => onChange(event.target.value)}>{children}</select></label>;
+function SelectField({
+  label,
+  value,
+  onChange,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block min-w-0 space-y-1.5 text-sm">
+      <span className="text-text-secondary">{label}</span>
+      <select
+        className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-primary"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {children}
+      </select>
+    </label>
+  );
 }
 
 function AdminUsersPage() {
@@ -228,46 +415,302 @@ function AdminUsersPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = Route.useRouteContext();
   const page = search.page ?? 1;
-  const filters = { page, pageSize, status: search.status ?? null, role: search.role ?? null, provider: search.provider ?? null, createdPeriod: search.created ?? null, accessPeriod: search.access ?? null, sort: search.sort ?? "CREATED_DESC" as const };
-  const query = useQuery({ queryKey: privateQueryKeys.adminUsers(user.id, filters), queryFn: () => listAdminUsers({ data: filters }), staleTime: 30_000 });
+  const filters = {
+    page,
+    pageSize,
+    status: search.status ?? null,
+    role: search.role ?? null,
+    provider: search.provider ?? null,
+    createdPeriod: search.created ?? null,
+    accessPeriod: search.access ?? null,
+    sort: search.sort ?? ("CREATED_DESC" as const),
+  };
+  const query = useQuery({
+    queryKey: privateQueryKeys.adminUsers(user.id, filters),
+    queryFn: () => listAdminUsers({ data: filters }),
+    staleTime: 30_000,
+  });
   const data = query.data;
-  const setSearch = (patch: Partial<Search>) => navigate({ search: (previous) => ({ ...previous, ...patch, page: patch.page ?? undefined }) });
-  const activeCount = [search.status, search.role, search.provider, search.created, search.access].filter(Boolean).length;
+  const setSearch = (patch: Partial<Search>) =>
+    navigate({ search: (previous) => ({ ...previous, ...patch, page: patch.page ?? undefined }) });
+  const activeCount = [
+    search.status,
+    search.role,
+    search.provider,
+    search.created,
+    search.access,
+  ].filter(Boolean).length;
   const clearFilters = () => navigate({ search: { sort: search.sort } });
 
-  const filterFields = <div className="grid gap-4 sm:grid-cols-2">
-    <SelectField label="Status" value={search.status ?? ""} onChange={(value) => setSearch({ status: value as Search["status"] || undefined })}><option value="">Todos</option><option value="ACTIVE">Ativo</option><option value="PENDING">Pendente de confirmação</option><option value="BLOCKED">Bloqueado</option></SelectField>
-    <SelectField label="Tipo de acesso" value={search.role ?? ""} onChange={(value) => setSearch({ role: value as Search["role"] || undefined })}><option value="">Todos</option>{accessRoles.map((value) => <option key={value} value={value}>{accessRoleLabel[value]}</option>)}</SelectField>
-    <SelectField label="Método de acesso" value={search.provider ?? ""} onChange={(value) => setSearch({ provider: value as Search["provider"] || undefined })}><option value="">Todos</option>{data?.availableProviders.map((provider) => <option key={provider} value={provider}>{providerLabel[provider] ?? provider}</option>)}</SelectField>
-    <SelectField label="Cadastro" value={search.created ?? ""} onChange={(value) => setSearch({ created: value as Search["created"] || undefined })}><option value="">Todos</option><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="30D">Últimos 30 dias</option><option value="90D">Últimos 90 dias</option></SelectField>
-    <SelectField label="Último acesso" value={search.access ?? ""} onChange={(value) => setSearch({ access: value as Search["access"] || undefined })}><option value="">Todos</option><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="30D">Últimos 30 dias</option><option value="STALE">Sem acesso recente</option><option value="NEVER">Nunca acessou</option></SelectField>
-  </div>;
+  const filterFields = (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <SelectField
+        label="Status"
+        value={search.status ?? ""}
+        onChange={(value) => setSearch({ status: (value as Search["status"]) || undefined })}
+      >
+        <option value="">Todos</option>
+        <option value="ACTIVE">Ativo</option>
+        <option value="PENDING">Pendente de confirmação</option>
+        <option value="BLOCKED">Bloqueado</option>
+      </SelectField>
+      <SelectField
+        label="Tipo de acesso"
+        value={search.role ?? ""}
+        onChange={(value) => setSearch({ role: (value as Search["role"]) || undefined })}
+      >
+        <option value="">Todos</option>
+        {accessRoles.map((value) => (
+          <option key={value} value={value}>
+            {accessRoleLabel[value]}
+          </option>
+        ))}
+      </SelectField>
+      <SelectField
+        label="Método de acesso"
+        value={search.provider ?? ""}
+        onChange={(value) => setSearch({ provider: (value as Search["provider"]) || undefined })}
+      >
+        <option value="">Todos</option>
+        {data?.availableProviders.map((provider) => (
+          <option key={provider} value={provider}>
+            {providerLabel[provider] ?? provider}
+          </option>
+        ))}
+      </SelectField>
+      <SelectField
+        label="Cadastro"
+        value={search.created ?? ""}
+        onChange={(value) => setSearch({ created: (value as Search["created"]) || undefined })}
+      >
+        <option value="">Todos</option>
+        <option value="TODAY">Hoje</option>
+        <option value="7D">Últimos 7 dias</option>
+        <option value="30D">Últimos 30 dias</option>
+        <option value="90D">Últimos 90 dias</option>
+      </SelectField>
+      <SelectField
+        label="Último acesso"
+        value={search.access ?? ""}
+        onChange={(value) => setSearch({ access: (value as Search["access"]) || undefined })}
+      >
+        <option value="">Todos</option>
+        <option value="TODAY">Hoje</option>
+        <option value="7D">Últimos 7 dias</option>
+        <option value="30D">Últimos 30 dias</option>
+        <option value="STALE">Sem acesso recente</option>
+        <option value="NEVER">Nunca acessou</option>
+      </SelectField>
+    </div>
+  );
 
-  return <div className="min-w-0 space-y-4">
-    <PageHeader title="Usuários" description="Consulta administrativa de contas cadastradas." />
-    {query.isLoading ? <LoadingState rows={5} label="Carregando usuários" /> : query.isError ? <ErrorState onRetry={() => query.refetch()} /> : !data ? <LoadingState rows={5} label="Carregando usuários" /> : <>
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Indicadores de usuários">
-        {[
-          ["Total", data.summary.total, {}], ["Ativos", data.summary.active, { status: "ACTIVE" }], ["Bloqueados", data.summary.blocked, { status: "BLOCKED" }], ["Usuários", data.summary.users, { role: "USER" }], ["Suporte", data.summary.support, { role: "SUPORTE" }], ["Administradores", data.summary.admins, { role: "ADMIN" }],
-        ].map(([label, count, patch]) => <button key={String(label)} type="button" onClick={() => setSearch(patch as Partial<Search>)} className="surface-card tappable min-h-16 p-3 text-left hover:border-primary"><span className="block text-xs text-text-secondary">{label as string}</span><strong className="font-display text-xl text-text-primary">{count as number}</strong></button>)}
-      </section>
+  return (
+    <div className="min-w-0 space-y-4">
+      <PageHeader title="Usuários" description="Consulta administrativa de contas cadastradas." />
+      {query.isLoading ? (
+        <LoadingState rows={5} label="Carregando usuários" />
+      ) : query.isError ? (
+        <ErrorState onRetry={() => query.refetch()} />
+      ) : !data ? (
+        <LoadingState rows={5} label="Carregando usuários" />
+      ) : (
+        <>
+          <section
+            className="grid grid-cols-2 gap-2 sm:grid-cols-6"
+            aria-label="Indicadores de usuários"
+          >
+            {[
+              ["Total", data.summary.total, {}],
+              ["Ativos", data.summary.active, { status: "ACTIVE" }],
+              ["Bloqueados", data.summary.blocked, { status: "BLOCKED" }],
+              ["Usuários", data.summary.users, { role: "USER" }],
+              ["Suporte", data.summary.support, { role: "SUPORTE" }],
+              ["Administradores", data.summary.admins, { role: "ADMIN" }],
+            ].map(([label, count, patch]) => (
+              <button
+                key={String(label)}
+                type="button"
+                onClick={() => setSearch(patch as Partial<Search>)}
+                className="surface-card tappable min-h-16 p-3 text-left hover:border-primary"
+              >
+                <span className="block text-xs text-text-secondary">{label as string}</span>
+                <strong className="font-display text-xl text-text-primary">
+                  {count as number}
+                </strong>
+              </button>
+            ))}
+          </section>
 
-      <section className="surface-card space-y-3 p-3">
-        <div className="flex min-w-0 flex-wrap items-end gap-2">
-          <div className="hidden flex-1 lg:block">{filterFields}</div>
-          <Drawer><DrawerTrigger asChild><Button variant="outline" className="lg:hidden"><SlidersHorizontal aria-hidden />Filtros{activeCount ? ` (${activeCount})` : ""}</Button></DrawerTrigger><DrawerContent className="max-h-[90vh]"><DrawerHeader><DrawerTitle>Filtrar usuários</DrawerTitle><DrawerDescription>Selecione os critérios da listagem.</DrawerDescription></DrawerHeader><div className="overflow-y-auto px-4">{filterFields}</div><DrawerFooter>{activeCount > 0 && <Button variant="ghost" onClick={clearFilters}>Limpar filtros</Button>}<DrawerClose asChild><Button>Ver resultados</Button></DrawerClose></DrawerFooter></DrawerContent></Drawer>
-          <div className="ml-auto w-full sm:w-64"><SelectField label="Ordenar" value={search.sort ?? "CREATED_DESC"} onChange={(value) => setSearch({ sort: value as Search["sort"] })}><option value="CREATED_DESC">Cadastro mais recente</option><option value="CREATED_ASC">Cadastro mais antigo</option><option value="ACCESS_DESC">Último acesso mais recente</option><option value="NAME_ASC">Nome A–Z</option><option value="NAME_DESC">Nome Z–A</option></SelectField></div>
-        </div>
-        {activeCount > 0 && <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary"><span>{activeCount} filtro(s) ativo(s)</span><Button variant="link" size="sm" onClick={clearFilters}>Limpar filtros</Button></div>}
-      </section>
+          <section className="surface-card space-y-3 p-3">
+            <div className="flex min-w-0 flex-wrap items-end gap-2">
+              <div className="hidden flex-1 lg:block">{filterFields}</div>
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button variant="outline" className="lg:hidden">
+                    <SlidersHorizontal aria-hidden />
+                    Filtros{activeCount ? ` (${activeCount})` : ""}
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[90vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Filtrar usuários</DrawerTitle>
+                    <DrawerDescription>Selecione os critérios da listagem.</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="overflow-y-auto px-4">{filterFields}</div>
+                  <DrawerFooter>
+                    {activeCount > 0 && (
+                      <Button variant="ghost" onClick={clearFilters}>
+                        Limpar filtros
+                      </Button>
+                    )}
+                    <DrawerClose asChild>
+                      <Button>Ver resultados</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+              <div className="ml-auto w-full sm:w-64">
+                <SelectField
+                  label="Ordenar"
+                  value={search.sort ?? "CREATED_DESC"}
+                  onChange={(value) => setSearch({ sort: value as Search["sort"] })}
+                >
+                  <option value="CREATED_DESC">Cadastro mais recente</option>
+                  <option value="CREATED_ASC">Cadastro mais antigo</option>
+                  <option value="ACCESS_DESC">Último acesso mais recente</option>
+                  <option value="NAME_ASC">Nome A–Z</option>
+                  <option value="NAME_DESC">Nome Z–A</option>
+                </SelectField>
+              </div>
+            </div>
+            {activeCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                <span>{activeCount} filtro(s) ativo(s)</span>
+                <Button variant="link" size="sm" onClick={clearFilters}>
+                  Limpar filtros
+                </Button>
+              </div>
+            )}
+          </section>
 
-      {data.items.length === 0 ? <EmptyState icon={Users} title="Nenhum usuário encontrado" description="Revise os filtros selecionados." /> : <>
-        <div className="space-y-2 xl:hidden">
-          {data.items.map((item) => <article key={item.id} className="surface-card min-w-0 space-y-3 p-4"><div className="min-w-0"><h2 className="truncate font-display text-sm font-semibold">{item.name}</h2><p className="truncate text-xs text-text-secondary">{item.email}</p></div><UserBadges role={item.role} status={item.status} /><dl className="grid grid-cols-2 gap-3 text-xs"><div><dt className="text-text-secondary">Acesso</dt><dd>{item.providers.map((p) => providerLabel[p] ?? p).join(" + ") || "Não informado"}</dd></div><div><dt className="text-text-secondary">Cadastro</dt><dd>{formatDate(item.createdAt)}</dd></div><div className="col-span-2"><dt className="text-text-secondary">Último acesso</dt><dd>{formatAccess(item.lastAccessAt)}</dd></div></dl><div className="border-t border-border pt-3"><UserActions item={item} currentUserId={user.id} /></div></article>)}
-        </div>
-        <div className="surface-card hidden overflow-hidden xl:block"><Table><TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>E-mail</TableHead><TableHead>Tipo de acesso</TableHead><TableHead>Status</TableHead><TableHead>Acesso</TableHead><TableHead>Cadastro</TableHead><TableHead>Último acesso</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{data.items.map((item) => <TableRow key={item.id}><TableCell className="max-w-40 truncate font-medium">{item.name}</TableCell><TableCell>{item.email}</TableCell><TableCell><Badge tone={roleTone(item.role)}>{accessRoleLabel[item.role]}</Badge></TableCell><TableCell><Badge tone={item.status === "ACTIVE" ? "success" : item.status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[item.status]}</Badge></TableCell><TableCell>{item.providers.map((p) => providerLabel[p] ?? p).join(" + ") || "Não informado"}</TableCell><TableCell>{formatDate(item.createdAt)}</TableCell><TableCell>{formatAccess(item.lastAccessAt)}</TableCell><TableCell className="max-w-56"><UserActions item={item} currentUserId={user.id} /></TableCell></TableRow>)}</TableBody></Table></div>
-      </>}
-      <footer className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary"><span>{data.total} usuário(s)</span><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setSearch({ page: page - 1 })}><ChevronLeft aria-hidden />Anterior</Button><span aria-live="polite">Página {page} de {Math.max(1, Math.ceil(data.total / pageSize))}</span><Button variant="outline" size="sm" disabled={page * pageSize >= data.total} onClick={() => setSearch({ page: page + 1 })}>Próxima<ChevronRight aria-hidden /></Button></div></footer>
-    </>}
-  </div>;
+          {data.items.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Nenhum usuário encontrado"
+              description="Revise os filtros selecionados."
+            />
+          ) : (
+            <>
+              <div className="space-y-2 xl:hidden">
+                {data.items.map((item) => (
+                  <article key={item.id} className="surface-card min-w-0 space-y-3 p-4">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-display text-sm font-semibold">{item.name}</h2>
+                      <p className="truncate text-xs text-text-secondary">{item.email}</p>
+                    </div>
+                    <UserBadges role={item.role} status={item.status} />
+                    <dl className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <dt className="text-text-secondary">Acesso</dt>
+                        <dd>
+                          {item.providers.map((p) => providerLabel[p] ?? p).join(" + ") ||
+                            "Não informado"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-text-secondary">Cadastro</dt>
+                        <dd>{formatDate(item.createdAt)}</dd>
+                      </div>
+                      <div className="col-span-2">
+                        <dt className="text-text-secondary">Último acesso</dt>
+                        <dd>{formatAccess(item.lastAccessAt)}</dd>
+                      </div>
+                    </dl>
+                    <div className="border-t border-border pt-3">
+                      <UserActions item={item} currentUserId={user.id} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="surface-card hidden overflow-hidden xl:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usuário</TableHead>
+                      <TableHead>E-mail</TableHead>
+                      <TableHead>Tipo de acesso</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Acesso</TableHead>
+                      <TableHead>Cadastro</TableHead>
+                      <TableHead>Último acesso</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="max-w-40 truncate font-medium">{item.name}</TableCell>
+                        <TableCell>{item.email}</TableCell>
+                        <TableCell>
+                          <Badge tone={roleTone(item.role)}>{accessRoleLabel[item.role]}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            tone={
+                              item.status === "ACTIVE"
+                                ? "success"
+                                : item.status === "BLOCKED"
+                                  ? "danger"
+                                  : "warning"
+                            }
+                          >
+                            {statusLabel[item.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {item.providers.map((p) => providerLabel[p] ?? p).join(" + ") ||
+                            "Não informado"}
+                        </TableCell>
+                        <TableCell>{formatDate(item.createdAt)}</TableCell>
+                        <TableCell>{formatAccess(item.lastAccessAt)}</TableCell>
+                        <TableCell className="max-w-56">
+                          <UserActions item={item} currentUserId={user.id} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+          <footer className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
+            <span>{data.total} usuário(s)</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setSearch({ page: page - 1 })}
+              >
+                <ChevronLeft aria-hidden />
+                Anterior
+              </Button>
+              <span aria-live="polite">
+                Página {page} de {Math.max(1, Math.ceil(data.total / pageSize))}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page * pageSize >= data.total}
+                onClick={() => setSearch({ page: page + 1 })}
+              >
+                Próxima
+                <ChevronRight aria-hidden />
+              </Button>
+            </div>
+          </footer>
+        </>
+      )}
+    </div>
+  );
 }

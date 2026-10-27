@@ -1,2543 +1,2537 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
-  }
+    PostgrestVersion: "14.17";
+  };
   public: {
     Tables: {
       audit_logs: {
         Row: {
-          action: string
-          created_at: string
-          entity_id: string | null
-          entity_type: string
-          id: string
-          metadata: Json | null
-          user_id: string | null
-        }
+          action: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          metadata: Json | null;
+          user_id: string | null;
+        };
         Insert: {
-          action: string
-          created_at?: string
-          entity_id?: string | null
-          entity_type: string
-          id?: string
-          metadata?: Json | null
-          user_id?: string | null
-        }
+          action: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          metadata?: Json | null;
+          user_id?: string | null;
+        };
         Update: {
-          action?: string
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string
-          id?: string
-          metadata?: Json | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+          action?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          metadata?: Json | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       draw_numbers: {
         Row: {
-          draw_id: string
-          id: string
-          number: number
-          position: number
-        }
+          draw_id: string;
+          id: string;
+          number: number;
+          position: number;
+        };
         Insert: {
-          draw_id: string
-          id?: string
-          number: number
-          position?: number
-        }
+          draw_id: string;
+          id?: string;
+          number: number;
+          position?: number;
+        };
         Update: {
-          draw_id?: string
-          id?: string
-          number?: number
-          position?: number
-        }
+          draw_id?: string;
+          id?: string;
+          number?: number;
+          position?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "draw_numbers_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "draw_numbers_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       draw_prizes: {
         Row: {
-          draw_id: string
-          hits: number
-          id: string
-          prize_per_winner: number | null
-          tier: string
-          winners: number | null
-        }
+          draw_id: string;
+          hits: number;
+          id: string;
+          prize_per_winner: number | null;
+          tier: string;
+          winners: number | null;
+        };
         Insert: {
-          draw_id: string
-          hits: number
-          id?: string
-          prize_per_winner?: number | null
-          tier: string
-          winners?: number | null
-        }
+          draw_id: string;
+          hits: number;
+          id?: string;
+          prize_per_winner?: number | null;
+          tier: string;
+          winners?: number | null;
+        };
         Update: {
-          draw_id?: string
-          hits?: number
-          id?: string
-          prize_per_winner?: number | null
-          tier?: string
-          winners?: number | null
-        }
+          draw_id?: string;
+          hits?: number;
+          id?: string;
+          prize_per_winner?: number | null;
+          tier?: string;
+          winners?: number | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "draw_prizes_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "draw_prizes_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       feature_flags: {
         Row: {
-          description: string | null
-          id: string
-          key: string
-          label: string
-          status: Database["public"]["Enums"]["feature_status"]
-          updated_at: string
-        }
+          description: string | null;
+          id: string;
+          key: string;
+          label: string;
+          status: Database["public"]["Enums"]["feature_status"];
+          updated_at: string;
+        };
         Insert: {
-          description?: string | null
-          id?: string
-          key: string
-          label: string
-          status?: Database["public"]["Enums"]["feature_status"]
-          updated_at?: string
-        }
+          description?: string | null;
+          id?: string;
+          key: string;
+          label: string;
+          status?: Database["public"]["Enums"]["feature_status"];
+          updated_at?: string;
+        };
         Update: {
-          description?: string | null
-          id?: string
-          key?: string
-          label?: string
-          status?: Database["public"]["Enums"]["feature_status"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          description?: string | null;
+          id?: string;
+          key?: string;
+          label?: string;
+          status?: Database["public"]["Enums"]["feature_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       game_analysis: {
         Row: {
-          column_distribution: Json | null
-          computed_at: string
-          even_count: number | null
-          fibonacci_count: number | null
-          game_id: string
-          id: string
-          max_sequence: number | null
-          odd_count: number | null
-          prime_count: number | null
-          repeated_from_last: number | null
-          row_distribution: Json | null
-          sum_total: number | null
-        }
+          column_distribution: Json | null;
+          computed_at: string;
+          even_count: number | null;
+          fibonacci_count: number | null;
+          game_id: string;
+          id: string;
+          max_sequence: number | null;
+          odd_count: number | null;
+          prime_count: number | null;
+          repeated_from_last: number | null;
+          row_distribution: Json | null;
+          sum_total: number | null;
+        };
         Insert: {
-          column_distribution?: Json | null
-          computed_at?: string
-          even_count?: number | null
-          fibonacci_count?: number | null
-          game_id: string
-          id?: string
-          max_sequence?: number | null
-          odd_count?: number | null
-          prime_count?: number | null
-          repeated_from_last?: number | null
-          row_distribution?: Json | null
-          sum_total?: number | null
-        }
+          column_distribution?: Json | null;
+          computed_at?: string;
+          even_count?: number | null;
+          fibonacci_count?: number | null;
+          game_id: string;
+          id?: string;
+          max_sequence?: number | null;
+          odd_count?: number | null;
+          prime_count?: number | null;
+          repeated_from_last?: number | null;
+          row_distribution?: Json | null;
+          sum_total?: number | null;
+        };
         Update: {
-          column_distribution?: Json | null
-          computed_at?: string
-          even_count?: number | null
-          fibonacci_count?: number | null
-          game_id?: string
-          id?: string
-          max_sequence?: number | null
-          odd_count?: number | null
-          prime_count?: number | null
-          repeated_from_last?: number | null
-          row_distribution?: Json | null
-          sum_total?: number | null
-        }
+          column_distribution?: Json | null;
+          computed_at?: string;
+          even_count?: number | null;
+          fibonacci_count?: number | null;
+          game_id?: string;
+          id?: string;
+          max_sequence?: number | null;
+          odd_count?: number | null;
+          prime_count?: number | null;
+          repeated_from_last?: number | null;
+          row_distribution?: Json | null;
+          sum_total?: number | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_analysis_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: true
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_analysis_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: true;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       game_check_errors: {
         Row: {
-          created_at: string
-          draw_id: string | null
-          error_type: string
-          game_id: string | null
-          id: string
-          job_id: string | null
-          message: string
-          resolved_at: string | null
-        }
+          created_at: string;
+          draw_id: string | null;
+          error_type: string;
+          game_id: string | null;
+          id: string;
+          job_id: string | null;
+          message: string;
+          resolved_at: string | null;
+        };
         Insert: {
-          created_at?: string
-          draw_id?: string | null
-          error_type: string
-          game_id?: string | null
-          id?: string
-          job_id?: string | null
-          message: string
-          resolved_at?: string | null
-        }
+          created_at?: string;
+          draw_id?: string | null;
+          error_type: string;
+          game_id?: string | null;
+          id?: string;
+          job_id?: string | null;
+          message: string;
+          resolved_at?: string | null;
+        };
         Update: {
-          created_at?: string
-          draw_id?: string | null
-          error_type?: string
-          game_id?: string | null
-          id?: string
-          job_id?: string | null
-          message?: string
-          resolved_at?: string | null
-        }
+          created_at?: string;
+          draw_id?: string | null;
+          error_type?: string;
+          game_id?: string | null;
+          id?: string;
+          job_id?: string | null;
+          message?: string;
+          resolved_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_check_errors_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_check_errors_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "game_check_errors_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_check_errors_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       game_check_jobs: {
         Row: {
-          created_at: string
-          created_by: string | null
-          draw_id: string
-          failed: number
-          finished_at: string | null
-          id: string
-          last_activity_at: string | null
-          last_error: string | null
-          last_game_id: string | null
-          locked_at: string | null
-          prized: number
-          processed: number
-          started_at: string | null
-          status: string
-          updated_at: string
-        }
+          created_at: string;
+          created_by: string | null;
+          draw_id: string;
+          failed: number;
+          finished_at: string | null;
+          id: string;
+          last_activity_at: string | null;
+          last_error: string | null;
+          last_game_id: string | null;
+          locked_at: string | null;
+          prized: number;
+          processed: number;
+          started_at: string | null;
+          status: string;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          draw_id: string
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          last_activity_at?: string | null
-          last_error?: string | null
-          last_game_id?: string | null
-          locked_at?: string | null
-          prized?: number
-          processed?: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          draw_id: string;
+          failed?: number;
+          finished_at?: string | null;
+          id?: string;
+          last_activity_at?: string | null;
+          last_error?: string | null;
+          last_game_id?: string | null;
+          locked_at?: string | null;
+          prized?: number;
+          processed?: number;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          draw_id?: string
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          last_activity_at?: string | null
-          last_error?: string | null
-          last_game_id?: string | null
-          locked_at?: string | null
-          prized?: number
-          processed?: number
-          started_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          draw_id?: string;
+          failed?: number;
+          finished_at?: string | null;
+          id?: string;
+          last_activity_at?: string | null;
+          last_error?: string | null;
+          last_game_id?: string | null;
+          locked_at?: string | null;
+          prized?: number;
+          processed?: number;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_check_jobs_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_check_jobs_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       game_check_results: {
         Row: {
-          amount_pending: boolean
-          calculation_version: number
-          checked_at: string
-          contest_number: number
-          created_at: string
-          draw_id: string
-          game_id: string
-          hits: number
-          id: string
-          is_prized: boolean
-          matched_numbers: number[]
-          prize_label: string | null
-          prize_tier_hits: number | null
-          source_updated_at: string | null
-          total_prize: number | null
-          updated_at: string
-        }
+          amount_pending: boolean;
+          calculation_version: number;
+          checked_at: string;
+          contest_number: number;
+          created_at: string;
+          draw_id: string;
+          game_id: string;
+          hits: number;
+          id: string;
+          is_prized: boolean;
+          matched_numbers: number[];
+          prize_label: string | null;
+          prize_tier_hits: number | null;
+          source_updated_at: string | null;
+          total_prize: number | null;
+          updated_at: string;
+        };
         Insert: {
-          amount_pending?: boolean
-          calculation_version?: number
-          checked_at?: string
-          contest_number: number
-          created_at?: string
-          draw_id: string
-          game_id: string
-          hits: number
-          id?: string
-          is_prized?: boolean
-          matched_numbers?: number[]
-          prize_label?: string | null
-          prize_tier_hits?: number | null
-          source_updated_at?: string | null
-          total_prize?: number | null
-          updated_at?: string
-        }
+          amount_pending?: boolean;
+          calculation_version?: number;
+          checked_at?: string;
+          contest_number: number;
+          created_at?: string;
+          draw_id: string;
+          game_id: string;
+          hits: number;
+          id?: string;
+          is_prized?: boolean;
+          matched_numbers?: number[];
+          prize_label?: string | null;
+          prize_tier_hits?: number | null;
+          source_updated_at?: string | null;
+          total_prize?: number | null;
+          updated_at?: string;
+        };
         Update: {
-          amount_pending?: boolean
-          calculation_version?: number
-          checked_at?: string
-          contest_number?: number
-          created_at?: string
-          draw_id?: string
-          game_id?: string
-          hits?: number
-          id?: string
-          is_prized?: boolean
-          matched_numbers?: number[]
-          prize_label?: string | null
-          prize_tier_hits?: number | null
-          source_updated_at?: string | null
-          total_prize?: number | null
-          updated_at?: string
-        }
+          amount_pending?: boolean;
+          calculation_version?: number;
+          checked_at?: string;
+          contest_number?: number;
+          created_at?: string;
+          draw_id?: string;
+          game_id?: string;
+          hits?: number;
+          id?: string;
+          is_prized?: boolean;
+          matched_numbers?: number[];
+          prize_label?: string | null;
+          prize_tier_hits?: number | null;
+          source_updated_at?: string | null;
+          total_prize?: number | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_check_results_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_check_results_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "game_check_results_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: true
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_check_results_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: true;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       game_numbers: {
         Row: {
-          game_id: string
-          id: string
-          number: number
-          position: number
-        }
+          game_id: string;
+          id: string;
+          number: number;
+          position: number;
+        };
         Insert: {
-          game_id: string
-          id?: string
-          number: number
-          position?: number
-        }
+          game_id: string;
+          id?: string;
+          number: number;
+          position?: number;
+        };
         Update: {
-          game_id?: string
-          id?: string
-          number?: number
-          position?: number
-        }
+          game_id?: string;
+          id?: string;
+          number?: number;
+          position?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_numbers_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_numbers_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       game_prize_breakdown: {
         Row: {
-          check_result_id: string
-          created_at: string
-          draw_prize_id: string | null
-          hits_required: number
-          id: string
-          prize_per_combination: number | null
-          tier: string
-          total_for_tier: number | null
-          winning_combinations: number
-        }
+          check_result_id: string;
+          created_at: string;
+          draw_prize_id: string | null;
+          hits_required: number;
+          id: string;
+          prize_per_combination: number | null;
+          tier: string;
+          total_for_tier: number | null;
+          winning_combinations: number;
+        };
         Insert: {
-          check_result_id: string
-          created_at?: string
-          draw_prize_id?: string | null
-          hits_required: number
-          id?: string
-          prize_per_combination?: number | null
-          tier: string
-          total_for_tier?: number | null
-          winning_combinations: number
-        }
+          check_result_id: string;
+          created_at?: string;
+          draw_prize_id?: string | null;
+          hits_required: number;
+          id?: string;
+          prize_per_combination?: number | null;
+          tier: string;
+          total_for_tier?: number | null;
+          winning_combinations: number;
+        };
         Update: {
-          check_result_id?: string
-          created_at?: string
-          draw_prize_id?: string | null
-          hits_required?: number
-          id?: string
-          prize_per_combination?: number | null
-          tier?: string
-          total_for_tier?: number | null
-          winning_combinations?: number
-        }
+          check_result_id?: string;
+          created_at?: string;
+          draw_prize_id?: string | null;
+          hits_required?: number;
+          id?: string;
+          prize_per_combination?: number | null;
+          tier?: string;
+          total_for_tier?: number | null;
+          winning_combinations?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "game_prize_breakdown_check_result_id_fkey"
-            columns: ["check_result_id"]
-            isOneToOne: false
-            referencedRelation: "game_check_results"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_prize_breakdown_check_result_id_fkey";
+            columns: ["check_result_id"];
+            isOneToOne: false;
+            referencedRelation: "game_check_results";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "game_prize_breakdown_draw_prize_id_fkey"
-            columns: ["draw_prize_id"]
-            isOneToOne: false
-            referencedRelation: "draw_prizes"
-            referencedColumns: ["id"]
+            foreignKeyName: "game_prize_breakdown_draw_prize_id_fkey";
+            columns: ["draw_prize_id"];
+            isOneToOne: false;
+            referencedRelation: "draw_prizes";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       generated_games: {
         Row: {
-          contest_number: number | null
-          cost: number | null
-          created_at: string
-          draw_id: string | null
-          generation_constraints: Json | null
-          generation_rules_version: number | null
-          hits: number | null
-          id: string
-          image_path: string | null
-          lottery_id: string
-          notes: string | null
-          numbers_count: number
-          pool_id: string | null
-          prize_amount: number | null
-          sequence_number: number | null
-          source: string
-          status: Database["public"]["Enums"]["game_status"]
-          updated_at: string
-          user_id: string
-        }
+          contest_number: number | null;
+          cost: number | null;
+          created_at: string;
+          draw_id: string | null;
+          generation_constraints: Json | null;
+          generation_rules_version: number | null;
+          hits: number | null;
+          id: string;
+          image_path: string | null;
+          lottery_id: string;
+          notes: string | null;
+          numbers_count: number;
+          pool_id: string | null;
+          prize_amount: number | null;
+          sequence_number: number | null;
+          source: string;
+          status: Database["public"]["Enums"]["game_status"];
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          contest_number?: number | null
-          cost?: number | null
-          created_at?: string
-          draw_id?: string | null
-          generation_constraints?: Json | null
-          generation_rules_version?: number | null
-          hits?: number | null
-          id?: string
-          image_path?: string | null
-          lottery_id: string
-          notes?: string | null
-          numbers_count: number
-          pool_id?: string | null
-          prize_amount?: number | null
-          sequence_number?: number | null
-          source?: string
-          status?: Database["public"]["Enums"]["game_status"]
-          updated_at?: string
-          user_id: string
-        }
+          contest_number?: number | null;
+          cost?: number | null;
+          created_at?: string;
+          draw_id?: string | null;
+          generation_constraints?: Json | null;
+          generation_rules_version?: number | null;
+          hits?: number | null;
+          id?: string;
+          image_path?: string | null;
+          lottery_id: string;
+          notes?: string | null;
+          numbers_count: number;
+          pool_id?: string | null;
+          prize_amount?: number | null;
+          sequence_number?: number | null;
+          source?: string;
+          status?: Database["public"]["Enums"]["game_status"];
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          contest_number?: number | null
-          cost?: number | null
-          created_at?: string
-          draw_id?: string | null
-          generation_constraints?: Json | null
-          generation_rules_version?: number | null
-          hits?: number | null
-          id?: string
-          image_path?: string | null
-          lottery_id?: string
-          notes?: string | null
-          numbers_count?: number
-          pool_id?: string | null
-          prize_amount?: number | null
-          sequence_number?: number | null
-          source?: string
-          status?: Database["public"]["Enums"]["game_status"]
-          updated_at?: string
-          user_id?: string
-        }
+          contest_number?: number | null;
+          cost?: number | null;
+          created_at?: string;
+          draw_id?: string | null;
+          generation_constraints?: Json | null;
+          generation_rules_version?: number | null;
+          hits?: number | null;
+          id?: string;
+          image_path?: string | null;
+          lottery_id?: string;
+          notes?: string | null;
+          numbers_count?: number;
+          pool_id?: string | null;
+          prize_amount?: number | null;
+          sequence_number?: number | null;
+          source?: string;
+          status?: Database["public"]["Enums"]["game_status"];
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "generated_games_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "generated_games_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "generated_games_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "generated_games_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "generated_games_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "generated_games_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       legal_acceptances: {
         Row: {
-          accepted_at: string
-          created_at: string
-          document_version_id: string
-          id: string
-          user_id: string
-        }
+          accepted_at: string;
+          created_at: string;
+          document_version_id: string;
+          id: string;
+          user_id: string;
+        };
         Insert: {
-          accepted_at?: string
-          created_at?: string
-          document_version_id: string
-          id?: string
-          user_id: string
-        }
+          accepted_at?: string;
+          created_at?: string;
+          document_version_id: string;
+          id?: string;
+          user_id: string;
+        };
         Update: {
-          accepted_at?: string
-          created_at?: string
-          document_version_id?: string
-          id?: string
-          user_id?: string
-        }
+          accepted_at?: string;
+          created_at?: string;
+          document_version_id?: string;
+          id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "legal_acceptances_document_version_id_fkey"
-            columns: ["document_version_id"]
-            isOneToOne: false
-            referencedRelation: "legal_document_versions"
-            referencedColumns: ["id"]
+            foreignKeyName: "legal_acceptances_document_version_id_fkey";
+            columns: ["document_version_id"];
+            isOneToOne: false;
+            referencedRelation: "legal_document_versions";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       legal_document_versions: {
         Row: {
-          created_at: string
-          document_type: string
-          id: string
-          is_active: boolean
-          is_preliminary: boolean
-          published_at: string
-          requires_reacceptance: boolean
-          title: string
-          version: string
-        }
+          created_at: string;
+          document_type: string;
+          id: string;
+          is_active: boolean;
+          is_preliminary: boolean;
+          published_at: string;
+          requires_reacceptance: boolean;
+          title: string;
+          version: string;
+        };
         Insert: {
-          created_at?: string
-          document_type: string
-          id?: string
-          is_active?: boolean
-          is_preliminary?: boolean
-          published_at?: string
-          requires_reacceptance?: boolean
-          title: string
-          version: string
-        }
+          created_at?: string;
+          document_type: string;
+          id?: string;
+          is_active?: boolean;
+          is_preliminary?: boolean;
+          published_at?: string;
+          requires_reacceptance?: boolean;
+          title: string;
+          version: string;
+        };
         Update: {
-          created_at?: string
-          document_type?: string
-          id?: string
-          is_active?: boolean
-          is_preliminary?: boolean
-          published_at?: string
-          requires_reacceptance?: boolean
-          title?: string
-          version?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          document_type?: string;
+          id?: string;
+          is_active?: boolean;
+          is_preliminary?: boolean;
+          published_at?: string;
+          requires_reacceptance?: boolean;
+          title?: string;
+          version?: string;
+        };
+        Relationships: [];
+      };
       lotteries: {
         Row: {
-          base_selectable: number
-          color_key: string
-          created_at: string
-          id: string
-          is_active: boolean
-          max_selectable: number
-          min_selectable: number
-          name: string
-          short_name: string
-          slug: string
-          sort_order: number
-          universe_max: number
-          universe_min: number
-          updated_at: string
-        }
+          base_selectable: number;
+          color_key: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          max_selectable: number;
+          min_selectable: number;
+          name: string;
+          short_name: string;
+          slug: string;
+          sort_order: number;
+          universe_max: number;
+          universe_min: number;
+          updated_at: string;
+        };
         Insert: {
-          base_selectable: number
-          color_key: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          max_selectable: number
-          min_selectable: number
-          name: string
-          short_name: string
-          slug: string
-          sort_order?: number
-          universe_max: number
-          universe_min: number
-          updated_at?: string
-        }
+          base_selectable: number;
+          color_key: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          max_selectable: number;
+          min_selectable: number;
+          name: string;
+          short_name: string;
+          slug: string;
+          sort_order?: number;
+          universe_max: number;
+          universe_min: number;
+          updated_at?: string;
+        };
         Update: {
-          base_selectable?: number
-          color_key?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          max_selectable?: number
-          min_selectable?: number
-          name?: string
-          short_name?: string
-          slug?: string
-          sort_order?: number
-          universe_max?: number
-          universe_min?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          base_selectable?: number;
+          color_key?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          max_selectable?: number;
+          min_selectable?: number;
+          name?: string;
+          short_name?: string;
+          slug?: string;
+          sort_order?: number;
+          universe_max?: number;
+          universe_min?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       lottery_draw_revisions: {
         Row: {
-          contest_number: number
-          detected_at: string
-          draw_id: string
-          id: string
-          lottery_id: string
-          new_snapshot: Json
-          previous_snapshot: Json
-        }
+          contest_number: number;
+          detected_at: string;
+          draw_id: string;
+          id: string;
+          lottery_id: string;
+          new_snapshot: Json;
+          previous_snapshot: Json;
+        };
         Insert: {
-          contest_number: number
-          detected_at?: string
-          draw_id: string
-          id?: string
-          lottery_id: string
-          new_snapshot: Json
-          previous_snapshot: Json
-        }
+          contest_number: number;
+          detected_at?: string;
+          draw_id: string;
+          id?: string;
+          lottery_id: string;
+          new_snapshot: Json;
+          previous_snapshot: Json;
+        };
         Update: {
-          contest_number?: number
-          detected_at?: string
-          draw_id?: string
-          id?: string
-          lottery_id?: string
-          new_snapshot?: Json
-          previous_snapshot?: Json
-        }
+          contest_number?: number;
+          detected_at?: string;
+          draw_id?: string;
+          id?: string;
+          lottery_id?: string;
+          new_snapshot?: Json;
+          previous_snapshot?: Json;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_draw_revisions_draw_id_fkey"
-            columns: ["draw_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_draw_revisions_draw_id_fkey";
+            columns: ["draw_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "lottery_draw_revisions_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_draw_revisions_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_draws: {
         Row: {
-          contest_number: number
-          created_at: string
-          draw_date: string | null
-          draw_location: string | null
-          estimated_next_prize: number | null
-          id: string
-          imported_at: string | null
-          is_accumulated: boolean | null
-          lottery_id: string
-          main_prize: number | null
-          next_contest_number: number | null
-          next_draw_date: string | null
-          revenue: number | null
-          source: string | null
-          source_updated_at: string | null
-          updated_at: string
-          verified_at: string | null
-        }
+          contest_number: number;
+          created_at: string;
+          draw_date: string | null;
+          draw_location: string | null;
+          estimated_next_prize: number | null;
+          id: string;
+          imported_at: string | null;
+          is_accumulated: boolean | null;
+          lottery_id: string;
+          main_prize: number | null;
+          next_contest_number: number | null;
+          next_draw_date: string | null;
+          revenue: number | null;
+          source: string | null;
+          source_updated_at: string | null;
+          updated_at: string;
+          verified_at: string | null;
+        };
         Insert: {
-          contest_number: number
-          created_at?: string
-          draw_date?: string | null
-          draw_location?: string | null
-          estimated_next_prize?: number | null
-          id?: string
-          imported_at?: string | null
-          is_accumulated?: boolean | null
-          lottery_id: string
-          main_prize?: number | null
-          next_contest_number?: number | null
-          next_draw_date?: string | null
-          revenue?: number | null
-          source?: string | null
-          source_updated_at?: string | null
-          updated_at?: string
-          verified_at?: string | null
-        }
+          contest_number: number;
+          created_at?: string;
+          draw_date?: string | null;
+          draw_location?: string | null;
+          estimated_next_prize?: number | null;
+          id?: string;
+          imported_at?: string | null;
+          is_accumulated?: boolean | null;
+          lottery_id: string;
+          main_prize?: number | null;
+          next_contest_number?: number | null;
+          next_draw_date?: string | null;
+          revenue?: number | null;
+          source?: string | null;
+          source_updated_at?: string | null;
+          updated_at?: string;
+          verified_at?: string | null;
+        };
         Update: {
-          contest_number?: number
-          created_at?: string
-          draw_date?: string | null
-          draw_location?: string | null
-          estimated_next_prize?: number | null
-          id?: string
-          imported_at?: string | null
-          is_accumulated?: boolean | null
-          lottery_id?: string
-          main_prize?: number | null
-          next_contest_number?: number | null
-          next_draw_date?: string | null
-          revenue?: number | null
-          source?: string | null
-          source_updated_at?: string | null
-          updated_at?: string
-          verified_at?: string | null
-        }
+          contest_number?: number;
+          created_at?: string;
+          draw_date?: string | null;
+          draw_location?: string | null;
+          estimated_next_prize?: number | null;
+          id?: string;
+          imported_at?: string | null;
+          is_accumulated?: boolean | null;
+          lottery_id?: string;
+          main_prize?: number | null;
+          next_contest_number?: number | null;
+          next_draw_date?: string | null;
+          revenue?: number | null;
+          source?: string | null;
+          source_updated_at?: string | null;
+          updated_at?: string;
+          verified_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_draws_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_draws_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_prices: {
         Row: {
-          combination_count: number
-          created_at: string
-          id: string
-          is_active: boolean
-          lottery_id: string
-          numbers_selected: number
-          price: number
-          source: string | null
-          valid_from: string
-          valid_until: string | null
-        }
+          combination_count: number;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          lottery_id: string;
+          numbers_selected: number;
+          price: number;
+          source: string | null;
+          valid_from: string;
+          valid_until: string | null;
+        };
         Insert: {
-          combination_count: number
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          lottery_id: string
-          numbers_selected: number
-          price: number
-          source?: string | null
-          valid_from?: string
-          valid_until?: string | null
-        }
+          combination_count: number;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          lottery_id: string;
+          numbers_selected: number;
+          price: number;
+          source?: string | null;
+          valid_from?: string;
+          valid_until?: string | null;
+        };
         Update: {
-          combination_count?: number
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          lottery_id?: string
-          numbers_selected?: number
-          price?: number
-          source?: string | null
-          valid_from?: string
-          valid_until?: string | null
-        }
+          combination_count?: number;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          lottery_id?: string;
+          numbers_selected?: number;
+          price?: number;
+          source?: string | null;
+          valid_from?: string;
+          valid_until?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_prices_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_prices_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_prize_tiers: {
         Row: {
-          hits: number
-          id: string
-          label: string
-          lottery_id: string
-          sort_order: number
-        }
+          hits: number;
+          id: string;
+          label: string;
+          lottery_id: string;
+          sort_order: number;
+        };
         Insert: {
-          hits: number
-          id?: string
-          label: string
-          lottery_id: string
-          sort_order?: number
-        }
+          hits: number;
+          id?: string;
+          label: string;
+          lottery_id: string;
+          sort_order?: number;
+        };
         Update: {
-          hits?: number
-          id?: string
-          label?: string
-          lottery_id?: string
-          sort_order?: number
-        }
+          hits?: number;
+          id?: string;
+          label?: string;
+          lottery_id?: string;
+          sort_order?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_prize_tiers_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_prize_tiers_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_sync_errors: {
         Row: {
-          contest_number: number | null
-          created_at: string
-          error_type: string
-          id: string
-          job_id: string | null
-          lottery_id: string
-          message: string
-          payload_summary: string | null
-          resolved_at: string | null
-        }
+          contest_number: number | null;
+          created_at: string;
+          error_type: string;
+          id: string;
+          job_id: string | null;
+          lottery_id: string;
+          message: string;
+          payload_summary: string | null;
+          resolved_at: string | null;
+        };
         Insert: {
-          contest_number?: number | null
-          created_at?: string
-          error_type: string
-          id?: string
-          job_id?: string | null
-          lottery_id: string
-          message: string
-          payload_summary?: string | null
-          resolved_at?: string | null
-        }
+          contest_number?: number | null;
+          created_at?: string;
+          error_type: string;
+          id?: string;
+          job_id?: string | null;
+          lottery_id: string;
+          message: string;
+          payload_summary?: string | null;
+          resolved_at?: string | null;
+        };
         Update: {
-          contest_number?: number | null
-          created_at?: string
-          error_type?: string
-          id?: string
-          job_id?: string | null
-          lottery_id?: string
-          message?: string
-          payload_summary?: string | null
-          resolved_at?: string | null
-        }
+          contest_number?: number | null;
+          created_at?: string;
+          error_type?: string;
+          id?: string;
+          job_id?: string | null;
+          lottery_id?: string;
+          message?: string;
+          payload_summary?: string | null;
+          resolved_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_sync_errors_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_sync_jobs"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_sync_errors_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_sync_jobs";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "lottery_sync_errors_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_sync_errors_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_sync_jobs: {
         Row: {
-          created_at: string
-          created_by: string | null
-          current_contest: number | null
-          end_contest: number | null
-          failed: number
-          finished_at: string | null
-          id: string
-          inserted: number
-          last_activity_at: string | null
-          last_error: string | null
-          locked_at: string | null
-          lottery_id: string
-          processed: number
-          start_contest: number | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["sync_job_status"]
-          type: Database["public"]["Enums"]["sync_job_type"]
-          updated: number
-          updated_at: string
-        }
+          created_at: string;
+          created_by: string | null;
+          current_contest: number | null;
+          end_contest: number | null;
+          failed: number;
+          finished_at: string | null;
+          id: string;
+          inserted: number;
+          last_activity_at: string | null;
+          last_error: string | null;
+          locked_at: string | null;
+          lottery_id: string;
+          processed: number;
+          start_contest: number | null;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["sync_job_status"];
+          type: Database["public"]["Enums"]["sync_job_type"];
+          updated: number;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          current_contest?: number | null
-          end_contest?: number | null
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          inserted?: number
-          last_activity_at?: string | null
-          last_error?: string | null
-          locked_at?: string | null
-          lottery_id: string
-          processed?: number
-          start_contest?: number | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["sync_job_status"]
-          type: Database["public"]["Enums"]["sync_job_type"]
-          updated?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          current_contest?: number | null;
+          end_contest?: number | null;
+          failed?: number;
+          finished_at?: string | null;
+          id?: string;
+          inserted?: number;
+          last_activity_at?: string | null;
+          last_error?: string | null;
+          locked_at?: string | null;
+          lottery_id: string;
+          processed?: number;
+          start_contest?: number | null;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["sync_job_status"];
+          type: Database["public"]["Enums"]["sync_job_type"];
+          updated?: number;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          current_contest?: number | null
-          end_contest?: number | null
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          inserted?: number
-          last_activity_at?: string | null
-          last_error?: string | null
-          locked_at?: string | null
-          lottery_id?: string
-          processed?: number
-          start_contest?: number | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["sync_job_status"]
-          type?: Database["public"]["Enums"]["sync_job_type"]
-          updated?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          current_contest?: number | null;
+          end_contest?: number | null;
+          failed?: number;
+          finished_at?: string | null;
+          id?: string;
+          inserted?: number;
+          last_activity_at?: string | null;
+          last_error?: string | null;
+          locked_at?: string | null;
+          lottery_id?: string;
+          processed?: number;
+          start_contest?: number | null;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["sync_job_status"];
+          type?: Database["public"]["Enums"]["sync_job_type"];
+          updated?: number;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_sync_jobs_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_sync_jobs_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_sync_runs: {
         Row: {
-          attempt_number: number
-          contest_number: number | null
-          created_at: string
-          error_message: string | null
-          error_type: string | null
-          finished_at: string | null
-          id: string
-          lottery_id: string
-          next_action_at: string | null
-          outcome: string | null
-          started_at: string
-          status: string
-          trigger_source: string
-        }
+          attempt_number: number;
+          contest_number: number | null;
+          created_at: string;
+          error_message: string | null;
+          error_type: string | null;
+          finished_at: string | null;
+          id: string;
+          lottery_id: string;
+          next_action_at: string | null;
+          outcome: string | null;
+          started_at: string;
+          status: string;
+          trigger_source: string;
+        };
         Insert: {
-          attempt_number?: number
-          contest_number?: number | null
-          created_at?: string
-          error_message?: string | null
-          error_type?: string | null
-          finished_at?: string | null
-          id?: string
-          lottery_id: string
-          next_action_at?: string | null
-          outcome?: string | null
-          started_at?: string
-          status: string
-          trigger_source: string
-        }
+          attempt_number?: number;
+          contest_number?: number | null;
+          created_at?: string;
+          error_message?: string | null;
+          error_type?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          lottery_id: string;
+          next_action_at?: string | null;
+          outcome?: string | null;
+          started_at?: string;
+          status: string;
+          trigger_source: string;
+        };
         Update: {
-          attempt_number?: number
-          contest_number?: number | null
-          created_at?: string
-          error_message?: string | null
-          error_type?: string | null
-          finished_at?: string | null
-          id?: string
-          lottery_id?: string
-          next_action_at?: string | null
-          outcome?: string | null
-          started_at?: string
-          status?: string
-          trigger_source?: string
-        }
+          attempt_number?: number;
+          contest_number?: number | null;
+          created_at?: string;
+          error_message?: string | null;
+          error_type?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          lottery_id?: string;
+          next_action_at?: string | null;
+          outcome?: string | null;
+          started_at?: string;
+          status?: string;
+          trigger_source?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_sync_runs_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_sync_runs_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lottery_sync_scheduler_config: {
         Row: {
-          enabled: boolean
-          endpoint: string
-          scheduler_token: string
-          singleton: boolean
-          token_hash: string
-          updated_at: string
-        }
+          enabled: boolean;
+          endpoint: string;
+          scheduler_token: string;
+          singleton: boolean;
+          token_hash: string;
+          updated_at: string;
+        };
         Insert: {
-          enabled?: boolean
-          endpoint: string
-          scheduler_token: string
-          singleton?: boolean
-          token_hash: string
-          updated_at?: string
-        }
+          enabled?: boolean;
+          endpoint: string;
+          scheduler_token: string;
+          singleton?: boolean;
+          token_hash: string;
+          updated_at?: string;
+        };
         Update: {
-          enabled?: boolean
-          endpoint?: string
-          scheduler_token?: string
-          singleton?: boolean
-          token_hash?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          enabled?: boolean;
+          endpoint?: string;
+          scheduler_token?: string;
+          singleton?: boolean;
+          token_hash?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       lottery_sync_state: {
         Row: {
-          consecutive_failures: number
-          consistency_contest_number: number | null
-          enabled: boolean
-          expected_contest_number: number | null
-          expected_draw_at: string | null
-          last_attempt_at: string | null
-          last_consistency_check_at: string | null
-          last_error_at: string | null
-          last_error_message: string | null
-          last_error_type: string | null
-          last_health_check_at: string | null
-          last_success_at: string | null
-          locked_at: string | null
-          lottery_id: string
-          next_action_kind: string
-          next_attempt_at: string | null
-          status: string
-          updated_at: string
-        }
+          consecutive_failures: number;
+          consistency_contest_number: number | null;
+          enabled: boolean;
+          expected_contest_number: number | null;
+          expected_draw_at: string | null;
+          last_attempt_at: string | null;
+          last_consistency_check_at: string | null;
+          last_error_at: string | null;
+          last_error_message: string | null;
+          last_error_type: string | null;
+          last_health_check_at: string | null;
+          last_success_at: string | null;
+          locked_at: string | null;
+          lottery_id: string;
+          next_action_kind: string;
+          next_attempt_at: string | null;
+          status: string;
+          updated_at: string;
+        };
         Insert: {
-          consecutive_failures?: number
-          consistency_contest_number?: number | null
-          enabled?: boolean
-          expected_contest_number?: number | null
-          expected_draw_at?: string | null
-          last_attempt_at?: string | null
-          last_consistency_check_at?: string | null
-          last_error_at?: string | null
-          last_error_message?: string | null
-          last_error_type?: string | null
-          last_health_check_at?: string | null
-          last_success_at?: string | null
-          locked_at?: string | null
-          lottery_id: string
-          next_action_kind?: string
-          next_attempt_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          consecutive_failures?: number;
+          consistency_contest_number?: number | null;
+          enabled?: boolean;
+          expected_contest_number?: number | null;
+          expected_draw_at?: string | null;
+          last_attempt_at?: string | null;
+          last_consistency_check_at?: string | null;
+          last_error_at?: string | null;
+          last_error_message?: string | null;
+          last_error_type?: string | null;
+          last_health_check_at?: string | null;
+          last_success_at?: string | null;
+          locked_at?: string | null;
+          lottery_id: string;
+          next_action_kind?: string;
+          next_attempt_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Update: {
-          consecutive_failures?: number
-          consistency_contest_number?: number | null
-          enabled?: boolean
-          expected_contest_number?: number | null
-          expected_draw_at?: string | null
-          last_attempt_at?: string | null
-          last_consistency_check_at?: string | null
-          last_error_at?: string | null
-          last_error_message?: string | null
-          last_error_type?: string | null
-          last_health_check_at?: string | null
-          last_success_at?: string | null
-          locked_at?: string | null
-          lottery_id?: string
-          next_action_kind?: string
-          next_attempt_at?: string | null
-          status?: string
-          updated_at?: string
-        }
+          consecutive_failures?: number;
+          consistency_contest_number?: number | null;
+          enabled?: boolean;
+          expected_contest_number?: number | null;
+          expected_draw_at?: string | null;
+          last_attempt_at?: string | null;
+          last_consistency_check_at?: string | null;
+          last_error_at?: string | null;
+          last_error_message?: string | null;
+          last_error_type?: string | null;
+          last_health_check_at?: string | null;
+          last_success_at?: string | null;
+          locked_at?: string | null;
+          lottery_id?: string;
+          next_action_kind?: string;
+          next_attempt_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lottery_sync_state_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: true
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "lottery_sync_state_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: true;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       notifications: {
         Row: {
-          body: string | null
-          created_at: string
-          id: string
-          kind: string
-          link: string | null
-          read_at: string | null
-          title: string
-          user_id: string
-        }
+          body: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          link: string | null;
+          read_at: string | null;
+          title: string;
+          user_id: string;
+        };
         Insert: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          kind?: string
-          link?: string | null
-          read_at?: string | null
-          title: string
-          user_id: string
-        }
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          link?: string | null;
+          read_at?: string | null;
+          title: string;
+          user_id: string;
+        };
         Update: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          kind?: string
-          link?: string | null
-          read_at?: string | null
-          title?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          body?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          link?: string | null;
+          read_at?: string | null;
+          title?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       pool_document_versions: {
         Row: {
-          document_id: string
-          file_size: number | null
-          id: string
-          mime_type: string | null
-          original_file_name: string | null
-          replaced_at: string
-          replaced_by: string | null
-          storage_path: string
-          version: number
-        }
+          document_id: string;
+          file_size: number | null;
+          id: string;
+          mime_type: string | null;
+          original_file_name: string | null;
+          replaced_at: string;
+          replaced_by: string | null;
+          storage_path: string;
+          version: number;
+        };
         Insert: {
-          document_id: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          original_file_name?: string | null
-          replaced_at?: string
-          replaced_by?: string | null
-          storage_path: string
-          version: number
-        }
+          document_id: string;
+          file_size?: number | null;
+          id?: string;
+          mime_type?: string | null;
+          original_file_name?: string | null;
+          replaced_at?: string;
+          replaced_by?: string | null;
+          storage_path: string;
+          version: number;
+        };
         Update: {
-          document_id?: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          original_file_name?: string | null
-          replaced_at?: string
-          replaced_by?: string | null
-          storage_path?: string
-          version?: number
-        }
+          document_id?: string;
+          file_size?: number | null;
+          id?: string;
+          mime_type?: string | null;
+          original_file_name?: string | null;
+          replaced_at?: string;
+          replaced_by?: string | null;
+          storage_path?: string;
+          version?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_document_versions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "pool_available_documents"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_document_versions_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_available_documents";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_document_versions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "pool_documents"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_document_versions_document_id_fkey";
+            columns: ["document_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_documents";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_documents: {
         Row: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          original_file_name: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
+          created_at: string;
+          deleted_at: string | null;
+          description: string | null;
+          file_size: number | null;
+          game_id: string | null;
+          id: string;
+          is_published: boolean;
+          kind: string;
+          mime_type: string | null;
+          notes: string | null;
+          original_file_name: string | null;
+          participant_id: string | null;
+          pool_id: string;
+          sort_order: number;
+          storage_path: string;
+          title: string;
+          updated_at: string;
+          uploaded_by: string | null;
+          version: number;
+        };
         Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          description?: string | null
-          file_size?: number | null
-          game_id?: string | null
-          id?: string
-          is_published?: boolean
-          kind?: string
-          mime_type?: string | null
-          notes?: string | null
-          original_file_name?: string | null
-          participant_id?: string | null
-          pool_id: string
-          sort_order?: number
-          storage_path: string
-          title: string
-          updated_at?: string
-          uploaded_by?: string | null
-          version?: number
-        }
+          created_at?: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          file_size?: number | null;
+          game_id?: string | null;
+          id?: string;
+          is_published?: boolean;
+          kind?: string;
+          mime_type?: string | null;
+          notes?: string | null;
+          original_file_name?: string | null;
+          participant_id?: string | null;
+          pool_id: string;
+          sort_order?: number;
+          storage_path: string;
+          title: string;
+          updated_at?: string;
+          uploaded_by?: string | null;
+          version?: number;
+        };
         Update: {
-          created_at?: string
-          deleted_at?: string | null
-          description?: string | null
-          file_size?: number | null
-          game_id?: string | null
-          id?: string
-          is_published?: boolean
-          kind?: string
-          mime_type?: string | null
-          notes?: string | null
-          original_file_name?: string | null
-          participant_id?: string | null
-          pool_id?: string
-          sort_order?: number
-          storage_path?: string
-          title?: string
-          updated_at?: string
-          uploaded_by?: string | null
-          version?: number
-        }
+          created_at?: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          file_size?: number | null;
+          game_id?: string | null;
+          id?: string;
+          is_published?: boolean;
+          kind?: string;
+          mime_type?: string | null;
+          notes?: string | null;
+          original_file_name?: string | null;
+          participant_id?: string | null;
+          pool_id?: string;
+          sort_order?: number;
+          storage_path?: string;
+          title?: string;
+          updated_at?: string;
+          uploaded_by?: string | null;
+          version?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_documents_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_documents_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_documents_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "pool_participants"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_documents_participant_id_fkey";
+            columns: ["participant_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_participants";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_documents_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_documents_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_events: {
         Row: {
-          actor_id: string | null
-          created_at: string
-          description: string
-          event_type: string
-          id: string
-          metadata: Json | null
-          pool_id: string
-        }
+          actor_id: string | null;
+          created_at: string;
+          description: string;
+          event_type: string;
+          id: string;
+          metadata: Json | null;
+          pool_id: string;
+        };
         Insert: {
-          actor_id?: string | null
-          created_at?: string
-          description: string
-          event_type: string
-          id?: string
-          metadata?: Json | null
-          pool_id: string
-        }
+          actor_id?: string | null;
+          created_at?: string;
+          description: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json | null;
+          pool_id: string;
+        };
         Update: {
-          actor_id?: string | null
-          created_at?: string
-          description?: string
-          event_type?: string
-          id?: string
-          metadata?: Json | null
-          pool_id?: string
-        }
+          actor_id?: string | null;
+          created_at?: string;
+          description?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json | null;
+          pool_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_events_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_events_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_games: {
         Row: {
-          created_at: string
-          game_id: string
-          id: string
-          pool_id: string
-        }
+          created_at: string;
+          game_id: string;
+          id: string;
+          pool_id: string;
+        };
         Insert: {
-          created_at?: string
-          game_id: string
-          id?: string
-          pool_id: string
-        }
+          created_at?: string;
+          game_id: string;
+          id?: string;
+          pool_id: string;
+        };
         Update: {
-          created_at?: string
-          game_id?: string
-          id?: string
-          pool_id?: string
-        }
+          created_at?: string;
+          game_id?: string;
+          id?: string;
+          pool_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_games_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "generated_games"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_games_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "generated_games";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_games_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_games_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_participants: {
         Row: {
-          adjustment_reason: string | null
-          amount_adjustment: number
-          amount_due: number
-          cancelled_at: string | null
-          created_at: string
-          eligible_for_prize_share: boolean
-          id: string
-          ineligible_reason: string | null
-          name: string
-          notes: string | null
-          paid_at: string | null
-          payment_status: Database["public"]["Enums"]["payment_status"]
-          phone: string | null
-          pool_id: string
-          quotas: number
-          status: Database["public"]["Enums"]["participant_status"]
-          total_paid: number
-          updated_at: string
-          user_id: string | null
-        }
+          adjustment_reason: string | null;
+          amount_adjustment: number;
+          amount_due: number;
+          cancelled_at: string | null;
+          created_at: string;
+          eligible_for_prize_share: boolean;
+          id: string;
+          ineligible_reason: string | null;
+          name: string;
+          notes: string | null;
+          paid_at: string | null;
+          payment_status: Database["public"]["Enums"]["payment_status"];
+          phone: string | null;
+          pool_id: string;
+          quotas: number;
+          status: Database["public"]["Enums"]["participant_status"];
+          total_paid: number;
+          updated_at: string;
+          user_id: string | null;
+        };
         Insert: {
-          adjustment_reason?: string | null
-          amount_adjustment?: number
-          amount_due?: number
-          cancelled_at?: string | null
-          created_at?: string
-          eligible_for_prize_share?: boolean
-          id?: string
-          ineligible_reason?: string | null
-          name: string
-          notes?: string | null
-          paid_at?: string | null
-          payment_status?: Database["public"]["Enums"]["payment_status"]
-          phone?: string | null
-          pool_id: string
-          quotas?: number
-          status?: Database["public"]["Enums"]["participant_status"]
-          total_paid?: number
-          updated_at?: string
-          user_id?: string | null
-        }
+          adjustment_reason?: string | null;
+          amount_adjustment?: number;
+          amount_due?: number;
+          cancelled_at?: string | null;
+          created_at?: string;
+          eligible_for_prize_share?: boolean;
+          id?: string;
+          ineligible_reason?: string | null;
+          name: string;
+          notes?: string | null;
+          paid_at?: string | null;
+          payment_status?: Database["public"]["Enums"]["payment_status"];
+          phone?: string | null;
+          pool_id: string;
+          quotas?: number;
+          status?: Database["public"]["Enums"]["participant_status"];
+          total_paid?: number;
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Update: {
-          adjustment_reason?: string | null
-          amount_adjustment?: number
-          amount_due?: number
-          cancelled_at?: string | null
-          created_at?: string
-          eligible_for_prize_share?: boolean
-          id?: string
-          ineligible_reason?: string | null
-          name?: string
-          notes?: string | null
-          paid_at?: string | null
-          payment_status?: Database["public"]["Enums"]["payment_status"]
-          phone?: string | null
-          pool_id?: string
-          quotas?: number
-          status?: Database["public"]["Enums"]["participant_status"]
-          total_paid?: number
-          updated_at?: string
-          user_id?: string | null
-        }
+          adjustment_reason?: string | null;
+          amount_adjustment?: number;
+          amount_due?: number;
+          cancelled_at?: string | null;
+          created_at?: string;
+          eligible_for_prize_share?: boolean;
+          id?: string;
+          ineligible_reason?: string | null;
+          name?: string;
+          notes?: string | null;
+          paid_at?: string | null;
+          payment_status?: Database["public"]["Enums"]["payment_status"];
+          phone?: string | null;
+          pool_id?: string;
+          quotas?: number;
+          status?: Database["public"]["Enums"]["participant_status"];
+          total_paid?: number;
+          updated_at?: string;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_participants_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_participants_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_payments: {
         Row: {
-          amount: number
-          cancelled_at: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          method: string | null
-          method_description: string | null
-          notes: string | null
-          paid_at: string | null
-          participant_id: string
-          pool_id: string
-        }
+          amount: number;
+          cancelled_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          method: string | null;
+          method_description: string | null;
+          notes: string | null;
+          paid_at: string | null;
+          participant_id: string;
+          pool_id: string;
+        };
         Insert: {
-          amount?: number
-          cancelled_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          method?: string | null
-          method_description?: string | null
-          notes?: string | null
-          paid_at?: string | null
-          participant_id: string
-          pool_id: string
-        }
+          amount?: number;
+          cancelled_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          method?: string | null;
+          method_description?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          participant_id: string;
+          pool_id: string;
+        };
         Update: {
-          amount?: number
-          cancelled_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          method?: string | null
-          method_description?: string | null
-          notes?: string | null
-          paid_at?: string | null
-          participant_id?: string
-          pool_id?: string
-        }
+          amount?: number;
+          cancelled_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          method?: string | null;
+          method_description?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          participant_id?: string;
+          pool_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_payments_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "pool_participants"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_payments_participant_id_fkey";
+            columns: ["participant_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_participants";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_payments_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_payments_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_prize_distributions: {
         Row: {
-          calculated_at: string
-          calculated_by: string | null
-          calculation_version: number
-          confirmed_at: string | null
-          created_at: string
-          id: string
-          pool_id: string
-          rateable_prize: number
-          rounding_remainder: number
-          source_hash: string
-          status: Database["public"]["Enums"]["distribution_status"]
-          total_eligible_quotas: number
-          total_prize: number
-          updated_at: string
-          value_per_quota: number
-          version: number
-        }
+          calculated_at: string;
+          calculated_by: string | null;
+          calculation_version: number;
+          confirmed_at: string | null;
+          created_at: string;
+          id: string;
+          pool_id: string;
+          rateable_prize: number;
+          rounding_remainder: number;
+          source_hash: string;
+          status: Database["public"]["Enums"]["distribution_status"];
+          total_eligible_quotas: number;
+          total_prize: number;
+          updated_at: string;
+          value_per_quota: number;
+          version: number;
+        };
         Insert: {
-          calculated_at?: string
-          calculated_by?: string | null
-          calculation_version?: number
-          confirmed_at?: string | null
-          created_at?: string
-          id?: string
-          pool_id: string
-          rateable_prize?: number
-          rounding_remainder?: number
-          source_hash: string
-          status?: Database["public"]["Enums"]["distribution_status"]
-          total_eligible_quotas?: number
-          total_prize?: number
-          updated_at?: string
-          value_per_quota?: number
-          version: number
-        }
+          calculated_at?: string;
+          calculated_by?: string | null;
+          calculation_version?: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          pool_id: string;
+          rateable_prize?: number;
+          rounding_remainder?: number;
+          source_hash: string;
+          status?: Database["public"]["Enums"]["distribution_status"];
+          total_eligible_quotas?: number;
+          total_prize?: number;
+          updated_at?: string;
+          value_per_quota?: number;
+          version: number;
+        };
         Update: {
-          calculated_at?: string
-          calculated_by?: string | null
-          calculation_version?: number
-          confirmed_at?: string | null
-          created_at?: string
-          id?: string
-          pool_id?: string
-          rateable_prize?: number
-          rounding_remainder?: number
-          source_hash?: string
-          status?: Database["public"]["Enums"]["distribution_status"]
-          total_eligible_quotas?: number
-          total_prize?: number
-          updated_at?: string
-          value_per_quota?: number
-          version?: number
-        }
+          calculated_at?: string;
+          calculated_by?: string | null;
+          calculation_version?: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          pool_id?: string;
+          rateable_prize?: number;
+          rounding_remainder?: number;
+          source_hash?: string;
+          status?: Database["public"]["Enums"]["distribution_status"];
+          total_eligible_quotas?: number;
+          total_prize?: number;
+          updated_at?: string;
+          value_per_quota?: number;
+          version?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_prize_distributions_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_prize_distributions_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_prize_participants: {
         Row: {
-          created_at: string
-          distribution_id: string
-          eligible_quotas: number
-          id: string
-          participant_id: string
-          payment_status_at_calc: Database["public"]["Enums"]["payment_status"]
-          rounding_adjustment: number
-          share_amount: number
-          status: string
-        }
+          created_at: string;
+          distribution_id: string;
+          eligible_quotas: number;
+          id: string;
+          participant_id: string;
+          payment_status_at_calc: Database["public"]["Enums"]["payment_status"];
+          rounding_adjustment: number;
+          share_amount: number;
+          status: string;
+        };
         Insert: {
-          created_at?: string
-          distribution_id: string
-          eligible_quotas: number
-          id?: string
-          participant_id: string
-          payment_status_at_calc: Database["public"]["Enums"]["payment_status"]
-          rounding_adjustment?: number
-          share_amount: number
-          status?: string
-        }
+          created_at?: string;
+          distribution_id: string;
+          eligible_quotas: number;
+          id?: string;
+          participant_id: string;
+          payment_status_at_calc: Database["public"]["Enums"]["payment_status"];
+          rounding_adjustment?: number;
+          share_amount: number;
+          status?: string;
+        };
         Update: {
-          created_at?: string
-          distribution_id?: string
-          eligible_quotas?: number
-          id?: string
-          participant_id?: string
-          payment_status_at_calc?: Database["public"]["Enums"]["payment_status"]
-          rounding_adjustment?: number
-          share_amount?: number
-          status?: string
-        }
+          created_at?: string;
+          distribution_id?: string;
+          eligible_quotas?: number;
+          id?: string;
+          participant_id?: string;
+          payment_status_at_calc?: Database["public"]["Enums"]["payment_status"];
+          rounding_adjustment?: number;
+          share_amount?: number;
+          status?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_prize_participants_distribution_id_fkey"
-            columns: ["distribution_id"]
-            isOneToOne: false
-            referencedRelation: "pool_prize_distributions"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_prize_participants_distribution_id_fkey";
+            columns: ["distribution_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_prize_distributions";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pool_prize_participants_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "pool_participants"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_prize_participants_participant_id_fkey";
+            columns: ["participant_id"];
+            isOneToOne: false;
+            referencedRelation: "pool_participants";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_share_links: {
         Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          pool_id: string
-          revoked_at: string | null
-          scope: Database["public"]["Enums"]["pool_share_scope"]
-          token: string
-        }
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          pool_id: string;
+          revoked_at: string | null;
+          scope: Database["public"]["Enums"]["pool_share_scope"];
+          token: string;
+        };
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          pool_id: string
-          revoked_at?: string | null
-          scope: Database["public"]["Enums"]["pool_share_scope"]
-          token: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          pool_id: string;
+          revoked_at?: string | null;
+          scope: Database["public"]["Enums"]["pool_share_scope"];
+          token: string;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          pool_id?: string
-          revoked_at?: string | null
-          scope?: Database["public"]["Enums"]["pool_share_scope"]
-          token?: string
-        }
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          pool_id?: string;
+          revoked_at?: string | null;
+          scope?: Database["public"]["Enums"]["pool_share_scope"];
+          token?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_share_links_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_share_links_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       pool_storage_cleanup_jobs: {
         Row: {
-          completed_at: string | null
-          created_at: string
-          id: string
-          last_error: string | null
-          pool_id: string
-          requested_by: string
-          status: string
-          storage_paths: string[]
-          updated_at: string
-        }
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          last_error: string | null;
+          pool_id: string;
+          requested_by: string;
+          status: string;
+          storage_paths: string[];
+          updated_at: string;
+        };
         Insert: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          pool_id: string
-          requested_by: string
-          status?: string
-          storage_paths?: string[]
-          updated_at?: string
-        }
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          last_error?: string | null;
+          pool_id: string;
+          requested_by: string;
+          status?: string;
+          storage_paths?: string[];
+          updated_at?: string;
+        };
         Update: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          pool_id?: string
-          requested_by?: string
-          status?: string
-          storage_paths?: string[]
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          last_error?: string | null;
+          pool_id?: string;
+          requested_by?: string;
+          status?: string;
+          storage_paths?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       pools: {
         Row: {
-          archived_at: string | null
-          cancel_reason: string | null
-          cancelled_at: string | null
-          closed_at: string | null
-          contest_id: string | null
-          contest_number: number | null
-          contest_number_planned: number | null
-          created_at: string
-          draw_date: string | null
-          draw_date_planned: string | null
-          id: string
-          is_public: boolean
-          lottery_id: string
-          name: string
-          notes: string | null
-          owner_id: string
-          payment_deadline: string | null
-          public_token: string | null
-          quota_value: number
-          reopened_at: string | null
-          status: Database["public"]["Enums"]["pool_status"]
-          total_quotas: number | null
-          updated_at: string
-        }
+          archived_at: string | null;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          closed_at: string | null;
+          contest_id: string | null;
+          contest_number: number | null;
+          contest_number_planned: number | null;
+          created_at: string;
+          draw_date: string | null;
+          draw_date_planned: string | null;
+          id: string;
+          is_public: boolean;
+          lottery_id: string;
+          name: string;
+          notes: string | null;
+          owner_id: string;
+          payment_deadline: string | null;
+          public_token: string | null;
+          quota_value: number;
+          reopened_at: string | null;
+          status: Database["public"]["Enums"]["pool_status"];
+          total_quotas: number | null;
+          updated_at: string;
+        };
         Insert: {
-          archived_at?: string | null
-          cancel_reason?: string | null
-          cancelled_at?: string | null
-          closed_at?: string | null
-          contest_id?: string | null
-          contest_number?: number | null
-          contest_number_planned?: number | null
-          created_at?: string
-          draw_date?: string | null
-          draw_date_planned?: string | null
-          id?: string
-          is_public?: boolean
-          lottery_id: string
-          name: string
-          notes?: string | null
-          owner_id: string
-          payment_deadline?: string | null
-          public_token?: string | null
-          quota_value?: number
-          reopened_at?: string | null
-          status?: Database["public"]["Enums"]["pool_status"]
-          total_quotas?: number | null
-          updated_at?: string
-        }
+          archived_at?: string | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          closed_at?: string | null;
+          contest_id?: string | null;
+          contest_number?: number | null;
+          contest_number_planned?: number | null;
+          created_at?: string;
+          draw_date?: string | null;
+          draw_date_planned?: string | null;
+          id?: string;
+          is_public?: boolean;
+          lottery_id: string;
+          name: string;
+          notes?: string | null;
+          owner_id: string;
+          payment_deadline?: string | null;
+          public_token?: string | null;
+          quota_value?: number;
+          reopened_at?: string | null;
+          status?: Database["public"]["Enums"]["pool_status"];
+          total_quotas?: number | null;
+          updated_at?: string;
+        };
         Update: {
-          archived_at?: string | null
-          cancel_reason?: string | null
-          cancelled_at?: string | null
-          closed_at?: string | null
-          contest_id?: string | null
-          contest_number?: number | null
-          contest_number_planned?: number | null
-          created_at?: string
-          draw_date?: string | null
-          draw_date_planned?: string | null
-          id?: string
-          is_public?: boolean
-          lottery_id?: string
-          name?: string
-          notes?: string | null
-          owner_id?: string
-          payment_deadline?: string | null
-          public_token?: string | null
-          quota_value?: number
-          reopened_at?: string | null
-          status?: Database["public"]["Enums"]["pool_status"]
-          total_quotas?: number | null
-          updated_at?: string
-        }
+          archived_at?: string | null;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          closed_at?: string | null;
+          contest_id?: string | null;
+          contest_number?: number | null;
+          contest_number_planned?: number | null;
+          created_at?: string;
+          draw_date?: string | null;
+          draw_date_planned?: string | null;
+          id?: string;
+          is_public?: boolean;
+          lottery_id?: string;
+          name?: string;
+          notes?: string | null;
+          owner_id?: string;
+          payment_deadline?: string | null;
+          public_token?: string | null;
+          quota_value?: number;
+          reopened_at?: string | null;
+          status?: Database["public"]["Enums"]["pool_status"];
+          total_quotas?: number | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "pools_contest_id_fkey"
-            columns: ["contest_id"]
-            isOneToOne: false
-            referencedRelation: "lottery_draws"
-            referencedColumns: ["id"]
+            foreignKeyName: "pools_contest_id_fkey";
+            columns: ["contest_id"];
+            isOneToOne: false;
+            referencedRelation: "lottery_draws";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "pools_lottery_id_fkey"
-            columns: ["lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "pools_lottery_id_fkey";
+            columns: ["lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          avatar_url: string | null
-          birth_date: string | null
-          created_at: string
-          display_name: string | null
-          id: string
-          phone: string | null
-          theme_preference: string
-          updated_at: string
-        }
+          avatar_url: string | null;
+          birth_date: string | null;
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          phone: string | null;
+          theme_preference: string;
+          updated_at: string;
+        };
         Insert: {
-          avatar_url?: string | null
-          birth_date?: string | null
-          created_at?: string
-          display_name?: string | null
-          id: string
-          phone?: string | null
-          theme_preference?: string
-          updated_at?: string
-        }
+          avatar_url?: string | null;
+          birth_date?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          id: string;
+          phone?: string | null;
+          theme_preference?: string;
+          updated_at?: string;
+        };
         Update: {
-          avatar_url?: string | null
-          birth_date?: string | null
-          created_at?: string
-          display_name?: string | null
-          id?: string
-          phone?: string | null
-          theme_preference?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          avatar_url?: string | null;
+          birth_date?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          phone?: string | null;
+          theme_preference?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       system_settings: {
         Row: {
-          singleton: boolean
-          system_owner_user_id: string
-          updated_at: string
-          updated_by: string | null
-        }
+          singleton: boolean;
+          system_owner_user_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
         Insert: {
-          singleton?: boolean
-          system_owner_user_id: string
-          updated_at?: string
-          updated_by?: string | null
-        }
+          singleton?: boolean;
+          system_owner_user_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
         Update: {
-          singleton?: boolean
-          system_owner_user_id?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
+          singleton?: boolean;
+          system_owner_user_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "system_settings_system_owner_user_id_fkey"
-            columns: ["system_owner_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "system_settings_system_owner_user_id_fkey";
+            columns: ["system_owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "system_settings_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            foreignKeyName: "system_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_preferences: {
         Row: {
-          created_at: string
-          favorite_lottery_id: string | null
-          followed_lottery_ids: string[] | null
-          home_blocks: Json | null
-          updated_at: string
-          user_id: string
-        }
+          created_at: string;
+          favorite_lottery_id: string | null;
+          followed_lottery_ids: string[] | null;
+          home_blocks: Json | null;
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          favorite_lottery_id?: string | null
-          followed_lottery_ids?: string[] | null
-          home_blocks?: Json | null
-          updated_at?: string
-          user_id: string
-        }
+          created_at?: string;
+          favorite_lottery_id?: string | null;
+          followed_lottery_ids?: string[] | null;
+          home_blocks?: Json | null;
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          favorite_lottery_id?: string | null
-          followed_lottery_ids?: string[] | null
-          home_blocks?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
+          created_at?: string;
+          favorite_lottery_id?: string | null;
+          followed_lottery_ids?: string[] | null;
+          home_blocks?: Json | null;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "user_preferences_favorite_lottery_id_fkey"
-            columns: ["favorite_lottery_id"]
-            isOneToOne: false
-            referencedRelation: "lotteries"
-            referencedColumns: ["id"]
+            foreignKeyName: "user_preferences_favorite_lottery_id_fkey";
+            columns: ["favorite_lottery_id"];
+            isOneToOne: false;
+            referencedRelation: "lotteries";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       user_roles: {
         Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-    }
+          created_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
       pool_available_documents: {
         Row: {
-          description: string | null
-          file_size: number | null
-          id: string | null
-          mime_type: string | null
-          original_file_name: string | null
-          pool_id: string | null
-          sort_order: number | null
-          title: string | null
-          updated_at: string | null
-          version: number | null
-        }
+          description: string | null;
+          file_size: number | null;
+          id: string | null;
+          mime_type: string | null;
+          original_file_name: string | null;
+          pool_id: string | null;
+          sort_order: number | null;
+          title: string | null;
+          updated_at: string | null;
+          version: number | null;
+        };
         Insert: {
-          description?: string | null
-          file_size?: number | null
-          id?: string | null
-          mime_type?: string | null
-          original_file_name?: string | null
-          pool_id?: string | null
-          sort_order?: number | null
-          title?: string | null
-          updated_at?: string | null
-          version?: number | null
-        }
+          description?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          original_file_name?: string | null;
+          pool_id?: string | null;
+          sort_order?: number | null;
+          title?: string | null;
+          updated_at?: string | null;
+          version?: number | null;
+        };
         Update: {
-          description?: string | null
-          file_size?: number | null
-          id?: string | null
-          mime_type?: string | null
-          original_file_name?: string | null
-          pool_id?: string | null
-          sort_order?: number | null
-          title?: string | null
-          updated_at?: string | null
-          version?: number | null
-        }
+          description?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          original_file_name?: string | null;
+          pool_id?: string | null;
+          sort_order?: number | null;
+          title?: string | null;
+          updated_at?: string | null;
+          version?: number | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "pool_documents_pool_id_fkey"
-            columns: ["pool_id"]
-            isOneToOne: false
-            referencedRelation: "pools"
-            referencedColumns: ["id"]
+            foreignKeyName: "pool_documents_pool_id_fkey";
+            columns: ["pool_id"];
+            isOneToOne: false;
+            referencedRelation: "pools";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Functions: {
-      admin_active_count: { Args: never; Returns: number }
+      admin_active_count: { Args: never; Returns: number };
       admin_list_users: {
         Args: {
-          _access_period?: string
-          _created_period?: string
-          _page?: number
-          _page_size?: number
-          _provider?: string
-          _role?: Database["public"]["Enums"]["app_role"]
-          _sort?: string
-          _status?: string
-        }
-        Returns: Json
-      }
+          _access_period?: string;
+          _created_period?: string;
+          _page?: number;
+          _page_size?: number;
+          _provider?: string;
+          _role?: Database["public"]["Enums"]["app_role"];
+          _sort?: string;
+          _status?: string;
+        };
+        Returns: Json;
+      };
       admin_list_users_v2: {
         Args: {
-          _access_period?: string
-          _created_period?: string
-          _page?: number
-          _page_size?: number
-          _provider?: string
-          _requester_id: string
-          _role?: Database["public"]["Enums"]["app_role"]
-          _sort?: string
-          _status?: string
-        }
-        Returns: Json
-      }
+          _access_period?: string;
+          _created_period?: string;
+          _page?: number;
+          _page_size?: number;
+          _provider?: string;
+          _requester_id: string;
+          _role?: Database["public"]["Enums"]["app_role"];
+          _sort?: string;
+          _status?: string;
+        };
+        Returns: Json;
+      };
       apply_game_check: {
-        Args: { _draw_id: string; _game_id: string; _payload: Json }
-        Returns: string
-      }
-      can_manage_pool: { Args: { _pool_id: string }; Returns: boolean }
-      can_read_game: { Args: { _game_id: string }; Returns: boolean }
+        Args: { _draw_id: string; _game_id: string; _payload: Json };
+        Returns: string;
+      };
+      can_manage_pool: { Args: { _pool_id: string }; Returns: boolean };
+      can_read_game: { Args: { _game_id: string }; Returns: boolean };
       claim_check_job: {
-        Args: { _job_id: string; _stale_after?: string }
-        Returns: boolean
-      }
+        Args: { _job_id: string; _stale_after?: string };
+        Returns: boolean;
+      };
       claim_lottery_sync: {
-        Args: { _force?: boolean; _lottery_id: string; _stale_after?: string }
+        Args: { _force?: boolean; _lottery_id: string; _stale_after?: string };
         Returns: {
-          consecutive_failures: number
-          consistency_contest_number: number | null
-          enabled: boolean
-          expected_contest_number: number | null
-          expected_draw_at: string | null
-          last_attempt_at: string | null
-          last_consistency_check_at: string | null
-          last_error_at: string | null
-          last_error_message: string | null
-          last_error_type: string | null
-          last_health_check_at: string | null
-          last_success_at: string | null
-          locked_at: string | null
-          lottery_id: string
-          next_action_kind: string
-          next_attempt_at: string | null
-          status: string
-          updated_at: string
-        }
+          consecutive_failures: number;
+          consistency_contest_number: number | null;
+          enabled: boolean;
+          expected_contest_number: number | null;
+          expected_draw_at: string | null;
+          last_attempt_at: string | null;
+          last_consistency_check_at: string | null;
+          last_error_at: string | null;
+          last_error_message: string | null;
+          last_error_type: string | null;
+          last_health_check_at: string | null;
+          last_success_at: string | null;
+          locked_at: string | null;
+          lottery_id: string;
+          next_action_kind: string;
+          next_attempt_at: string | null;
+          status: string;
+          updated_at: string;
+        };
         SetofOptions: {
-          from: "*"
-          to: "lottery_sync_state"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+          from: "*";
+          to: "lottery_sync_state";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       claim_sync_job_batch: {
-        Args: { _batch_size: number; _job_id: string; _stale_after?: string }
+        Args: { _batch_size: number; _job_id: string; _stale_after?: string };
         Returns: {
-          claim_end: number
-          claim_start: number
-          is_final: boolean
-          job_id: string
-          lottery_id: string
-          resumed: boolean
-        }[]
-      }
+          claim_end: number;
+          claim_start: number;
+          is_final: boolean;
+          job_id: string;
+          lottery_id: string;
+          resumed: boolean;
+        }[];
+      };
       complete_lottery_sync:
         | {
             Args: {
-              _error_message?: string
-              _error_type?: string
-              _expected_contest_number: number
-              _expected_draw_at: string
-              _lottery_id: string
-              _next_attempt_at: string
-              _status: string
-              _success: boolean
-            }
+              _error_message?: string;
+              _error_type?: string;
+              _expected_contest_number: number;
+              _expected_draw_at: string;
+              _lottery_id: string;
+              _next_attempt_at: string;
+              _status: string;
+              _success: boolean;
+            };
             Returns: {
-              consecutive_failures: number
-              consistency_contest_number: number | null
-              enabled: boolean
-              expected_contest_number: number | null
-              expected_draw_at: string | null
-              last_attempt_at: string | null
-              last_consistency_check_at: string | null
-              last_error_at: string | null
-              last_error_message: string | null
-              last_error_type: string | null
-              last_health_check_at: string | null
-              last_success_at: string | null
-              locked_at: string | null
-              lottery_id: string
-              next_action_kind: string
-              next_attempt_at: string | null
-              status: string
-              updated_at: string
-            }
+              consecutive_failures: number;
+              consistency_contest_number: number | null;
+              enabled: boolean;
+              expected_contest_number: number | null;
+              expected_draw_at: string | null;
+              last_attempt_at: string | null;
+              last_consistency_check_at: string | null;
+              last_error_at: string | null;
+              last_error_message: string | null;
+              last_error_type: string | null;
+              last_health_check_at: string | null;
+              last_success_at: string | null;
+              locked_at: string | null;
+              lottery_id: string;
+              next_action_kind: string;
+              next_attempt_at: string | null;
+              status: string;
+              updated_at: string;
+            };
             SetofOptions: {
-              from: "*"
-              to: "lottery_sync_state"
-              isOneToOne: true
-              isSetofReturn: false
-            }
+              from: "*";
+              to: "lottery_sync_state";
+              isOneToOne: true;
+              isSetofReturn: false;
+            };
           }
         | {
             Args: {
-              _consistency_checked?: boolean
-              _consistency_contest_number?: number
-              _error_message?: string
-              _error_type?: string
-              _expected_contest_number: number
-              _expected_draw_at: string
-              _health_checked?: boolean
-              _lottery_id: string
-              _next_action_kind?: string
-              _next_attempt_at: string
-              _status: string
-              _success: boolean
-            }
+              _consistency_checked?: boolean;
+              _consistency_contest_number?: number;
+              _error_message?: string;
+              _error_type?: string;
+              _expected_contest_number: number;
+              _expected_draw_at: string;
+              _health_checked?: boolean;
+              _lottery_id: string;
+              _next_action_kind?: string;
+              _next_attempt_at: string;
+              _status: string;
+              _success: boolean;
+            };
             Returns: {
-              consecutive_failures: number
-              consistency_contest_number: number | null
-              enabled: boolean
-              expected_contest_number: number | null
-              expected_draw_at: string | null
-              last_attempt_at: string | null
-              last_consistency_check_at: string | null
-              last_error_at: string | null
-              last_error_message: string | null
-              last_error_type: string | null
-              last_health_check_at: string | null
-              last_success_at: string | null
-              locked_at: string | null
-              lottery_id: string
-              next_action_kind: string
-              next_attempt_at: string | null
-              status: string
-              updated_at: string
-            }
+              consecutive_failures: number;
+              consistency_contest_number: number | null;
+              enabled: boolean;
+              expected_contest_number: number | null;
+              expected_draw_at: string | null;
+              last_attempt_at: string | null;
+              last_consistency_check_at: string | null;
+              last_error_at: string | null;
+              last_error_message: string | null;
+              last_error_type: string | null;
+              last_health_check_at: string | null;
+              last_success_at: string | null;
+              locked_at: string | null;
+              lottery_id: string;
+              next_action_kind: string;
+              next_attempt_at: string | null;
+              status: string;
+              updated_at: string;
+            };
             SetofOptions: {
-              from: "*"
-              to: "lottery_sync_state"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+              from: "*";
+              to: "lottery_sync_state";
+              isOneToOne: true;
+              isSetofReturn: false;
+            };
+          };
       complete_profile_onboarding: {
         Args: {
-          _accepted_document_ids: string[]
-          _birth_date: string
-          _display_name: string
-          _phone: string
-        }
+          _accepted_document_ids: string[];
+          _birth_date: string;
+          _display_name: string;
+          _phone: string;
+        };
         Returns: {
-          avatar_url: string | null
-          birth_date: string | null
-          created_at: string
-          display_name: string | null
-          id: string
-          phone: string | null
-          theme_preference: string
-          updated_at: string
-        }
+          avatar_url: string | null;
+          birth_date: string | null;
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          phone: string | null;
+          theme_preference: string;
+          updated_at: string;
+        };
         SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+          from: "*";
+          to: "profiles";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       complete_sync_job_batch: {
         Args: {
-          _failed: number
-          _inserted: number
-          _is_final: boolean
-          _job_id: string
-          _last_error?: string
-          _processed: number
-          _updated: number
-        }
+          _failed: number;
+          _inserted: number;
+          _is_final: boolean;
+          _job_id: string;
+          _last_error?: string;
+          _processed: number;
+          _updated: number;
+        };
         Returns: {
-          created_at: string
-          created_by: string | null
-          current_contest: number | null
-          end_contest: number | null
-          failed: number
-          finished_at: string | null
-          id: string
-          inserted: number
-          last_activity_at: string | null
-          last_error: string | null
-          locked_at: string | null
-          lottery_id: string
-          processed: number
-          start_contest: number | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["sync_job_status"]
-          type: Database["public"]["Enums"]["sync_job_type"]
-          updated: number
-          updated_at: string
-        }
+          created_at: string;
+          created_by: string | null;
+          current_contest: number | null;
+          end_contest: number | null;
+          failed: number;
+          finished_at: string | null;
+          id: string;
+          inserted: number;
+          last_activity_at: string | null;
+          last_error: string | null;
+          locked_at: string | null;
+          lottery_id: string;
+          processed: number;
+          start_contest: number | null;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["sync_job_status"];
+          type: Database["public"]["Enums"]["sync_job_type"];
+          updated: number;
+          updated_at: string;
+        };
         SetofOptions: {
-          from: "*"
-          to: "lottery_sync_jobs"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+          from: "*";
+          to: "lottery_sync_jobs";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      invoke_lottery_sync_scheduler: { Args: never; Returns: number }
-      is_pool_member: { Args: { _pool_id: string }; Returns: boolean }
-      is_pool_owner: { Args: { _pool_id: string }; Returns: boolean }
+          _role: Database["public"]["Enums"]["app_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      invoke_lottery_sync_scheduler: { Args: never; Returns: number };
+      is_pool_member: { Args: { _pool_id: string }; Returns: boolean };
+      is_pool_owner: { Args: { _pool_id: string }; Returns: boolean };
       log_pool_event: {
         Args: {
-          _description: string
-          _event_type: string
-          _metadata?: Json
-          _pool_id: string
-        }
-        Returns: undefined
-      }
+          _description: string;
+          _event_type: string;
+          _metadata?: Json;
+          _pool_id: string;
+        };
+        Returns: undefined;
+      };
       lottery_combination_stats: {
-        Args: { _lottery_slug: string; _numbers: number[]; _window?: number }
-        Returns: Json
-      }
+        Args: { _lottery_slug: string; _numbers: number[]; _window?: number };
+        Returns: Json;
+      };
       lottery_number_statistics: {
-        Args: { _lottery_slug: string; _max_contest?: number; _window?: number }
-        Returns: Json
-      }
-      mark_games_awaiting_check: { Args: { _draw_id: string }; Returns: number }
-      owns_game: { Args: { _game_id: string }; Returns: boolean }
+        Args: { _lottery_slug: string; _max_contest?: number; _window?: number };
+        Returns: Json;
+      };
+      mark_games_awaiting_check: { Args: { _draw_id: string }; Returns: number };
+      owns_game: { Args: { _game_id: string }; Returns: boolean };
       persist_official_draw: {
         Args: {
-          _contest_number: number
-          _draw: Json
-          _lottery_id: string
-          _numbers: Json
-          _prizes: Json
-        }
-        Returns: string
-      }
+          _contest_number: number;
+          _draw: Json;
+          _lottery_id: string;
+          _numbers: Json;
+          _prizes: Json;
+        };
+        Returns: string;
+      };
       pool_add_participant: {
         Args: {
-          _adjustment?: number
-          _adjustment_reason?: string
-          _method?: string
-          _method_description?: string
-          _name: string
-          _notes?: string
-          _paid_at?: string
-          _payment_amount?: number
-          _payment_mode?: string
-          _phone?: string
-          _pool_id: string
-          _quotas?: number
-        }
-        Returns: string
-      }
+          _adjustment?: number;
+          _adjustment_reason?: string;
+          _method?: string;
+          _method_description?: string;
+          _name: string;
+          _notes?: string;
+          _paid_at?: string;
+          _payment_amount?: number;
+          _payment_mode?: string;
+          _phone?: string;
+          _pool_id: string;
+          _quotas?: number;
+        };
+        Returns: string;
+      };
       pool_attach_game: {
-        Args: { _game_id: string; _pool_id: string }
-        Returns: string
-      }
+        Args: { _game_id: string; _pool_id: string };
+        Returns: string;
+      };
       pool_attach_games: {
-        Args: { _game_ids: string[]; _pool_id: string }
-        Returns: number
-      }
+        Args: { _game_ids: string[]; _pool_id: string };
+        Returns: number;
+      };
       pool_calculate_distribution: {
-        Args: { _pool_id: string }
-        Returns: string
-      }
+        Args: { _pool_id: string };
+        Returns: string;
+      };
       pool_cancel_participant: {
-        Args: { _participant_id: string; _reason?: string }
-        Returns: undefined
-      }
+        Args: { _participant_id: string; _reason?: string };
+        Returns: undefined;
+      };
       pool_cancel_payment: {
-        Args: { _payment_id: string; _reason?: string }
-        Returns: undefined
-      }
+        Args: { _payment_id: string; _reason?: string };
+        Returns: undefined;
+      };
       pool_classify_games: {
-        Args: { _game_ids: string[]; _pool_id: string }
+        Args: { _game_ids: string[]; _pool_id: string };
         Returns: {
-          eligibility: string
-          game_id: string
-          linked_pool_name: string
-        }[]
-      }
+          eligibility: string;
+          game_id: string;
+          linked_pool_name: string;
+        }[];
+      };
       pool_confirm_distribution: {
-        Args: { _distribution_id: string }
-        Returns: undefined
-      }
+        Args: { _distribution_id: string };
+        Returns: undefined;
+      };
       pool_delete_permanently: {
-        Args: { _confirmation: string; _pool_id: string }
-        Returns: Json
-      }
-      pool_delete_summary: { Args: { _pool_id: string }; Returns: Json }
+        Args: { _confirmation: string; _pool_id: string };
+        Returns: Json;
+      };
+      pool_delete_summary: { Args: { _pool_id: string }; Returns: Json };
       pool_detach_game: {
-        Args: { _game_id: string; _pool_id: string }
-        Returns: undefined
-      }
+        Args: { _game_id: string; _pool_id: string };
+        Returns: undefined;
+      };
       pool_document_create: {
         Args: {
-          _description: string
-          _file_size: number
-          _mime_type: string
-          _original_file_name: string
-          _pool_id: string
-          _sort_order: number
-          _storage_path: string
-          _title: string
-        }
+          _description: string;
+          _file_size: number;
+          _mime_type: string;
+          _original_file_name: string;
+          _pool_id: string;
+          _sort_order: number;
+          _storage_path: string;
+          _title: string;
+        };
         Returns: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          original_file_name: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
+          created_at: string;
+          deleted_at: string | null;
+          description: string | null;
+          file_size: number | null;
+          game_id: string | null;
+          id: string;
+          is_published: boolean;
+          kind: string;
+          mime_type: string | null;
+          notes: string | null;
+          original_file_name: string | null;
+          participant_id: string | null;
+          pool_id: string;
+          sort_order: number;
+          storage_path: string;
+          title: string;
+          updated_at: string;
+          uploaded_by: string | null;
+          version: number;
+        };
         SetofOptions: {
-          from: "*"
-          to: "pool_documents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      pool_document_delete: { Args: { _document_id: string }; Returns: string }
+          from: "*";
+          to: "pool_documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      pool_document_delete: { Args: { _document_id: string }; Returns: string };
       pool_document_replace: {
         Args: {
-          _document_id: string
-          _file_size: number
-          _mime_type: string
-          _original_file_name: string
-          _storage_path: string
-        }
+          _document_id: string;
+          _file_size: number;
+          _mime_type: string;
+          _original_file_name: string;
+          _storage_path: string;
+        };
         Returns: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          original_file_name: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
+          created_at: string;
+          deleted_at: string | null;
+          description: string | null;
+          file_size: number | null;
+          game_id: string | null;
+          id: string;
+          is_published: boolean;
+          kind: string;
+          mime_type: string | null;
+          notes: string | null;
+          original_file_name: string | null;
+          participant_id: string | null;
+          pool_id: string;
+          sort_order: number;
+          storage_path: string;
+          title: string;
+          updated_at: string;
+          uploaded_by: string | null;
+          version: number;
+        };
         SetofOptions: {
-          from: "*"
-          to: "pool_documents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+          from: "*";
+          to: "pool_documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       pool_document_update: {
         Args: {
-          _description: string
-          _document_id: string
-          _is_published: boolean
-          _sort_order: number
-          _title: string
-        }
+          _description: string;
+          _document_id: string;
+          _is_published: boolean;
+          _sort_order: number;
+          _title: string;
+        };
         Returns: {
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          file_size: number | null
-          game_id: string | null
-          id: string
-          is_published: boolean
-          kind: string
-          mime_type: string | null
-          notes: string | null
-          original_file_name: string | null
-          participant_id: string | null
-          pool_id: string
-          sort_order: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string | null
-          version: number
-        }
+          created_at: string;
+          deleted_at: string | null;
+          description: string | null;
+          file_size: number | null;
+          game_id: string | null;
+          id: string;
+          is_published: boolean;
+          kind: string;
+          mime_type: string | null;
+          notes: string | null;
+          original_file_name: string | null;
+          participant_id: string | null;
+          pool_id: string;
+          sort_order: number;
+          storage_path: string;
+          title: string;
+          updated_at: string;
+          uploaded_by: string | null;
+          version: number;
+        };
         SetofOptions: {
-          from: "*"
-          to: "pool_documents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      pool_hub_counts: { Args: never; Returns: Json }
+          from: "*";
+          to: "pool_documents";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      pool_hub_counts: { Args: never; Returns: Json };
       pool_outdate_distributions: {
-        Args: { _pool_id: string; _reason?: string }
-        Returns: undefined
-      }
-      pool_prize_total: { Args: { _pool_id: string }; Returns: number }
+        Args: { _pool_id: string; _reason?: string };
+        Returns: undefined;
+      };
+      pool_prize_total: { Args: { _pool_id: string }; Returns: number };
       pool_public_document_path: {
-        Args: { _document_id: string; _token: string }
+        Args: { _document_id: string; _token: string };
         Returns: {
-          mime_type: string
-          original_file_name: string
-          storage_path: string
-          title: string
-        }[]
-      }
+          mime_type: string;
+          original_file_name: string;
+          storage_path: string;
+          title: string;
+        }[];
+      };
       pool_public_documents: {
-        Args: { _token: string }
+        Args: { _token: string };
         Returns: {
-          description: string
-          file_size: number
-          id: string
-          mime_type: string
-          sort_order: number
-          title: string
-        }[]
-      }
-      pool_public_summary: { Args: { _token: string }; Returns: Json }
+          description: string;
+          file_size: number;
+          id: string;
+          mime_type: string;
+          sort_order: number;
+          title: string;
+        }[];
+      };
+      pool_public_summary: { Args: { _token: string }; Returns: Json };
       pool_register_payment:
         | {
             Args: {
-              _allow_overpay?: boolean
-              _amount: number
-              _method?: string
-              _notes?: string
-              _paid_at?: string
-              _participant_id: string
-            }
-            Returns: string
+              _allow_overpay?: boolean;
+              _amount: number;
+              _method?: string;
+              _notes?: string;
+              _paid_at?: string;
+              _participant_id: string;
+            };
+            Returns: string;
           }
         | {
             Args: {
-              _allow_overpay?: boolean
-              _amount: number
-              _method?: string
-              _method_description?: string
-              _notes?: string
-              _paid_at?: string
-              _participant_id: string
-            }
-            Returns: string
-          }
+              _allow_overpay?: boolean;
+              _amount: number;
+              _method?: string;
+              _method_description?: string;
+              _notes?: string;
+              _paid_at?: string;
+              _participant_id: string;
+            };
+            Returns: string;
+          };
       pool_set_archived: {
-        Args: { _archived: boolean; _pool_id: string }
-        Returns: string
-      }
+        Args: { _archived: boolean; _pool_id: string };
+        Returns: string;
+      };
       pool_set_games_status: {
         Args: {
-          _game_ids: string[]
-          _pool_id: string
-          _status: Database["public"]["Enums"]["game_status"]
-        }
-        Returns: number
-      }
+          _game_ids: string[];
+          _pool_id: string;
+          _status: Database["public"]["Enums"]["game_status"];
+        };
+        Returns: number;
+      };
       pool_set_participant_eligibility: {
-        Args: { _eligible: boolean; _participant_id: string; _reason?: string }
-        Returns: undefined
-      }
+        Args: { _eligible: boolean; _participant_id: string; _reason?: string };
+        Returns: undefined;
+      };
       pool_set_public: {
-        Args: { _enabled: boolean; _pool_id: string }
-        Returns: string
-      }
+        Args: { _enabled: boolean; _pool_id: string };
+        Returns: string;
+      };
       pool_set_share_link: {
         Args: {
-          _enabled: boolean
-          _pool_id: string
-          _regenerate?: boolean
-          _scope: Database["public"]["Enums"]["pool_share_scope"]
-        }
-        Returns: string
-      }
+          _enabled: boolean;
+          _pool_id: string;
+          _regenerate?: boolean;
+          _scope: Database["public"]["Enums"]["pool_share_scope"];
+        };
+        Returns: string;
+      };
       pool_set_status: {
         Args: {
-          _pool_id: string
-          _reason?: string
-          _status: Database["public"]["Enums"]["pool_status"]
-        }
-        Returns: Database["public"]["Enums"]["pool_status"]
-      }
+          _pool_id: string;
+          _reason?: string;
+          _status: Database["public"]["Enums"]["pool_status"];
+        };
+        Returns: Database["public"]["Enums"]["pool_status"];
+      };
       pool_update_details: {
-        Args: { _patch: Json; _pool_id: string }
-        Returns: undefined
-      }
+        Args: { _patch: Json; _pool_id: string };
+        Returns: undefined;
+      };
       pool_update_participant: {
-        Args: { _participant_id: string; _patch: Json }
-        Returns: undefined
-      }
-      profile_onboarding_status: { Args: never; Returns: Json }
+        Args: { _participant_id: string; _patch: Json };
+        Returns: undefined;
+      };
+      profile_onboarding_status: { Args: never; Returns: Json };
       public_next_draws: {
-        Args: never
+        Args: never;
         Returns: {
-          color_key: string
-          estimated_next_prize: number
-          lottery_name: string
-          lottery_slug: string
-          next_contest_number: number
-          next_draw_date: string
-        }[]
-      }
+          color_key: string;
+          estimated_next_prize: number;
+          lottery_name: string;
+          lottery_slug: string;
+          next_contest_number: number;
+          next_draw_date: string;
+        }[];
+      };
       recalc_participant_payment: {
-        Args: { _participant_id: string }
-        Returns: undefined
-      }
-      reconcile_pool_lifecycle: { Args: { _draw_id: string }; Returns: number }
-      record_password_changed: { Args: never; Returns: undefined }
+        Args: { _participant_id: string };
+        Returns: undefined;
+      };
+      reconcile_pool_lifecycle: { Args: { _draw_id: string }; Returns: number };
+      record_password_changed: { Args: never; Returns: undefined };
       search_draws: {
         Args: {
-          _contest?: number
-          _date_from?: string
-          _date_to?: string
-          _lottery_slug?: string
-          _numbers?: number[]
-          _page?: number
-          _page_size?: number
-          _situation?: string
-          _sort?: string
-        }
-        Returns: Json
-      }
+          _contest?: number;
+          _date_from?: string;
+          _date_to?: string;
+          _lottery_slug?: string;
+          _numbers?: number[];
+          _page?: number;
+          _page_size?: number;
+          _situation?: string;
+          _sort?: string;
+        };
+        Returns: Json;
+      };
       set_manual_game_status: {
         Args: {
-          _game_id: string
-          _status: Database["public"]["Enums"]["game_status"]
-        }
-        Returns: Database["public"]["Enums"]["game_status"]
-      }
+          _game_id: string;
+          _status: Database["public"]["Enums"]["game_status"];
+        };
+        Returns: Database["public"]["Enums"]["game_status"];
+      };
       verify_sync_scheduler_token: {
-        Args: { _token: string }
-        Returns: boolean
-      }
-    }
+        Args: { _token: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
-      app_role: "USER" | "ADMIN" | "SUPORTE"
-      distribution_status: "CALCULATED" | "CONFIRMED" | "OUTDATED"
-      feature_status: "ACTIVE" | "BETA" | "MAINTENANCE" | "DISABLED"
+      app_role: "USER" | "ADMIN" | "SUPORTE";
+      distribution_status: "CALCULATED" | "CONFIRMED" | "OUTDATED";
+      feature_status: "ACTIVE" | "BETA" | "MAINTENANCE" | "DISABLED";
       game_status:
         | "PLANNED"
         | "BET"
@@ -2546,10 +2540,10 @@ export type Database = {
         | "AWAITING_CHECK"
         | "CHECKED"
         | "PRIZED"
-        | "NOT_PRIZED"
-      participant_status: "ACTIVE" | "CANCELLED"
-      payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED"
-      pool_share_scope: "PARTICIPANTS" | "GAMES" | "FULL"
+        | "NOT_PRIZED";
+      participant_status: "ACTIVE" | "CANCELLED";
+      payment_status: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED";
+      pool_share_scope: "PARTICIPANTS" | "GAMES" | "FULL";
       pool_status:
         | "FORMING"
         | "OPEN"
@@ -2559,137 +2553,126 @@ export type Database = {
         | "CHECKED"
         | "PRIZED"
         | "FINISHED"
-        | "CANCELLED"
-      sync_job_status:
-        | "pending"
-        | "running"
-        | "completed"
-        | "completed_with_errors"
-        | "failed"
-      sync_job_type: "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS"
-    }
+        | "CANCELLED";
+      sync_job_status: "pending" | "running" | "completed" | "completed_with_errors" | "failed";
+      sync_job_type: "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
@@ -2721,14 +2704,8 @@ export const Constants = {
         "FINISHED",
         "CANCELLED",
       ],
-      sync_job_status: [
-        "pending",
-        "running",
-        "completed",
-        "completed_with_errors",
-        "failed",
-      ],
+      sync_job_status: ["pending", "running", "completed", "completed_with_errors", "failed"],
       sync_job_type: ["LATEST", "RECENT", "HISTORICAL", "REPROCESS"],
     },
   },
-} as const
+} as const;
