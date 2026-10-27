@@ -22,3 +22,10 @@ Pontos em aberto que exigem atenção. Atualizar ao resolver.
 - +Milionária (faixas combinadas com trevos, matriz completa de preços) — issue #9.
 - Super Sete (gerador por colunas) — issue #10.
 - Importação do histórico de concursos das modalidades novas (só a Lotomania tem o caminho ligado).
+
+
+## Melhorias homologadas (análise dos 13 pontos)
+
+- Pacote 1 em andamento: próximo sorteio para todas as modalidades (feito neste PR), Loterias com cartões informativos (feito), intervalo menor em falha (feito para o calendário; falta o mesmo para a importação de resultados), **Monitor configurável** (ADMIN/SUPORTE escolhem indicadores e ordem), Administração em cartões, "Recursos do sistema" com **modo manutenção geral** (desligar tudo com urgência).
+- Bolão/Orçamento: a escolha de Mês, Time e Trevos deve ser 100% automática, sem pedir nada ao usuário (hoje essas modalidades ficam fora do fluxo por orçamento).
+- Pendente: +Milionária ainda precisa de validação com resultado real (`trevosSorteados`).

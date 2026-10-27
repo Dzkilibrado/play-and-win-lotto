@@ -12,9 +12,7 @@ export const Route = createFileRoute("/api/public/sync/run")({
       POST: async ({ request }) => {
         const denied = await authenticateCronRequest(request);
         if (denied) {
-          const { authenticateDatabaseScheduler } = await import(
-            "@/lib/sync/schedulerAuth.server"
-          );
+          const { authenticateDatabaseScheduler } = await import("@/lib/sync/schedulerAuth.server");
           if (!(await authenticateDatabaseScheduler(request))) {
             return new Response("Unauthorized", { status: 401 });
           }
@@ -28,8 +26,11 @@ export const Route = createFileRoute("/api/public/sync/run")({
         // concursos recentes com jogos pendentes entram na fila e um lote é
         // processado. Nunca depende de navegador aberto.
         const runChecks = async (scan: boolean) => {
-          const { scanPendingChecks, runOpenCheckJobs, getAdminClient: adminForChecks } =
-            await import("@/lib/check/gameCheck.server");
+          const {
+            scanPendingChecks,
+            runOpenCheckJobs,
+            getAdminClient: adminForChecks,
+          } = await import("@/lib/check/gameCheck.server");
           const checkAdmin = await adminForChecks();
           const queued = scan ? await scanPendingChecks(checkAdmin) : [];
           const executed = await runOpenCheckJobs(checkAdmin, 3);
@@ -65,10 +66,21 @@ export const Route = createFileRoute("/api/public/sync/run")({
           results.push(result);
         }
         const changed = results.some(
-          (result) => result.attempted && (result.outcome === "inserted" || result.outcome === "updated"),
+          (result) =>
+            result.attempted && (result.outcome === "inserted" || result.outcome === "updated"),
         );
         const checks = await runChecks(changed);
+        // Calendário do próximo sorteio de todas as modalidades (falha aqui
+        // nunca derruba a execução principal).
+        let nextDraws: unknown = [];
+        try {
+          const { refreshNextDraws } = await import("@/lib/sync/nextDrawRefresh.server");
+          nextDraws = await refreshNextDraws(admin, lotteries);
+        } catch {
+          nextDraws = [];
+        }
         return Response.json({
+          nextDraws,
           mode: advancedJob ? "job-and-latest" : "latest",
           job: advancedJob,
           results,

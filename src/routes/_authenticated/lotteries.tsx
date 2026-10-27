@@ -6,7 +6,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { LotteryCard, type UpcomingContestInfo } from "@/components/lottery/LotteryCard";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
+import { activeLotteries } from "@/config/lotteries";
 import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
+import { useNextDraws } from "@/hooks/useNextDraws";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 
 export const Route = createFileRoute("/_authenticated/lotteries")({
@@ -27,10 +29,22 @@ export const Route = createFileRoute("/_authenticated/lotteries")({
 });
 
 function LotteriesPage() {
-  const { visibleLotteries, availabilityOf, noteOf } = useLotteryAvailability();
+  const { availabilityOf, noteOf } = useLotteryAvailability();
   const latest = useQuery({
     queryKey: ["latest-draws"],
     queryFn: () => lotteryDataService.getLatestDraws(),
+  });
+
+  const nextDraws = useNextDraws((slug) => {
+    const draw = (latest.data ?? []).find((item) => item.lotteries?.slug === slug);
+    return draw
+      ? {
+          contestNumber: draw.next_contest_number,
+          drawDate: draw.next_draw_date,
+          estimatedPrize: draw.estimated_next_prize,
+          fetchedAt: null,
+        }
+      : null;
   });
 
   return (
@@ -45,29 +59,49 @@ function LotteriesPage() {
         }
       />
 
-      {latest.isLoading ? (
+      {latest.isLoading || nextDraws.isLoading ? (
         <LoadingState rows={3} />
       ) : latest.isError ? (
         <ErrorState onRetry={() => latest.refetch()} />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {visibleLotteries.map((lottery) => {
-            const draw = (latest.data ?? []).find((item) => item.lotteries?.slug === lottery.slug);
-            const contest: UpcomingContestInfo = {
-              contestNumber: draw?.next_contest_number ?? null,
-              drawDate: draw?.next_draw_date ?? null,
-              estimatedPrize: draw?.estimated_next_prize ?? null,
-              status: draw?.next_contest_number ? "ready" : "unavailable",
-            };
-            const maintenance = availabilityOf(lottery.slug) === "MAINTENANCE";
+          {activeLotteries.map((lottery) => {
+            const view = nextDraws.viewOf(lottery.slug);
+            const contest: UpcomingContestInfo =
+              view.kind === "ready"
+                ? {
+                    contestNumber: view.contestNumber,
+                    drawDate: view.drawDate,
+                    estimatedPrize: view.estimatedPrize,
+                    status: "ready",
+                  }
+                : {
+                    contestNumber: null,
+                    drawDate: null,
+                    estimatedPrize: null,
+                    status: view.kind === "awaiting" ? "awaiting" : "unavailable",
+                  };
+            const availability = availabilityOf(lottery.slug);
+            const maintenance = availability === "MAINTENANCE";
+            const disabled = availability === "DISABLED";
             return (
               <div key={lottery.slug} className="space-y-2">
-                <LotteryCard lottery={lottery} contest={contest} />
+                <LotteryCard
+                  lottery={lottery}
+                  contest={contest}
+                  informativeLabel={disabled ? "Em breve" : undefined}
+                />
                 {maintenance ? (
                   <p className="rounded-lg bg-warning-soft p-2 text-xs text-warning" role="status">
                     Em manutenção
                     {noteOf(lottery.slug) ? ` — ${noteOf(lottery.slug)}` : ""}. Novos jogos e bolões
                     estão pausados.
+                  </p>
+                ) : null}
+                {disabled ? (
+                  <p className="rounded-lg bg-surface-secondary p-2 text-xs text-text-secondary">
+                    Ainda não disponível para jogos e bolões. As informações do próximo sorteio são
+                    apenas para consulta.
                   </p>
                 ) : null}
               </div>
