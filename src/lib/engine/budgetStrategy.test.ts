@@ -118,6 +118,35 @@ describe("computeBudgetStrategy", () => {
     expect(allocation!.leftover).toBe(0);
   });
 
+  it("junta a sobra de modalidades diferentes para fechar mais um jogo (regressão: sobras presas por fatia)", () => {
+    // A divisão em fatias iguais entre 3 modalidades pode deixar, em cada
+    // uma isoladamente, uma sobra pequena demais para mais um jogo ali —
+    // mesmo quando a SOMA das sobras já fecha com um jogo em outra
+    // modalidade. Cenário real verificado: nenhuma fatia sozinha comporta
+    // mais um jogo, mas a varredura final consegue zerar a sobra comprando
+    // 1 jogo extra de Lotofácil (15 dezenas) e 1 de Quina (5 dezenas) com
+    // o valor somado.
+    const result = computeBudgetStrategy({
+      budget: 114,
+      modalities: ["mega-sena", "lotofacil", "quina"],
+      priority: "max_probability",
+      profile: "max_prize",
+      pricesBySlug,
+    });
+
+    expect(result.totalLeftover).toBe(0);
+    expect(result.excludedModalities).toHaveLength(0);
+
+    const lotofacil = result.allocations.find((item) => item.slug === "lotofacil");
+    const quina = result.allocations.find((item) => item.slug === "quina");
+    // Antes da varredura, lotofácil tinha 12 jogos de 15 dezenas (R$36) e
+    // quina tinha 2 de 6 + 3 de 5 dezenas (R$37,50) — cada um com sobra
+    // isolada insuficiente para mais um jogo ali. A varredura soma as
+    // sobras e compra mais 1 jogo de cada, fechando em R$0 de sobra total.
+    expect(lotofacil!.lines.find((line) => line.numbersSelected === 15)!.gamesCount).toBe(13);
+    expect(quina!.lines.find((line) => line.numbersSelected === 5)!.gamesCount).toBe(4);
+  });
+
   it("divide o orçamento entre modalidades selecionadas sem perder valor", () => {
     const result = computeBudgetStrategy({
       budget: 30,

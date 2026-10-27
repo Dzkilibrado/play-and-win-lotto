@@ -32,8 +32,18 @@
  *
  * Nenhum valor de prêmio é projetado ou estimado aqui — apenas preço oficial
  * (tabela `lottery_prices`) e combinatória. Sobra de orçamento que não fecha
- * com nenhum jogo adicional em nenhuma configuração disponível é reportada,
- * nunca descartada em silêncio nem "arredondada" para dentro.
+ * com nenhum jogo adicional em nenhuma configuração disponível, em NENHUMA
+ * modalidade selecionada, é reportada, nunca descartada em silêncio nem
+ * "arredondada" para dentro.
+ *
+ * A divisão em fatias iguais por modalidade (abaixo) pode deixar, em cada
+ * modalidade isoladamente, uma sobra pequena demais para mais um jogo ali —
+ * mesmo quando a SOMA dessas sobras já daria para outro jogo, numa modalidade
+ * qualquer. Por isso, depois da divisão inicial, uma etapa de "varredura"
+ * (`mopUpLeftover`) junta toda sobra não comprometida e continua comprando o
+ * jogo mais barato/forte que couber, em qualquer modalidade selecionada —
+ * inclusive uma que tenha ficado de fora da divisão inicial —, até que o
+ * valor restante realmente não feche com nenhum jogo em lugar nenhum.
  */
 
 import { type LotterySlug, lotteryConfigs } from "@/config/lotteries";
@@ -213,6 +223,116 @@ function fillBudget(
   return { lines, totalCost };
 }
 
+/**
+ * Varre a sobra consolidada de todas as modalidades (inclusive as que
+ * ficaram de fora da divisão inicial) e continua comprando — um jogo por
+ * vez, no preço mais baixo/dezenas mais forte conforme a prioridade — em
+ * qualquer modalidade onde ainda couber, até não caber mais nenhum jogo em
+ * lugar nenhum. Isso evita que a divisão em fatias iguais deixe sobras
+ * pequenas "presas" em cada modalidade isoladamente quando a soma delas já
+ * daria para mais um jogo.
+ *
+ * Modifica `allocations` e `excludedModalities` em memória (cria uma nova
+ * alocação quando uma modalidade antes excluída passa a caber um jogo) e
+ * devolve o valor que de fato não fechou com nenhuma configuração.
+ */
+function mopUpLeftover(
+  pool: number,
+  priority: BudgetStrategyPriority,
+  modalities: LotterySlug[],
+  pricesBySlug: Record<string, BudgetPriceRow[]>,
+  allocations: BudgetStrategyAllocation[],
+  excludedModalities: LotterySlug[],
+): number {
+  if (pool <= 0) return Math.max(pool, 0);
+
+  const allocationBySlug = new Map(allocations.map((allocation) => [allocation.slug, allocation]));
+
+  const candidates = modalities
+    .flatMap((slug) => {
+      const selectable = lotteryConfigs[slug].selectable;
+      return (pricesBySlug[slug] ?? [])
+        .filter(
+          (row) =>
+            row.numbersSelected >= selectable.min &&
+            row.numbersSelected <= selectable.max &&
+            row.price > 0,
+        )
+        .map((row) => ({ slug, row }));
+    })
+    .sort((a, b) =>
+      priority === "max_games"
+        ? a.row.price - b.row.price || a.row.numbersSelected - b.row.numbersSelected
+        : b.row.numbersSelected - a.row.numbersSelected || a.row.price - b.row.price,
+    );
+
+  let remaining = pool;
+  let boughtSomething = true;
+
+  while (boughtSomething && remaining > 0) {
+    boughtSomething = false;
+
+    for (const { slug, row } of candidates) {
+      if (row.price > remaining) continue;
+
+      const existingAllocation = allocationBySlug.get(slug);
+      if ((existingAllocation?.totalGamesCount ?? 0) >= generationConfig.maxGamesPerRequest)
+        continue;
+
+      let allocation = existingAllocation;
+      if (!allocation) {
+        allocation = {
+          slug,
+          name: lotteryConfigs[slug].name,
+          lines: [],
+          totalGamesCount: 0,
+          totalCost: 0,
+          budgetAllocated: 0,
+          leftover: 0,
+          unaffordable: false,
+        };
+        allocations.push(allocation);
+        allocationBySlug.set(slug, allocation);
+        const excludedIndex = excludedModalities.indexOf(slug);
+        if (excludedIndex >= 0) excludedModalities.splice(excludedIndex, 1);
+      }
+
+      const existingLine = allocation.lines.find(
+        (line) => line.numbersSelected === row.numbersSelected,
+      );
+      if (existingLine) {
+        existingLine.gamesCount += 1;
+        existingLine.subtotal = Math.round((existingLine.subtotal + row.price) * 100) / 100;
+      } else {
+        allocation.lines.push({
+          numbersSelected: row.numbersSelected,
+          pricePerGame: row.price,
+          gamesCount: 1,
+          combinationsPerGame: row.combinationCount,
+          subtotal: row.price,
+        });
+      }
+
+      allocation.totalGamesCount += 1;
+      allocation.totalCost = Math.round((allocation.totalCost + row.price) * 100) / 100;
+      allocation.budgetAllocated = Math.round((allocation.budgetAllocated + row.price) * 100) / 100;
+      allocation.leftover = Math.max(0, Math.round((allocation.leftover - row.price) * 100) / 100);
+
+      remaining = Math.round((remaining - row.price) * 100) / 100;
+      boughtSomething = true;
+      break; // reinicia a varredura do topo (mais barato/forte) com o novo valor restante
+    }
+  }
+
+  // Mantém os grupos de cada modalidade ordenados da maior para a menor
+  // quantidade de dezenas, para uma exibição consistente após a varredura.
+  for (const allocation of allocations) {
+    allocation.lines.sort((a, b) => b.numbersSelected - a.numbersSelected);
+  }
+
+  return Math.max(remaining, 0);
+}
+
 export function computeBudgetStrategy(input: BudgetStrategyInput): BudgetStrategyResult {
   const { budget, modalities, priority, profile, pricesBySlug } = input;
 
@@ -277,14 +397,34 @@ export function computeBudgetStrategy(input: BudgetStrategyInput): BudgetStrateg
     pendingModalities = pendingModalities.filter((item) => item !== slug);
   }
 
+  // A divisão em fatias iguais acima pode deixar, em cada modalidade
+  // isoladamente, uma sobra pequena demais para mais um jogo ali — mesmo
+  // quando a soma dessas sobras já fecharia com um jogo em outra
+  // modalidade (inclusive uma excluída da divisão inicial). A varredura
+  // junta toda a sobra e continua comprando enquanto couber em qualquer
+  // modalidade selecionada, antes de reportar o valor como não utilizável.
+  const costBeforeMopUp =
+    Math.round(allocations.reduce((sum, item) => sum + item.totalCost, 0) * 100) / 100;
+  const leftoverBeforeMopUp = Math.round((budget - costBeforeMopUp) * 100) / 100;
+  const totalLeftover = mopUpLeftover(
+    leftoverBeforeMopUp,
+    priority,
+    modalities,
+    pricesBySlug,
+    allocations,
+    excludedModalities,
+  );
+
+  // Reordena pela mesma ordem de prioridade do perfil, já que a varredura
+  // pode ter reincluído modalidades antes excluídas ao final da lista.
+  allocations.sort((a, b) => ranked.indexOf(a.slug) - ranked.indexOf(b.slug));
+
+  const totalCost = Math.round((budget - totalLeftover) * 100) / 100;
+
   if (excludedModalities.length > 0) {
     const names = excludedModalities.map((slug) => lotteryConfigs[slug].name).join(", ");
     warnings.push(`O valor disponível não é suficiente para incluir ${names} nesta divisão.`);
   }
-
-  const totalCost =
-    Math.round(allocations.reduce((sum, item) => sum + item.totalCost, 0) * 100) / 100;
-  const totalLeftover = Math.round((budget - totalCost) * 100) / 100;
 
   if (allocations.length === 0) {
     warnings.push("Nenhuma modalidade selecionada comporta um jogo com o valor informado.");
