@@ -49,7 +49,7 @@ describe("computeBudgetStrategy", () => {
     expect(result.warnings[0]).toMatch(/Selecione ao menos uma modalidade/);
   });
 
-  it("max_games maximiza quantidade de jogos na dezena mais barata", () => {
+  it("max_games maximiza quantidade de jogos na dezena mais barata, em um único grupo", () => {
     const result = computeBudgetStrategy({
       budget: 50,
       modalities: ["mega-sena"],
@@ -58,13 +58,14 @@ describe("computeBudgetStrategy", () => {
       pricesBySlug,
     });
     const [allocation] = result.allocations;
-    expect(allocation!.numbersSelected).toBe(6);
-    expect(allocation!.gamesCount).toBe(10);
+    expect(allocation!.lines).toHaveLength(1);
+    expect(allocation!.lines[0]!.numbersSelected).toBe(6);
+    expect(allocation!.totalGamesCount).toBe(10);
     expect(allocation!.totalCost).toBe(50);
     expect(result.totalLeftover).toBe(0);
   });
 
-  it("max_probability prioriza mais dezenas por jogo mesmo com menos jogos", () => {
+  it("max_probability prioriza mais dezenas por jogo quando o valor fecha exatamente", () => {
     const result = computeBudgetStrategy({
       budget: 140,
       modalities: ["mega-sena"],
@@ -73,8 +74,48 @@ describe("computeBudgetStrategy", () => {
       pricesBySlug,
     });
     const [allocation] = result.allocations;
-    expect(allocation!.numbersSelected).toBe(8);
-    expect(allocation!.gamesCount).toBe(1);
+    expect(allocation!.lines).toHaveLength(1);
+    expect(allocation!.lines[0]!.numbersSelected).toBe(8);
+    expect(allocation!.totalGamesCount).toBe(1);
+    expect(allocation!.leftover).toBe(0);
+  });
+
+  it("max_probability preenche a sobra com grupos de dezenas menores em vez de descartar (regressão do bug reportado)", () => {
+    // 1 jogo de 8 dezenas (140) esgota a config mais forte; sobra 35,
+    // que fecha exatamente com 1 jogo de 7 dezenas — não deve sobrar sem uso.
+    const result = computeBudgetStrategy({
+      budget: 175,
+      modalities: ["mega-sena"],
+      priority: "max_probability",
+      profile: "cost_benefit",
+      pricesBySlug,
+    });
+    const [allocation] = result.allocations;
+    expect(allocation!.lines.map((line) => line.numbersSelected)).toEqual([8, 7]);
+    expect(allocation!.lines[0]!.gamesCount).toBe(1);
+    expect(allocation!.lines[1]!.gamesCount).toBe(1);
+    expect(allocation!.totalGamesCount).toBe(2);
+    expect(allocation!.totalCost).toBe(175);
+    expect(allocation!.leftover).toBe(0);
+  });
+
+  it("max_probability mistura três grupos quando necessário para aproveitar o valor (exemplo do usuário)", () => {
+    // 140 (8 dezenas) + 2x35 (7 dezenas) + 5 (6 dezenas) = 215, sem sobra.
+    const result = computeBudgetStrategy({
+      budget: 215,
+      modalities: ["mega-sena"],
+      priority: "max_probability",
+      profile: "cost_benefit",
+      pricesBySlug,
+    });
+    const [allocation] = result.allocations;
+    expect(allocation!.lines).toEqual([
+      expect.objectContaining({ numbersSelected: 8, gamesCount: 1 }),
+      expect.objectContaining({ numbersSelected: 7, gamesCount: 2 }),
+      expect.objectContaining({ numbersSelected: 6, gamesCount: 1 }),
+    ]);
+    expect(allocation!.totalCost).toBe(215);
+    expect(allocation!.leftover).toBe(0);
   });
 
   it("divide o orçamento entre modalidades selecionadas sem perder valor", () => {
@@ -137,6 +178,21 @@ describe("computeBudgetStrategy", () => {
     expect(result.totalLeftover).toBeGreaterThanOrEqual(0);
   });
 
+  it("max_probability também nunca excede o orçamento, mesmo misturando grupos", () => {
+    const result = computeBudgetStrategy({
+      budget: 233.7,
+      modalities: ["mega-sena"],
+      priority: "max_probability",
+      profile: "cost_benefit",
+      pricesBySlug,
+    });
+    expect(result.totalCost).toBeLessThanOrEqual(233.7);
+    expect(result.totalLeftover).toBeGreaterThanOrEqual(0);
+    // sobra deve ser menor que o preço da configuração mais barata disponível:
+    // se não, o motor deixou de comprar um jogo que caberia.
+    expect(result.totalLeftover).toBeLessThan(5);
+  });
+
   it("nunca ultrapassa o limite de jogos por solicitação", () => {
     const result = computeBudgetStrategy({
       budget: 100000,
@@ -145,6 +201,6 @@ describe("computeBudgetStrategy", () => {
       profile: "cost_benefit",
       pricesBySlug,
     });
-    expect(result.allocations[0]!.gamesCount).toBeLessThanOrEqual(200);
+    expect(result.allocations[0]!.totalGamesCount).toBeLessThanOrEqual(200);
   });
 });
