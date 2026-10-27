@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { MaintenanceScreen } from "@/components/common/MaintenanceScreen";
 import { AppShell } from "@/components/layout/AppShell";
+import { useSystemStatus } from "@/hooks/useSystemStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { isBlockedAuthError } from "@/lib/auth/blockedAccount";
 
@@ -24,7 +26,13 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/login" });
     }
     const { data: status } = await supabase.rpc("profile_onboarding_status");
-    if (!(status && typeof status === "object" && !Array.isArray(status) && status["complete"] === true)) throw redirect({ to: "/complete-profile" });
+    if (!(
+      status &&
+      typeof status === "object" &&
+      !Array.isArray(status) &&
+      status["complete"] === true
+    ))
+      throw redirect({ to: "/complete-profile" });
     const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role")
@@ -42,6 +50,7 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin } = Route.useRouteContext();
+  const { status, refresh } = useSystemStatus();
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -55,8 +64,21 @@ function AuthenticatedLayout() {
     }
   }
 
+  if (status.maintenance && !isAdmin) {
+    return <MaintenanceScreen reason={status.reason} onRetry={refresh} onSignOut={handleSignOut} />;
+  }
+
   return (
     <AppShell isAdmin={isAdmin} onSignOut={handleSignOut}>
+      {status.maintenance && isAdmin ? (
+        <p
+          className="mb-4 rounded-lg bg-warning-soft p-3 text-sm font-medium text-warning"
+          role="status"
+        >
+          Modo manutenção ATIVO: os usuários não conseguem usar o sistema. Só administradores têm
+          acesso.
+        </p>
+      ) : null}
       <Outlet />
     </AppShell>
   );

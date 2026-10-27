@@ -70,8 +70,8 @@ const cards: AdminCard[] = [
   },
   {
     to: "/admin/recursos",
-    title: "Recursos do sistema",
-    description: "Liga e desliga funções para todos.",
+    title: "Controle do sistema",
+    description: "Modo manutenção geral e ações de urgência.",
     icon: SlidersHorizontal,
   },
 ];

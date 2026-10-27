@@ -8,6 +8,17 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { LotteryAvailabilityPanel } from "@/components/admin/LotteryAvailabilityPanel";
 import { LotteryClubsPanel } from "@/components/admin/LotteryClubsPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
 import { syncConfig } from "@/config/sync.config";
@@ -298,37 +309,69 @@ export function SyncPanel({ userId }: { userId: string }) {
     ]);
   };
 
-  const action = useMutation({
-    mutationFn: async (input: {
-      slug: string;
-      type: "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS";
-    }) => {
-      const started = await startFn({ data: input });
-      if (started.kind === "job" && input.type === "HISTORICAL") {
-        let status = started.status;
-        let guard = 0;
-        while (
-          status !== "completed" &&
-          status !== "completed_with_errors" &&
-          status !== "failed" &&
-          guard < 500
-        ) {
-          const step = await batchFn({ data: { jobId: started.jobId } });
-          status = step.status;
-          guard += 1;
-          setProgress(
-            `${input.slug}: ${formatNumber(step.processed)} concursos processados · ${formatNumber(
-              step.inserted,
-            )} novos · ${formatNumber(step.failed)} com erro`,
-          );
-          await queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] });
-        }
+  type SyncType = "LATEST" | "RECENT" | "HISTORICAL" | "REPROCESS";
+
+  const runOne = async (input: { slug: string; type: SyncType }) => {
+    const started = await startFn({ data: input });
+    if (started.kind === "job" && input.type === "HISTORICAL") {
+      let status = started.status;
+      let guard = 0;
+      while (
+        status !== "completed" &&
+        status !== "completed_with_errors" &&
+        status !== "failed" &&
+        guard < 500
+      ) {
+        const step = await batchFn({ data: { jobId: started.jobId } });
+        status = step.status;
+        guard += 1;
+        setProgress(
+          `${input.slug}: ${formatNumber(step.processed)} concursos processados · ${formatNumber(
+            step.inserted,
+          )} novos · ${formatNumber(step.failed)} com erro`,
+        );
+        await queryClient.invalidateQueries({ queryKey: ["admin", userId, "sync-overview"] });
       }
-      return started;
-    },
+    }
+    return started;
+  };
+
+  const action = useMutation({
+    mutationFn: runOne,
     onMutate: (input) => setBusy(`${input.slug}:${input.type}`),
     onSuccess: async () => {
       toast.success("Sincronização concluída.");
+      await refreshAll();
+    },
+    onError: (error: Error) => toast.error(error.message),
+    onSettled: () => {
+      setBusy(null);
+      setProgress(null);
+    },
+  });
+
+  const targets = (overview.data ?? []).filter((row) => row.automation?.enabled !== false);
+  const skipped = (overview.data ?? []).length - targets.length;
+
+  const bulk = useMutation({
+    mutationFn: async (type: SyncType) => {
+      const failures: string[] = [];
+      let done = 0;
+      for (const row of targets) {
+        setProgress(`${row.name}: executando (${done + 1} de ${targets.length})…`);
+        try {
+          await runOne({ slug: row.slug, type });
+        } catch {
+          failures.push(row.name);
+        }
+        done += 1;
+      }
+      return { total: targets.length, failures };
+    },
+    onMutate: (type) => setBusy(`ALL:${type}`),
+    onSuccess: async ({ total, failures }) => {
+      if (failures.length === 0) toast.success(`Concluído em ${total} loteria(s).`);
+      else toast.error(`Concluído com falha em: ${failures.join(", ")}.`);
       await refreshAll();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -348,9 +391,59 @@ export function SyncPanel({ userId }: { userId: string }) {
           Atualização automática
         </h2>
         <p className="mt-1 text-xs text-text-secondary">
-          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte:{" "}
-          {syncConfig.sourceLabel}
+          Sincronização automática: ATIVA · verifica somente quando necessário e, em falha, tenta de
+          novo em poucos minutos · Fonte: {syncConfig.sourceLabel}
         </p>
+        <div className="mt-3 space-y-2">
+          <p className="text-xs font-medium text-text-primary">Em todas as loterias</p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["LATEST", "Sincronizar último"],
+                ["RECENT", "Atualizar recentes"],
+                ["REPROCESS", "Reprocessar falhas"],
+              ] as const
+            ).map(([type, label]) => (
+              <Button
+                key={type}
+                size="sm"
+                variant="outline"
+                className="h-11"
+                disabled={busy !== null || targets.length === 0}
+                onClick={() => bulk.mutate(type)}
+              >
+                {busy === `ALL:${type}` ? "Executando…" : label}
+              </Button>
+            ))}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" className="h-11" disabled={busy !== null || targets.length === 0}>
+                  {busy === "ALL:HISTORICAL" ? "Executando…" : "Importação histórica"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Importar o histórico de todas as loterias?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso percorre todos os concursos de {targets.length} loteria(s), uma após a
+                    outra, e pode levar vários minutos. Mantenha esta tela aberta até terminar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => bulk.mutate("HISTORICAL")}>
+                    Importar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+          {skipped > 0 ? (
+            <p className="text-xs text-text-secondary">
+              {skipped} loteria(s) com atualização desligada ficam de fora.
+            </p>
+          ) : null}
+        </div>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
 
