@@ -233,12 +233,18 @@ export function BudgetStrategyPanel({ onApprove }: BudgetStrategyPanelProps) {
                       className="rounded-md border border-border p-3 space-y-1"
                     >
                       <p className="text-sm font-medium">{allocation.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {allocation.gamesCount} {allocation.gamesCount === 1 ? "jogo" : "jogos"} de{" "}
-                        {allocation.numbersSelected} dezenas —{" "}
-                        {formatCurrency(allocation.pricePerGame)} cada
-                      </p>
+                      <ul className="space-y-0.5">
+                        {allocation.lines.map((line) => (
+                          <li key={line.numbersSelected} className="text-sm text-muted-foreground">
+                            {line.gamesCount} {line.gamesCount === 1 ? "jogo" : "jogos"} de{" "}
+                            {line.numbersSelected} dezenas — {formatCurrency(line.pricePerGame)}{" "}
+                            cada
+                          </li>
+                        ))}
+                      </ul>
                       <p className="text-sm">
+                        {allocation.totalGamesCount}{" "}
+                        {allocation.totalGamesCount === 1 ? "jogo no total" : "jogos no total"} —
                         Total: <strong>{formatCurrency(allocation.totalCost)}</strong>
                       </p>
                     </div>

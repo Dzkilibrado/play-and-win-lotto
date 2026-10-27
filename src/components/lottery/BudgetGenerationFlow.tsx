@@ -1,7 +1,8 @@
 /**
  * Etapa 4 do fluxo "Criar jogo por orçamento": a partir da estratégia já
- * aprovada pelo usuário (Etapa 3), gera de fato os jogos de cada
- * modalidade, e depois oferece — por modalidade, já que um bolão pertence
+ * aprovada pelo usuário (Etapa 3) — que pode misturar grupos de jogos com
+ * dezenas diferentes dentro da mesma modalidade —, gera de fato os jogos de
+ * cada grupo, e depois oferece — por modalidade, já que um bolão pertence
  * a uma única modalidade no modelo atual — duas decisões independentes do
  * usuário:
  *
@@ -25,19 +26,30 @@ import { GameCard } from "@/components/lottery/GameCard";
 import { useSession } from "@/hooks/useAuth";
 import { useGameGeneration } from "@/lib/engine/useGameGeneration";
 import type { GeneratedGameDraft } from "@/lib/engine/types";
-import type { BudgetStrategyAllocation, BudgetStrategyResult } from "@/lib/engine/budgetStrategy";
+import type {
+  BudgetGameLine,
+  BudgetStrategyAllocation,
+  BudgetStrategyResult,
+} from "@/lib/engine/budgetStrategy";
 import { gameService } from "@/lib/services/gameService";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { poolService } from "@/lib/services/poolService";
 import { lotteryConfigs } from "@/config/lotteries";
 
+/** Um jogo gerado, junto do grupo (dezenas/preço) que o originou. */
+interface GeneratedGameWithLine {
+  draft: GeneratedGameDraft;
+  line: BudgetGameLine;
+}
+
 interface ModalityState {
   allocation: BudgetStrategyAllocation;
   lotteryId: string | null;
   contestNumber: number | null;
-  priceRowId: string | null;
+  /** Id da linha de preço oficial (lottery_prices) por quantidade de dezenas. */
+  priceRowIdByNumbers: Record<number, string>;
   status: "pending" | "generating" | "done" | "error";
-  games: GeneratedGameDraft[];
+  games: GeneratedGameWithLine[];
   error: string | null;
   savedGameIds: string[] | null; // null = ainda não salvo
   saving: boolean;
@@ -60,7 +72,7 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
       allocation,
       lotteryId: null,
       contestNumber: null,
-      priceRowId: null,
+      priceRowIdByNumbers: {},
       status: "pending",
       games: [],
       error: null,
@@ -89,33 +101,51 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
 
         try {
           const lotteryRow = lotteries.find((row) => row.slug === slug) ?? null;
-          const priceRow = lotteryRow
-            ? await lotteryDataService.getActivePrice(lotteryRow.id, allocation.numbersSelected)
-            : null;
           const lastDraw = (await lotteryDataService.listRecentResults(slug, 1))[0] ?? null;
           const lastNumbers =
             lastDraw?.draw_numbers?.map((item: { number: number }) => item.number) ?? null;
           const nextContest =
             lastDraw?.next_contest_number ?? (lastDraw ? lastDraw.contest_number + 1 : null);
 
-          const outcome = await generate(
-            {
-              lotterySlug: slug,
-              numbersCount: allocation.numbersSelected,
-              gamesCount: allocation.gamesCount,
-              fixed: [],
-              excluded: [],
-              filters: null,
-              weights: null,
-            },
-            { lastDrawNumbers: lastNumbers, lastContestNumber: lastDraw?.contest_number ?? null },
-          );
+          const games: GeneratedGameWithLine[] = [];
+          const priceRowIdByNumbers: Record<number, string> = {};
+          let failure: string | null = null;
 
-          if (!outcome || !outcome.validation.ok) {
-            updateState(slug, {
-              status: "error",
-              error: outcome?.validation.issues[0]?.message ?? "Não foi possível gerar os jogos.",
-            });
+          // Cada grupo (linha) tem sua própria quantidade de dezenas e preço —
+          // gera e busca o preço oficial separadamente por grupo.
+          for (const line of allocation.lines) {
+            if (lotteryRow) {
+              const priceRow = await lotteryDataService.getActivePrice(
+                lotteryRow.id,
+                line.numbersSelected,
+              );
+              if (priceRow) priceRowIdByNumbers[line.numbersSelected] = priceRow.id;
+            }
+
+            const outcome = await generate(
+              {
+                lotterySlug: slug,
+                numbersCount: line.numbersSelected,
+                gamesCount: line.gamesCount,
+                fixed: [],
+                excluded: [],
+                filters: null,
+                weights: null,
+              },
+              { lastDrawNumbers: lastNumbers, lastContestNumber: lastDraw?.contest_number ?? null },
+            );
+
+            if (!outcome || !outcome.validation.ok) {
+              failure =
+                outcome?.validation.issues[0]?.message ?? "Não foi possível gerar os jogos.";
+              break;
+            }
+
+            for (const draft of outcome.games) games.push({ draft, line });
+          }
+
+          if (failure) {
+            updateState(slug, { status: "error", error: failure });
             continue;
           }
 
@@ -123,8 +153,8 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
             status: "done",
             lotteryId: lotteryRow?.id ?? null,
             contestNumber: nextContest,
-            priceRowId: priceRow?.id ?? null,
-            games: outcome.games,
+            priceRowIdByNumbers,
+            games,
           });
         } catch (error) {
           updateState(slug, {
@@ -148,7 +178,8 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
     updateState(slug, { saving: true });
     try {
       const ids: string[] = [];
-      for (const draft of state.games) {
+      for (const { draft, line } of state.games) {
+        const priceRowId = state.priceRowIdByNumbers[line.numbersSelected] ?? null;
         const savedId = await gameService.saveGame({
           userId: user.id,
           lotteryId: state.lotteryId,
@@ -156,11 +187,11 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
           analysis: draft.analysis,
           contestNumber: state.contestNumber,
           drawId: null,
-          price: state.priceRowId
+          price: priceRowId
             ? {
-                priceId: state.priceRowId,
-                price: state.allocation.pricePerGame,
-                combinationCount: state.allocation.combinationsPerGame,
+                priceId: priceRowId,
+                price: line.pricePerGame,
+                combinationCount: line.combinationsPerGame,
                 source: null,
               }
             : null,
@@ -229,15 +260,15 @@ export function BudgetGenerationFlow({ result, onBack }: BudgetGenerationFlowPro
             {state.status === "done" && (
               <>
                 <div className="space-y-2">
-                  {state.games.map((game) => (
+                  {state.games.map(({ draft, line }) => (
                     <GameCard
-                      key={game.key}
-                      title={`Jogo ${game.index}`}
-                      numbers={game.numbers}
-                      analysis={game.analysis}
+                      key={draft.key}
+                      title={`Jogo ${draft.index} — ${line.numbersSelected} dezenas`}
+                      numbers={draft.numbers}
+                      analysis={draft.analysis}
                       lotteryName={state.allocation.name}
                       colorKey={lotteryConfigs[state.allocation.slug].colorKey}
-                      cost={state.allocation.pricePerGame}
+                      cost={line.pricePerGame}
                       contestNumber={state.contestNumber}
                     />
                   ))}
