@@ -7,11 +7,14 @@ export const checkConfig = {
    * Versão do cálculo de conferência.
    * v1 = acertos por interseção + decomposição combinatória C(a,f) * C(n-a, b-f)
    *      sobre as faixas oficiais registradas em `draw_prizes`.
+   * v2 = mesma fórmula, mas aceitando faixa de 0 acertos (Lotomania premia
+   *      "nenhum acerto") — sem efeito sobre o resultado de nenhuma faixa
+   *      das demais modalidades, que nunca têm faixa de 0 acertos.
    * Sempre que a fórmula mudar, incrementar aqui: resultados antigos não são
    * reinterpretados silenciosamente, ficam marcados com a versão em que
    * foram calculados.
    */
-  calculationVersion: 1,
+  calculationVersion: 2,
   /** Jogos conferidos por lote (mantém cada execução curta e retomável). */
   batchSize: 200,
   /** Concursos recentes considerados ao procurar jogos ainda não conferidos. */

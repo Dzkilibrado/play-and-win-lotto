@@ -77,10 +77,19 @@ function toNumberLoose(value: unknown): number | null {
 
 /** Extrai o número de acertos da descrição da faixa. null = não interpretável. */
 function parseHits(description: string, faixa: unknown): number | null {
+  // Lotomania tem uma faixa de ZERO acertos ("nenhum acerto"/"0 acertos") —
+  // só o dígito "0" não aparece sozinho de forma confiável na descrição,
+  // então o texto precisa ser checado antes do regex genérico de dígitos.
+  const normalized = description
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+  if (/\bnenhum\s+acerto/.test(normalized) || /\b0\s*acerto/.test(normalized)) return 0;
+
   const match = /(\d+)/.exec(description);
   if (match) {
     const hits = Number.parseInt(match[1]!, 10);
-    if (Number.isInteger(hits) && hits > 0) return hits;
+    if (Number.isInteger(hits) && hits >= 0) return hits;
   }
   void faixa;
   return null;
@@ -135,7 +144,9 @@ function validate(slug: LotterySlug, draw: NormalizedDraw): void {
   if (!Number.isInteger(draw.contestNumber) || draw.contestNumber <= 0) {
     throw new SyncError("VALIDATION", "Número de concurso inválido.");
   }
-  const expected = config.selectable.base;
+  // Quantas dezenas o SORTEIO revela — normalmente igual à aposta simples,
+  // mas a Lotomania sorteia 20 de um universo de 100 com aposta de 50.
+  const expected = config.drawnCount;
   if (draw.numbers.length !== expected) {
     throw new SyncError(
       "VALIDATION",

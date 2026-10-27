@@ -256,3 +256,46 @@ describe("faixa com valor oficial zero", () => {
     expect(outcome.totalPrize).toBe(0);
   });
 });
+
+describe("conferência — faixa de zero acertos (Lotomania)", () => {
+  const lotomaniaTiers: OfficialTier[] = [
+    { drawPrizeId: "l20", tier: "20 acertos", hits: 20, prizePerWinner: 1_000_000 },
+    { drawPrizeId: "l19", tier: "19 acertos", hits: 19, prizePerWinner: 50_000 },
+    { drawPrizeId: "l0", tier: "Nenhum acerto", hits: 0, prizePerWinner: 5_000 },
+  ];
+
+  it("premia quando o jogo não acerta nenhuma das dezenas sorteadas", () => {
+    const gameNumbers = Array.from({ length: 50 }, (_, index) => index + 1); // 1..50
+    const drawNumbers = Array.from({ length: 20 }, (_, index) => 51 + index); // 51..70
+    const result = checkGame({
+      gameNumbers,
+      drawNumbers,
+      baseSize: 50,
+      tiers: lotomaniaTiers,
+    });
+    expect(result.hits).toBe(0);
+    expect(result.isPrized).toBe(true);
+    const zeroTier = result.breakdown.find((entry) => entry.hitsRequired === 0);
+    expect(zeroTier).toBeDefined();
+    expect(zeroTier?.winningCombinations).toBe(1);
+    expect(zeroTier?.totalForTier).toBe(5_000);
+    expect(result.prizeLabel).toBe("Nenhum acerto");
+    expect(result.totalPrize).toBe(5_000);
+  });
+
+  it("não premia a faixa de zero acertos quando o jogo acerta pelo menos uma dezena", () => {
+    const gameNumbers = Array.from({ length: 50 }, (_, index) => index + 1); // 1..50
+    // 19 dezenas fora de gameNumbers + 1 dentro: garante 1 acerto, não 0.
+    const drawNumbers = [...Array.from({ length: 19 }, (_, index) => 51 + index), 1];
+    const result = checkGame({
+      gameNumbers,
+      drawNumbers,
+      baseSize: 50,
+      tiers: lotomaniaTiers,
+    });
+    expect(result.hits).toBe(1);
+    const zeroTier = result.breakdown.find((entry) => entry.hitsRequired === 0);
+    expect(zeroTier).toBeUndefined();
+    expect(result.isPrized).toBe(false);
+  });
+});

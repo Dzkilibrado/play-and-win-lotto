@@ -8,7 +8,9 @@
  * DESIGN SYSTEM — Gestor da Sorte
  *
  * Tokens semânticos em oklch. Nunca use cores literais em componentes.
- * Identidade por modalidade: aplique data-lottery="mega|lotofacil|quina"
+ * Identidade por modalidade: aplique
+ * data-lottery="mega|lotofacil|quina|lotomania|dupla-sena|dia-de-sorte|timemania|mais-milionaria|super-sete"
+ * (mesmo valor de `colorKey` em src/config/lotteries.ts)
  * em um contêiner para trocar --lottery-primary daquele bloco.
  */
 
@@ -214,6 +216,36 @@
   --lottery-soft: oklch(0.95 0.04 270);
   --lottery-foreground: oklch(0.99 0.005 270);
 }
+[data-lottery="lotomania"] {
+  --lottery-primary: oklch(0.58 0.18 45);
+  --lottery-soft: oklch(0.95 0.05 45);
+  --lottery-foreground: oklch(0.99 0.005 45);
+}
+[data-lottery="dupla-sena"] {
+  --lottery-primary: oklch(0.52 0.19 25);
+  --lottery-soft: oklch(0.95 0.05 25);
+  --lottery-foreground: oklch(0.99 0.005 25);
+}
+[data-lottery="dia-de-sorte"] {
+  --lottery-primary: oklch(0.6 0.15 95);
+  --lottery-soft: oklch(0.95 0.05 95);
+  --lottery-foreground: oklch(0.18 0.03 95);
+}
+[data-lottery="timemania"] {
+  --lottery-primary: oklch(0.52 0.12 200);
+  --lottery-soft: oklch(0.95 0.04 200);
+  --lottery-foreground: oklch(0.99 0.005 200);
+}
+[data-lottery="mais-milionaria"] {
+  --lottery-primary: oklch(0.52 0.19 345);
+  --lottery-soft: oklch(0.95 0.05 345);
+  --lottery-foreground: oklch(0.99 0.005 345);
+}
+[data-lottery="super-sete"] {
+  --lottery-primary: oklch(0.62 0.17 105);
+  --lottery-soft: oklch(0.95 0.05 105);
+  --lottery-foreground: oklch(0.18 0.03 105);
+}
 .dark [data-lottery="mega"] {
   --lottery-primary: oklch(0.75 0.14 155);
   --lottery-soft: oklch(0.31 0.05 155);
@@ -228,6 +260,36 @@
   --lottery-primary: oklch(0.73 0.13 270);
   --lottery-soft: oklch(0.31 0.05 270);
   --lottery-foreground: oklch(0.18 0.03 270);
+}
+.dark [data-lottery="lotomania"] {
+  --lottery-primary: oklch(0.76 0.15 45);
+  --lottery-soft: oklch(0.31 0.06 45);
+  --lottery-foreground: oklch(0.18 0.03 45);
+}
+.dark [data-lottery="dupla-sena"] {
+  --lottery-primary: oklch(0.72 0.16 25);
+  --lottery-soft: oklch(0.31 0.06 25);
+  --lottery-foreground: oklch(0.18 0.03 25);
+}
+.dark [data-lottery="dia-de-sorte"] {
+  --lottery-primary: oklch(0.78 0.13 95);
+  --lottery-soft: oklch(0.31 0.06 95);
+  --lottery-foreground: oklch(0.18 0.03 95);
+}
+.dark [data-lottery="timemania"] {
+  --lottery-primary: oklch(0.73 0.1 200);
+  --lottery-soft: oklch(0.31 0.05 200);
+  --lottery-foreground: oklch(0.18 0.03 200);
+}
+.dark [data-lottery="mais-milionaria"] {
+  --lottery-primary: oklch(0.72 0.16 345);
+  --lottery-soft: oklch(0.31 0.06 345);
+  --lottery-foreground: oklch(0.18 0.03 345);
+}
+.dark [data-lottery="super-sete"] {
+  --lottery-primary: oklch(0.79 0.14 105);
+  --lottery-soft: oklch(0.31 0.06 105);
+  --lottery-foreground: oklch(0.18 0.03 105);
 }
 
 @layer base {
