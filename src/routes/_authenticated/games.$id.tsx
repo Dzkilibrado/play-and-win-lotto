@@ -20,10 +20,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/config/app.config";
+import { getLotteryConfig } from "@/config/lotteries";
 import { resolveRules, universeNumbers } from "@/lib/engine/rules";
 import { sanitizeStrategySnapshot } from "@/lib/engine/weights";
 import { weightIntensityLabels, weightsDisclaimer, windowLabel } from "@/config/weights.config";
-import { describeFilters, generationRulesVersion, sanitizeFilterStates } from "@/lib/engine/filters";
+import {
+  describeFilters,
+  generationRulesVersion,
+  sanitizeFilterStates,
+} from "@/lib/engine/filters";
 import {
   automaticStatuses,
   gameDisplayName,
@@ -68,15 +73,16 @@ function originFacts(notes: string | null): string[] {
   }
   const facts: string[] = [];
   const price = map.get("preco");
-  if (price) facts.push(`Valor da aposta informado: R$ ${Number(price).toFixed(2).replace(".", ",")}`);
+  if (price)
+    facts.push(`Valor da aposta informado: R$ ${Number(price).toFixed(2).replace(".", ",")}`);
   const source = map.get("fonte");
   if (source) facts.push(`Referência de preço: ${source}`);
-  if (map.get("origem") === "foto") facts.push("Dezenas lidas a partir de uma foto enviada por você.");
-  if (map.get("revisado_pelo_usuario") === "sim") facts.push("Você revisou e confirmou as dezenas antes de salvar.");
+  if (map.get("origem") === "foto")
+    facts.push("Dezenas lidas a partir de uma foto enviada por você.");
+  if (map.get("revisado_pelo_usuario") === "sim")
+    facts.push("Você revisou e confirmou as dezenas antes de salvar.");
   return facts;
 }
-
-
 
 function GameDetailPage() {
   const { id } = Route.useParams();
@@ -104,6 +110,17 @@ function GameDetailPage() {
     queryFn: () => checkService.getGameCheck(id),
   });
 
+  const multiDraw = (getLotteryConfig(game?.lotteries?.slug)?.drawsPerContest ?? 1) > 1;
+  const drawResults = useQuery({
+    queryKey: ["game-check-draws", id, check.data?.id],
+    enabled: Boolean(multiDraw && check.data?.id),
+    queryFn: () => checkService.getGameDrawResults(id),
+  });
+  const secondDraw = useQuery({
+    queryKey: ["game-check-second-draw", check.data?.draw_id],
+    enabled: Boolean(multiDraw && check.data?.draw_id),
+    queryFn: () => lotteryDataService.getSecondDraw(check.data!.draw_id),
+  });
   const drawNumbers = useQuery({
     queryKey: ["game-check-draw", check.data?.draw_id],
     enabled: Boolean(check.data?.draw_id && game?.lotteries?.slug),
@@ -209,12 +226,12 @@ function GameDetailPage() {
               result={check.data}
               gameNumbers={game.game_numbers.map((item) => item.number)}
               drawNumbers={(drawNumbers.data?.draw_numbers ?? []).map((item) => item.number)}
+              drawResults={drawResults.data ?? []}
+              secondDrawNumbers={(secondDraw.data?.numbers ?? []).map((item) => item.number)}
             />
           ) : (
             <section className="surface-card space-y-3 p-4">
-              <h2 className="font-display text-sm font-semibold text-text-primary">
-                Conferência
-              </h2>
+              <h2 className="font-display text-sm font-semibold text-text-primary">Conferência</h2>
               <p className="text-xs text-text-secondary">
                 {situation === "drawn"
                   ? "Este concurso já foi sorteado. Confira para ver seus acertos."
@@ -315,7 +332,6 @@ function GameDetailPage() {
             <GameDocumentSection imagePath={game.image_path} source={game.source} />
           ) : null}
 
-
           <section className="surface-card space-y-2 p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">Excluir jogo</h2>
             <p className="text-xs text-text-secondary">
@@ -338,9 +354,7 @@ function GameDetailPage() {
                 <AlertDialogTitle>
                   Excluir {gameDisplayName(game.sequence_number)}?
                 </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
+                <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -447,8 +461,8 @@ function AppliedFiltersSection({
       </ul>
       {legacyRules ? (
         <p className="text-xs text-text-secondary">
-          Este jogo foi criado com uma versão anterior do filtro de saltos, por isso esse item não
-          é exibido aqui.
+          Este jogo foi criado com uma versão anterior do filtro de saltos, por isso esse item não é
+          exibido aqui.
         </p>
       ) : null}
       <p className="text-xs text-text-secondary">

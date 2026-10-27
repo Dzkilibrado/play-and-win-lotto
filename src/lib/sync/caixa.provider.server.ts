@@ -42,6 +42,8 @@ export interface NormalizedDraw {
   /** Dezenas na ordem oficial de sorteio quando disponível. */
   numbers: number[];
   prizes: NormalizedPrize[];
+  /** 2º sorteio do concurso (Dupla Sena); `null` nas modalidades de sorteio único. */
+  secondDraw: { numbers: number[]; prizes: NormalizedPrize[] } | null;
   isLatest: boolean;
   raw: { source: string };
 }
@@ -70,15 +72,56 @@ function toNumberLoose(value: unknown): number | null {
   return null;
 }
 
-/** Extrai o número de acertos da descrição da faixa. null = não interpretável. */
-function parseHits(description: string, faixa: unknown): number | null {
+/** Texto sem acento/caixa, para comparar descrições de faixa. */
+function plain(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Marca de 2º sorteio na descrição da faixa ("... - 2º Sorteio", "segundo sorteio"). */
+const SECOND_DRAW_MARK = /\b(?:2\s*[ºo°]?|segundo)\s*sorteio\b/;
+
+function isSecondDrawDescription(description: string): boolean {
+  return SECOND_DRAW_MARK.test(plain(description));
+}
+
+/**
+ * Extrai o número de acertos da descrição da faixa. null = não interpretável.
+ * `tierLabels` (faixas da modalidade) permite entender descrições por nome
+ * ("Sena", "Terno") quando a fonte não traz o número de acertos.
+ */
+function parseHits(
+  description: string,
+  faixa: unknown,
+  tierLabels: { hits: number; label: string }[] = [],
+): number | null {
   // Lotomania tem uma faixa de ZERO acertos ("nenhum acerto"/"0 acertos") —
   // só o dígito "0" não aparece sozinho de forma confiável na descrição,
   // então o texto precisa ser checado antes do regex genérico de dígitos.
-  const normalized = description.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const normalized = plain(description);
   if (/\bnenhum\s+acerto/.test(normalized) || /\b0\s*acerto/.test(normalized)) return 0;
 
-  const match = /(\d+)/.exec(description);
+  // O "2" de "2º sorteio" não pode ser lido como número de acertos.
+  const withoutDrawMark = description.replace(/(?:2\s*[ºo°]?|segundo)\s*sorteio/gi, " ");
+
+  const explicit = /(\d+)\s*acerto/i.exec(withoutDrawMark);
+  if (explicit) {
+    const hits = Number.parseInt(explicit[1]!, 10);
+    if (Number.isInteger(hits) && hits >= 0) return hits;
+  }
+
+  const wordOnly = plain(withoutDrawMark).replace(/[^a-z]/g, "");
+  if (wordOnly) {
+    const byLabel = tierLabels.find((tier) => {
+      const label = plain(tier.label).replace(/[^a-z]/g, "");
+      return label.length > 0 && label === wordOnly;
+    });
+    if (byLabel) return byLabel.hits;
+  }
+
+  const match = /(\d+)/.exec(withoutDrawMark);
   if (match) {
     const hits = Number.parseInt(match[1]!, 10);
     if (Number.isInteger(hits) && hits >= 0) return hits;
@@ -140,30 +183,51 @@ function validate(slug: LotterySlug, draw: NormalizedDraw): void {
   if (!Number.isInteger(draw.contestNumber) || draw.contestNumber <= 0) {
     throw new SyncError("VALIDATION", "Número de concurso inválido.");
   }
+  validateDrawSet(config, "", draw.numbers, draw.prizes);
+
+  if (config.drawsPerContest > 1) {
+    // Concurso de 2 sorteios só é aceito completo: um resultado parcial seria
+    // conferido e pago como se fosse o final.
+    if (!draw.secondDraw) {
+      throw new SyncError("VALIDATION", "2º sorteio ausente na resposta oficial.");
+    }
+    validateDrawSet(config, "2º sorteio: ", draw.secondDraw.numbers, draw.secondDraw.prizes);
+  }
+}
+
+function validateDrawSet(
+  config: NonNullable<ReturnType<typeof getLotteryConfig>>,
+  prefix: string,
+  numbers: number[],
+  prizes: NormalizedPrize[],
+): void {
   // Quantas dezenas o SORTEIO revela — normalmente igual à aposta simples,
   // mas a Lotomania sorteia 20 de um universo de 100 com aposta de 50.
   const expected = config.drawnCount;
-  if (draw.numbers.length !== expected) {
+  if (numbers.length !== expected) {
     throw new SyncError(
       "VALIDATION",
-      `Esperadas ${expected} dezenas, recebidas ${draw.numbers.length}.`,
+      `${prefix}Esperadas ${expected} dezenas, recebidas ${numbers.length}.`,
     );
   }
-  if (new Set(draw.numbers).size !== draw.numbers.length) {
-    throw new SyncError("VALIDATION", "Dezenas duplicadas na resposta oficial.");
+  if (new Set(numbers).size !== numbers.length) {
+    throw new SyncError("VALIDATION", `${prefix}Dezenas duplicadas na resposta oficial.`);
   }
-  for (const number of draw.numbers) {
+  for (const number of numbers) {
     if (!Number.isInteger(number) || number < config.universe.min || number > config.universe.max) {
       throw new SyncError(
         "VALIDATION",
-        `Dezena ${number} fora do universo ${config.universe.min}–${config.universe.max}.`,
+        `${prefix}Dezena ${number} fora do universo ${config.universe.min}–${config.universe.max}.`,
       );
     }
   }
   const allowedHits = new Set(config.prizeTiers.map((tier) => tier.hits));
-  for (const prize of draw.prizes) {
+  for (const prize of prizes) {
     if (!allowedHits.has(prize.hits)) {
-      throw new SyncError("VALIDATION", `Faixa de premiação inesperada: ${prize.hits} acertos.`);
+      throw new SyncError(
+        "VALIDATION",
+        `${prefix}Faixa de premiação inesperada: ${prize.hits} acertos.`,
+      );
     }
   }
 }
@@ -185,7 +249,7 @@ export async function fetchOfficialDraw(
   for (let attempt = 1; attempt <= syncConfig.maxAttempts; attempt += 1) {
     try {
       const payload = (await fetchJson(url)) as Record<string, unknown>;
-      const draw = normalize(payload);
+      const draw = normalize(payload, slug);
       validate(slug, draw);
       return draw;
     } catch (error) {
@@ -199,29 +263,20 @@ export async function fetchOfficialDraw(
   throw lastError ?? new SyncError("UNAVAILABLE", "Falha desconhecida ao consultar a fonte.");
 }
 
-function normalize(payload: Record<string, unknown>): NormalizedDraw {
-  const contestNumber = toNumberOrNull(payload["numero"]);
-  if (contestNumber === null) {
-    throw new SyncError("INVALID_RESPONSE", "Resposta sem número de concurso.");
-  }
-
-  const ordered = Array.isArray(payload["dezenasSorteadasOrdemSorteio"])
-    ? (payload["dezenasSorteadasOrdemSorteio"] as unknown[])
-    : [];
-  const ascending = Array.isArray(payload["listaDezenas"])
-    ? (payload["listaDezenas"] as unknown[])
-    : [];
-  const rawNumbers = ordered.length > 0 ? ordered : ascending;
-  const numbers = rawNumbers
+function toNumberList(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return (value as unknown[])
     .map((item) => Number.parseInt(String(item), 10))
     .filter((item) => Number.isFinite(item));
+}
 
-  const rateio = Array.isArray(payload["listaRateioPremio"])
-    ? (payload["listaRateioPremio"] as Record<string, unknown>[])
-    : [];
-  const prizes: NormalizedPrize[] = rateio.map((item, index) => {
+function normalizePrizes(
+  items: Record<string, unknown>[],
+  tierLabels: { hits: number; label: string }[],
+): NormalizedPrize[] {
+  const prizes: NormalizedPrize[] = items.map((item, index) => {
     const description = cleanText(item["descricaoFaixa"]) ?? "";
-    const hits = parseHits(description, item["faixa"]);
+    const hits = parseHits(description, item["faixa"], tierLabels);
     if (hits === null) {
       // Faixa devolvida pela fonte e não interpretável: nunca descartar em silêncio.
       throw new SyncError(
@@ -245,6 +300,54 @@ function normalize(payload: Record<string, unknown>): NormalizedDraw {
     }
     seenHits.add(prize.hits);
   }
+  return prizes;
+}
+
+function normalize(payload: Record<string, unknown>, slug: LotterySlug): NormalizedDraw {
+  const contestNumber = toNumberOrNull(payload["numero"]);
+  if (contestNumber === null) {
+    throw new SyncError("INVALID_RESPONSE", "Resposta sem número de concurso.");
+  }
+
+  const config = getLotteryConfig(slug);
+  const isMultiDraw = (config?.drawsPerContest ?? 1) > 1;
+  const tierLabels = config?.prizeTiers ?? [];
+
+  const ordered = Array.isArray(payload["dezenasSorteadasOrdemSorteio"])
+    ? (payload["dezenasSorteadasOrdemSorteio"] as unknown[])
+    : [];
+  const ascending = Array.isArray(payload["listaDezenas"])
+    ? (payload["listaDezenas"] as unknown[])
+    : [];
+  // Em modalidade de 2 sorteios, `dezenasSorteadasOrdemSorteio` pode misturar
+  // os dois: o 1º sorteio vem sempre de `listaDezenas`.
+  const rawNumbers = isMultiDraw ? ascending : ordered.length > 0 ? ordered : ascending;
+  const numbers = toNumberList(rawNumbers);
+
+  const rateio = Array.isArray(payload["listaRateioPremio"])
+    ? (payload["listaRateioPremio"] as Record<string, unknown>[])
+    : [];
+
+  let prizes: NormalizedPrize[];
+  let secondDraw: NormalizedDraw["secondDraw"] = null;
+  if (isMultiDraw) {
+    // Cada faixa precisa se declarar do 2º sorteio ("... 2º sorteio"); o que
+    // não declara é do 1º. Se a fonte não separar, as faixas se repetem e a
+    // verificação de duplicidade rejeita — nunca se mistura sorteio em silêncio.
+    const firstItems = rateio.filter(
+      (item) => !isSecondDrawDescription(cleanText(item["descricaoFaixa"]) ?? ""),
+    );
+    const secondItems = rateio.filter((item) =>
+      isSecondDrawDescription(cleanText(item["descricaoFaixa"]) ?? ""),
+    );
+    prizes = normalizePrizes(firstItems, tierLabels);
+    secondDraw = {
+      numbers: toNumberList(payload["listaDezenasSegundoSorteio"]),
+      prizes: normalizePrizes(secondItems, tierLabels),
+    };
+  } else {
+    prizes = normalizePrizes(rateio, tierLabels);
+  }
 
   const municipio = cleanText(payload["nomeMunicipioUFSorteio"]);
   const local = cleanText(payload["localSorteio"]);
@@ -262,6 +365,7 @@ function normalize(payload: Record<string, unknown>): NormalizedDraw {
     revenue: toNumberOrNull(payload["valorArrecadado"]),
     numbers,
     prizes,
+    secondDraw,
     isLatest: payload["ultimoConcurso"] === true,
     raw: { source: syncConfig.provider },
   };

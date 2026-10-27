@@ -3,7 +3,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { checkDisclaimer } from "@/config/check.config";
 import { prizeValueLabel } from "@/lib/check/prizeLabels";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
-import type { CheckResultRow } from "@/lib/services/checkService";
+import type { CheckResultRow, GameDrawResultRow } from "@/lib/services/checkService";
 
 /**
  * Resultado da conferência de um jogo, em linguagem simples.
@@ -13,11 +13,21 @@ export function CheckResultPanel({
   result,
   gameNumbers,
   drawNumbers,
+  drawResults,
+  secondDrawNumbers,
 }: {
   result: CheckResultRow;
   gameNumbers: number[];
   drawNumbers?: number[];
+  /** Resultado de cada sorteio (Dupla Sena). Com 2+ itens, a tela mostra um bloco por sorteio. */
+  drawResults?: GameDrawResultRow[];
+  secondDrawNumbers?: number[];
 }) {
+  const perDraw = (drawResults ?? []).length > 1 ? (drawResults ?? []) : null;
+  const drawnBySequence = new Map<number, number[]>([
+    [1, drawNumbers ?? []],
+    [2, secondDrawNumbers ?? []],
+  ]);
   const matched = new Set(result.matched_numbers ?? []);
   const breakdown = [...(result.game_prize_breakdown ?? [])].sort(
     (a, b) => b.hits_required - a.hits_required,
@@ -49,39 +59,106 @@ export function CheckResultPanel({
         />
       </div>
 
-      <p className="text-sm text-text-primary">
-        <span className="font-display text-2xl font-semibold">{result.hits}</span>{" "}
-        {result.hits === 1 ? "dezena acertada" : "dezenas acertadas"} no concurso{" "}
-        {result.contest_number}.
-      </p>
-
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-text-secondary">Suas dezenas</p>
-        <div className="flex flex-wrap gap-1.5">
-          {[...gameNumbers].sort((a, b) => a - b).map((number) => (
-            <NumberBall
-              key={number}
-              value={number}
-              size="sm"
-              variant={matched.has(number) ? "hit" : "muted"}
-            />
-          ))}
+      {perDraw ? (
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Esta modalidade tem dois sorteios por concurso ({result.contest_number}). Seu jogo é
+            conferido em cada um, e os prêmios dos dois são somados.
+          </p>
+          {perDraw.map((item) => {
+            const matchedInDraw = new Set(item.matched_numbers ?? []);
+            const drawn = drawnBySequence.get(item.draw_sequence) ?? [];
+            return (
+              <div
+                key={item.draw_sequence}
+                className="space-y-2 rounded-lg border border-border p-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-text-primary">
+                    {item.draw_sequence}º sorteio ·{" "}
+                    <span className="font-display text-lg font-semibold">{item.hits}</span>{" "}
+                    {item.hits === 1 ? "acerto" : "acertos"}
+                  </p>
+                  <StatusBadge
+                    label={
+                      item.is_prized
+                        ? item.total_prize == null
+                          ? `${item.prize_label ?? "Premiado"} · valor a divulgar`
+                          : `${item.prize_label ?? "Premiado"} · ${formatCurrency(item.total_prize)}`
+                        : "Sem premiação"
+                    }
+                    tone={item.is_prized ? "success" : "neutral"}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[...gameNumbers]
+                    .sort((a, b) => a - b)
+                    .map((number) => (
+                      <NumberBall
+                        key={number}
+                        value={number}
+                        size="sm"
+                        variant={matchedInDraw.has(number) ? "hit" : "muted"}
+                      />
+                    ))}
+                </div>
+                {drawn.length > 0 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-text-secondary">Dezenas sorteadas</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...drawn]
+                        .sort((a, b) => a - b)
+                        .map((number) => (
+                          <NumberBall key={number} value={number} size="sm" variant="lottery" />
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
-        <p className="text-xs text-text-secondary">
-          Em verde, as dezenas que saíram no sorteio.
-        </p>
-      </div>
+      ) : (
+        <>
+          <p className="text-sm text-text-primary">
+            <span className="font-display text-2xl font-semibold">{result.hits}</span>{" "}
+            {result.hits === 1 ? "dezena acertada" : "dezenas acertadas"} no concurso{" "}
+            {result.contest_number}.
+          </p>
 
-      {drawNumbers && drawNumbers.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-text-secondary">Dezenas sorteadas</p>
-          <div className="flex flex-wrap gap-1.5">
-            {[...drawNumbers].sort((a, b) => a - b).map((number) => (
-              <NumberBall key={number} value={number} size="sm" variant="lottery" />
-            ))}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-text-secondary">Suas dezenas</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[...gameNumbers]
+                .sort((a, b) => a - b)
+                .map((number) => (
+                  <NumberBall
+                    key={number}
+                    value={number}
+                    size="sm"
+                    variant={matched.has(number) ? "hit" : "muted"}
+                  />
+                ))}
+            </div>
+            <p className="text-xs text-text-secondary">
+              Em verde, as dezenas que saíram no sorteio.
+            </p>
           </div>
-        </div>
-      ) : null}
+
+          {drawNumbers && drawNumbers.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-text-secondary">Dezenas sorteadas</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[...drawNumbers]
+                  .sort((a, b) => a - b)
+                  .map((number) => (
+                    <NumberBall key={number} value={number} size="sm" variant="lottery" />
+                  ))}
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
 
       {result.is_prized ? (
         <div className="space-y-2 rounded-lg bg-success-soft p-3">
@@ -134,10 +211,8 @@ export function CheckResultPanel({
                     <td className="px-2 py-2 text-right tabular-nums text-text-secondary">
                       {entry.prize_per_combination == null
                         ? "Não informado"
-                        : prizeValueLabel(
-                            entry.prize_per_combination,
-                            entry.draw_prizes?.winners,
-                          ).value}
+                        : prizeValueLabel(entry.prize_per_combination, entry.draw_prizes?.winners)
+                            .value}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-text-primary">
                       {entry.total_for_tier == null ? "—" : formatCurrency(entry.total_for_tier)}
@@ -148,8 +223,8 @@ export function CheckResultPanel({
             </table>
           </div>
           <p className="text-xs text-text-secondary">
-            Uma aposta com mais dezenas equivale a várias apostas simples: cada faixa mostra
-            quantas dessas apostas foram premiadas.
+            Uma aposta com mais dezenas equivale a várias apostas simples: cada faixa mostra quantas
+            dessas apostas foram premiadas.
           </p>
         </div>
       ) : null}

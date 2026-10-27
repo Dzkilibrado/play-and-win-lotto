@@ -138,3 +138,96 @@ describe("validação por drawnCount (Lotomania: sorteio de 20, aposta de 50)", 
     expect(draw.numbers).toHaveLength(6);
   });
 });
+
+describe("Dupla Sena: 2 sorteios por concurso", () => {
+  const first = ["03", "11", "20", "28", "35", "47"];
+  const second = ["01", "09", "14", "26", "38", "50"];
+  const rateio = [
+    { faixa: 1, descricaoFaixa: "6 acertos", numeroDeGanhadores: 0, valorPremio: 0 },
+    { faixa: 2, descricaoFaixa: "3 acertos", numeroDeGanhadores: 900, valorPremio: 12.5 },
+    {
+      faixa: 3,
+      descricaoFaixa: "6 acertos - 2º Sorteio",
+      numeroDeGanhadores: 1,
+      valorPremio: 70000,
+    },
+    {
+      faixa: 4,
+      descricaoFaixa: "3 acertos - 2º Sorteio",
+      numeroDeGanhadores: 800,
+      valorPremio: 11,
+    },
+  ];
+
+  it("separa as faixas e as dezenas dos dois sorteios (inclui o Terno)", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: first,
+      listaDezenasSegundoSorteio: second,
+      listaRateioPremio: rateio,
+    });
+    const draw = await fetchOfficialDraw("dupla-sena", 2500);
+    expect(draw.numbers).toEqual([3, 11, 20, 28, 35, 47]);
+    expect(draw.prizes.map((prize) => prize.hits)).toEqual([6, 3]);
+    expect(draw.secondDraw?.numbers).toEqual([1, 9, 14, 26, 38, 50]);
+    // O "2" de "2º Sorteio" nunca vira número de acertos.
+    expect(draw.secondDraw?.prizes.map((prize) => prize.hits)).toEqual([6, 3]);
+    expect(draw.secondDraw?.prizes[1]).toMatchObject({ winners: 800, prizePerWinner: 11 });
+  });
+
+  it("entende faixas descritas só pelo nome (Sena, Quina, Quadra, Terno)", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: first,
+      listaDezenasSegundoSorteio: second,
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "Sena", valorPremio: 1 },
+        { faixa: 2, descricaoFaixa: "Terno", valorPremio: 2 },
+        { faixa: 3, descricaoFaixa: "Quadra - 2º Sorteio", valorPremio: 3 },
+      ],
+    });
+    const draw = await fetchOfficialDraw("dupla-sena", 2500);
+    expect(draw.prizes.map((prize) => prize.hits)).toEqual([6, 3]);
+    expect(draw.secondDraw?.prizes.map((prize) => prize.hits)).toEqual([4]);
+  });
+
+  it("recusa concurso sem o 2º sorteio", async () => {
+    mockResponse({ ...basePayload, listaDezenas: first, listaRateioPremio: [] });
+    await expect(fetchOfficialDraw("dupla-sena", 2500)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa faixas dos dois sorteios sem marca de sorteio (duplicadas)", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: first,
+      listaDezenasSegundoSorteio: second,
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "6 acertos", valorPremio: 1 },
+        { faixa: 2, descricaoFaixa: "6 acertos", valorPremio: 2 },
+      ],
+    });
+    await expect(fetchOfficialDraw("dupla-sena", 2500)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa 2º sorteio com quantidade errada de dezenas", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: first,
+      listaDezenasSegundoSorteio: second.slice(0, 5),
+      listaRateioPremio: [],
+    });
+    await expect(fetchOfficialDraw("dupla-sena", 2500)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("modalidades de sorteio único nunca trazem segundo sorteio", async () => {
+    mockResponse({ ...basePayload, listaRateioPremio: [] });
+    const draw = await fetchOfficialDraw("mega-sena", 2500);
+    expect(draw.secondDraw).toBeNull();
+  });
+});

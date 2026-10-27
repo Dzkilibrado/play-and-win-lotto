@@ -124,6 +124,21 @@ async function persistDraw(
       winners: prize.winners,
       prize_per_winner: prize.prizePerWinner,
     })),
+    // 2º sorteio (Dupla Sena), gravado na mesma transação; `null` nas demais.
+    _second: draw.secondDraw
+      ? {
+          numbers: draw.secondDraw.numbers.map((number, index) => ({
+            number,
+            position: index + 1,
+          })),
+          prizes: draw.secondDraw.prizes.map((prize) => ({
+            tier: prize.tier,
+            hits: prize.hits,
+            winners: prize.winners,
+            prize_per_winner: prize.prizePerWinner,
+          })),
+        }
+      : null,
   });
 
   if (error) throw new SyncError("PERSISTENCE", error.message);
@@ -162,11 +177,16 @@ async function ensureSyncState(admin: Admin, lottery: LotteryRow) {
     .from("lottery_sync_state")
     .upsert({
       lottery_id: lottery.id,
-      status: expectedAt && Date.parse(expectedAt) > now.getTime() ? "WAITING_DRAW" : "WAITING_PUBLICATION",
+      status:
+        expectedAt && Date.parse(expectedAt) > now.getTime()
+          ? "WAITING_DRAW"
+          : "WAITING_PUBLICATION",
       expected_contest_number: latest?.next_contest_number ?? null,
       expected_draw_at: expectedAt,
-      next_attempt_at: expectedAt && Date.parse(expectedAt) > now.getTime() ? next.at : now.toISOString(),
-      next_action_kind: expectedAt && Date.parse(expectedAt) > now.getTime() ? next.action : "WAIT_PUBLICATION",
+      next_attempt_at:
+        expectedAt && Date.parse(expectedAt) > now.getTime() ? next.at : now.toISOString(),
+      next_action_kind:
+        expectedAt && Date.parse(expectedAt) > now.getTime() ? next.action : "WAIT_PUBLICATION",
     })
     .select("*")
     .single();
@@ -191,12 +211,14 @@ async function finishAutomationState(
     consistencyContest?: number | null;
   },
 ) {
-  const { error } = await (admin as unknown as {
-    rpc: (
-      name: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
-  }).rpc("complete_lottery_sync", {
+  const { error } = await (
+    admin as unknown as {
+      rpc: (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    }
+  ).rpc("complete_lottery_sync", {
     _lottery_id: input.lotteryId,
     _status: input.status,
     _expected_contest_number: input.expectedContest,
@@ -332,9 +354,10 @@ export async function runLotteryAutomation(
     const firstContest = range?.start ?? latest.contestNumber;
     const lastContest = range?.end ?? latest.contestNumber;
     for (let number = firstContest; number <= lastContest; number += 1) {
-      const draw = number === latest.contestNumber
-        ? latest
-        : await fetchOfficialDraw(lottery.slug as LotterySlug, number);
+      const draw =
+        number === latest.contestNumber
+          ? latest
+          : await fetchOfficialDraw(lottery.slug as LotterySlug, number);
       const persisted = await persistDraw(admin, lottery, draw);
       if (persisted !== "unchanged") outcome = persisted;
     }
@@ -413,7 +436,8 @@ export async function runLotteryAutomation(
       nextAttemptAt: next.at,
     };
   } catch (error) {
-    const syncError = error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
+    const syncError =
+      error instanceof SyncError ? error : new SyncError("UNAVAILABLE", String(error));
     await recordError(admin, null, lottery.id, contest, syncError);
     const nextFailureCount = state.consecutive_failures + 1;
     const status = publicationNeedsAttention(now, state.expected_draw_at)
@@ -485,7 +509,11 @@ export async function syncSingleContest(
   lottery: LotteryRow,
   contest: number | null,
   jobId: string | null,
-): Promise<{ ok: boolean; outcome?: "inserted" | "updated" | "unchanged"; contest: number | null }> {
+): Promise<{
+  ok: boolean;
+  outcome?: "inserted" | "updated" | "unchanged";
+  contest: number | null;
+}> {
   try {
     const draw = await fetchOfficialDraw(lottery.slug as LotterySlug, contest ?? undefined);
     const outcome = await persistDraw(admin, lottery, draw);
@@ -608,7 +636,8 @@ export async function runJobBatch(jobId: string, batchSize = syncConfig.batchSiz
   });
   if (claimError) throw new SyncError("PERSISTENCE", claimError.message);
 
-  const claim = (Array.isArray(claimData) ? (claimData[0] as ClaimRow | undefined) : undefined) ?? null;
+  const claim =
+    (Array.isArray(claimData) ? (claimData[0] as ClaimRow | undefined) : undefined) ?? null;
   if (!claim) {
     // Job já concluído ou detido por outra execução ativa: encerra limpo.
     const job = await readJob(admin, jobId);
@@ -662,7 +691,8 @@ export async function runJobBatch(jobId: string, batchSize = syncConfig.batchSiz
   });
   if (completeError) throw new SyncError("PERSISTENCE", completeError.message);
 
-  const updatedJob = (completed as Awaited<ReturnType<typeof readJob>>) ?? (await readJob(admin, jobId));
+  const updatedJob =
+    (completed as Awaited<ReturnType<typeof readJob>>) ?? (await readJob(admin, jobId));
 
   if (claim.is_final) {
     await logAudit(

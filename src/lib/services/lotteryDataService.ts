@@ -16,6 +16,12 @@ export interface DrawPrizeRow {
   prize_per_winner: number;
 }
 
+/** 2º sorteio de um concurso (Dupla Sena). */
+export interface SecondDraw {
+  numbers: { number: number; position: number }[];
+  prizes: DrawPrizeRow[];
+}
+
 export interface DrawWithNumbers extends LotteryDraw {
   draw_numbers: { number: number; position: number }[];
   draw_prizes?: DrawPrizeRow[];
@@ -104,7 +110,12 @@ export const lotteryDataService = {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    return { rows: (data ?? []) as unknown as DrawWithNumbers[], total: count ?? 0, page, pageSize };
+    return {
+      rows: (data ?? []) as unknown as DrawWithNumbers[],
+      total: count ?? 0,
+      page,
+      pageSize,
+    };
   },
 
   async getContestById(id: string) {
@@ -117,6 +128,33 @@ export const lotteryDataService = {
       .maybeSingle();
     if (error) throw error;
     return data as unknown as DrawWithNumbers | null;
+  },
+
+  /**
+   * 2º sorteio do concurso, lido à parte do concurso principal: se a leitura
+   * falhar (ex.: tabela ainda não publicada), a página do concurso continua
+   * funcionando e simplesmente não mostra o 2º sorteio.
+   */
+  async getSecondDraw(drawId: string): Promise<SecondDraw | null> {
+    try {
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            eq: (column: string, value: string) => PromiseLike<{ data: unknown; error: unknown }>;
+          };
+        };
+      };
+      const [numbers, prizes] = await Promise.all([
+        client.from("draw_second_numbers").select("number, position").eq("draw_id", drawId),
+        client.from("draw_second_prizes").select("*").eq("draw_id", drawId),
+      ]);
+      if (numbers.error || prizes.error) return null;
+      const rows = (numbers.data ?? []) as { number: number; position: number }[];
+      if (rows.length === 0) return null;
+      return { numbers: rows, prizes: (prizes.data ?? []) as DrawPrizeRow[] };
+    } catch {
+      return null;
+    }
   },
 
   async getContestByNumber(lotterySlug: string, contestNumber: number) {
@@ -160,11 +198,8 @@ export const lotteryDataService = {
       .limit(1)
       .maybeSingle();
     if (error) throw error;
-    return data
-      ? { contestNumber: data.next_contest_number, drawDate: data.next_draw_date }
-      : null;
+    return data ? { contestNumber: data.next_contest_number, drawDate: data.next_draw_date } : null;
   },
-
 
   /**
    * Concurso oficial imediatamente anterior a um concurso de referência.

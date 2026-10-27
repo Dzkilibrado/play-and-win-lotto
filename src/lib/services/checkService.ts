@@ -35,6 +35,17 @@ export interface CheckResultRow {
   game_prize_breakdown: PrizeBreakdownRow[];
 }
 
+/** Resultado de um sorteio do concurso (modalidades com mais de um sorteio). */
+export interface GameDrawResultRow {
+  draw_sequence: number;
+  hits: number;
+  matched_numbers: number[];
+  is_prized: boolean;
+  prize_label: string | null;
+  total_prize: number | null;
+  amount_pending: boolean;
+}
+
 const RESULT_SELECT = "*, game_prize_breakdown(*, draw_prizes(winners))";
 
 export const checkService = {
@@ -46,6 +57,26 @@ export const checkService = {
       .maybeSingle();
     if (error) throw error;
     return (data ?? null) as unknown as CheckResultRow | null;
+  },
+
+  /**
+   * Resultado de cada sorteio do jogo (Dupla Sena). Leitura tolerante: sem a
+   * tabela ou sem linhas, devolve lista vazia e a tela mostra o resultado somado.
+   */
+  async getGameDrawResults(gameId: string): Promise<GameDrawResultRow[]> {
+    try {
+      const { data, error } = await supabase
+        .from("game_check_draw_results" as never)
+        .select(
+          "draw_sequence, hits, matched_numbers, is_prized, prize_label, total_prize, amount_pending",
+        )
+        .eq("game_id" as never, gameId as never)
+        .order("draw_sequence" as never, { ascending: true });
+      if (error) return [];
+      return (data ?? []) as unknown as GameDrawResultRow[];
+    } catch {
+      return [];
+    }
   },
 
   /** Conferências de vários jogos de uma vez (listas e cards). */
