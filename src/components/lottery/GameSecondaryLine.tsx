@@ -13,12 +13,14 @@ export function GameSecondaryLine({
 }) {
   const secondary = useSecondaryOptions(slug, lotteryId);
   if (!secondary.supported) return null;
-  const value = selection?.[0];
+  const values = selection ?? [];
   return (
     <p className="rounded-lg bg-surface-secondary px-3 py-2 text-sm text-text-primary">
       {secondary.label}:{" "}
       <span className="font-medium">
-        {value ? (secondaryLabel(secondary.options, value) ?? value) : "não informado"}
+        {values.length > 0
+          ? values.map((value) => secondaryLabel(secondary.options, value) ?? value).join(", ")
+          : "não informado"}
       </span>
     </p>
   );

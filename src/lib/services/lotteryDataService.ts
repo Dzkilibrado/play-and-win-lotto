@@ -323,12 +323,18 @@ export const lotteryDataService = {
 
   /** Preço vigente para uma quantidade de dezenas. */
 
-  async getActivePrice(lotteryId: string, numbersSelected: number) {
+  /**
+   * Preço oficial vigente. `secondarySelected` é a quantidade de trevos na
+   * +Milionária (preço = dezenas × trevos); 0 nas demais modalidades.
+   */
+  async getActivePrice(lotteryId: string, numbersSelected: number, secondarySelected = 0) {
     const { data, error } = await supabase
       .from("lottery_prices")
       .select("*")
       .eq("lottery_id", lotteryId)
       .eq("numbers_selected", numbersSelected)
+      // Coluna criada na migração da seleção secundária (types.ts é gerado).
+      .eq("secondary_selected" as never, secondarySelected as never)
       .eq("is_active", true)
       .order("valid_from", { ascending: false })
       .limit(1)

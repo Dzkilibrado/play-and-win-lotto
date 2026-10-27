@@ -326,7 +326,9 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
     // Faixas conjuntas (dezenas + trevos): `hits` é a chave da faixa, não um número de acertos.
     prizeTiers: maisMilionariaTiers.map((tier) => ({ hits: tier.key, label: tier.label })),
     jointTiers: maisMilionariaTiers,
-    isActive: false,
+    // Ativa, mas a administração a mantém DESABILITADA até validar o primeiro
+    // resultado real da Caixa (trevos sorteados e faixas conjuntas).
+    isActive: true,
     sortOrder: 8,
     drawsPerContest: 1,
     drawnCount: 6,

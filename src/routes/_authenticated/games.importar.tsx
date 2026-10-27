@@ -74,7 +74,7 @@ function ImportGamePage() {
   const [dateText, setDateText] = useState("");
   const [numbers, setNumbers] = useState<number[]>([]);
   /** Mês da Sorte / Time do Coração do jogo (chave canônica); "" = não informado. */
-  const [secondary, setSecondary] = useState("");
+  const [secondary, setSecondary] = useState<string[]>([]);
   const [readingNotes, setReadingNotes] = useState<string | null>(null);
   const [uncertain, setUncertain] = useState<string[]>([]);
 
@@ -192,7 +192,7 @@ function ImportGamePage() {
       toast.error("Modalidade indisponível no momento.");
       return;
     }
-    if (secondaryOptions.supported && !secondary) {
+    if (secondaryOptions.supported && secondary.length < secondaryOptions.minSelect) {
       toast.error(
         `Informe ${secondaryOptions.label ? `o ${secondaryOptions.label}` : "a seleção extra"} do jogo.`,
       );
@@ -212,7 +212,11 @@ function ImportGamePage() {
         imagePath = path;
       }
 
-      const price = await lotteryDataService.getActivePrice(lotteryRow.id, numbers.length);
+      const price = await lotteryDataService.getActivePrice(
+        lotteryRow.id,
+        numbers.length,
+        secondaryOptions.kind === "trevo" ? secondary.length : 0,
+      );
       const analysis = analyzeGame(numbers, rules, {});
 
       const id = await gameService.saveGame({
@@ -220,7 +224,7 @@ function ImportGamePage() {
         lotteryId: lotteryRow.id,
         numbers,
         analysis,
-        secondarySelection: secondary ? [secondary] : [],
+        secondarySelection: secondary,
         contestNumber: hasContest ? contestNumber : null,
         drawId: contestQuery.data?.drawId ?? null,
         price: price
@@ -387,7 +391,7 @@ function ImportGamePage() {
                   value={slug}
                   onChange={(event) => {
                     setSlug(event.target.value as LotterySlug);
-                    setSecondary("");
+                    setSecondary([]);
                   }}
                 >
                   <option value="">Selecione</option>
@@ -418,6 +422,8 @@ function ImportGamePage() {
                 kind={secondaryOptions.kind}
                 options={secondaryOptions.options}
                 value={secondary}
+                min={secondaryOptions.minSelect}
+                max={secondaryOptions.maxSelect}
                 onChange={setSecondary}
                 isLoading={secondaryOptions.isLoading}
               />
