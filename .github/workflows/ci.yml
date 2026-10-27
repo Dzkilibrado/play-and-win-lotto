@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Histórico completo: necessário para o diff da base no lint incremental.
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          # Fixada explicitamente (nunca "latest"): versão estável disponível
+          # no ambiente de desenvolvimento usado para validar este workflow.
+          # Nenhuma versão estava previamente fixada em bun.lock/bunfig.toml.
+          bun-version: "1.4.4"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint (apenas arquivos alterados neste PR/push)
+        # A auditoria completa ("bun run lint") tem dívida preexistente grande
+        # e não serve como gate de CI. Este passo bloqueia só REGRESSÕES NOVAS.
+        run: bun run lint:changed
+        env:
+          LINT_CHANGED_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+
+      - name: Test
+        run: bun run test
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        run: bun run build
+        env:
+          # Somente variáveis públicas/client-safe. Nenhum secret de servidor
+          # é necessário para este build.
+          VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
