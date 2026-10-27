@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
-import { resolveNextDrawView, type NextDrawSnapshot, type NextDrawView } from "@/lib/nextDraw/nextDraw";
+import {
+  resolveNextDrawView,
+  type NextDrawSnapshot,
+  type NextDrawView,
+} from "@/lib/nextDraw/nextDraw";
 
 interface Row {
   contest_number: number | null;

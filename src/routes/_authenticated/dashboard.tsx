@@ -137,15 +137,22 @@ function DashboardPage() {
   const renderBlock = (key: HomeBlockKey) => {
     switch (key) {
       case "indicators":
-        if (countsState === "loading") return <LoadingState key={key} rows={2} label="Carregando seus jogos…" />;
-        if (countsState === "error") return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
+        if (countsState === "loading")
+          return <LoadingState key={key} rows={2} label="Carregando seus jogos…" />;
+        if (countsState === "error")
+          return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
         return (
           <section key={key} aria-labelledby="my-numbers" className="space-y-2 sm:space-y-3">
             <h2 id="my-numbers" className="font-display text-base font-semibold text-text-primary">
               Seus jogos
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-              <StatCard label="Total salvos" value={counts.data?.total ?? 0} icon={ListChecks} to="/games" />
+              <StatCard
+                label="Total salvos"
+                value={counts.data?.total ?? 0}
+                icon={ListChecks}
+                to="/games"
+              />
               <StatCard
                 label="Aguardando sorteio"
                 value={byStatus.AWAITING_DRAW ?? 0}
@@ -237,7 +244,10 @@ function DashboardPage() {
         if (!showsLotteryBlocks) return null;
         return (
           <section key={key} aria-labelledby="next-contests" className="space-y-2 sm:space-y-3">
-            <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
+            <h2
+              id="next-contests"
+              className="font-display text-base font-semibold text-text-primary"
+            >
               Próximos sorteios
             </h2>
             {latest.isLoading || nextDraws.isLoading ? (
@@ -350,8 +360,10 @@ function DashboardPage() {
         );
 
       case "awaiting_check":
-        if (countsState === "loading") return <LoadingState key={key} rows={1} label="Carregando conferências…" />;
-        if (countsState === "error") return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
+        if (countsState === "loading")
+          return <LoadingState key={key} rows={1} label="Carregando conferências…" />;
+        if (countsState === "error")
+          return <ErrorState key={key} onRetry={() => void counts.refetch()} />;
         return (
           <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">
@@ -373,8 +385,10 @@ function DashboardPage() {
         );
 
       case "prized":
-        if (checkState === "loading") return <LoadingState key={key} rows={1} label="Carregando premiações…" />;
-        if (checkState === "error") return <ErrorState key={key} onRetry={() => void checkSummary.refetch()} />;
+        if (checkState === "loading")
+          return <LoadingState key={key} rows={1} label="Carregando premiações…" />;
+        if (checkState === "error")
+          return <ErrorState key={key} onRetry={() => void checkSummary.refetch()} />;
         return (
           <section key={key} className="space-y-2 sm:space-y-3">
             <h2 className="font-display text-base font-semibold text-text-primary">Premiados</h2>
@@ -474,7 +488,9 @@ function Shortcut({
       <span
         className={cn(
           "flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-9",
-          primary ? "bg-primary text-primary-foreground" : "bg-surface-secondary text-text-secondary",
+          primary
+            ? "bg-primary text-primary-foreground"
+            : "bg-surface-secondary text-text-secondary",
         )}
       >
         <Icon className="size-4" aria-hidden />

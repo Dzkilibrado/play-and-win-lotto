@@ -38,9 +38,9 @@ export async function refreshNextDraws(
   now: Date = new Date(),
 ): Promise<NextDrawRefreshResult[]> {
   const client = admin as Loose;
-  const { data } = await client.from("lottery_next_draw" as never).select(
-    "lottery_id, draw_date, fetched_at, last_attempt_at, consecutive_failures" as never,
-  );
+  const { data } = await client
+    .from("lottery_next_draw" as never)
+    .select("lottery_id, draw_date, fetched_at, last_attempt_at, consecutive_failures" as never);
   const byLottery = new Map(((data ?? []) as unknown as Row[]).map((row) => [row.lottery_id, row]));
   const results: NextDrawRefreshResult[] = [];
 
@@ -72,7 +72,11 @@ export async function refreshNextDraws(
       results.push({ lottery: lottery.slug, ok: true });
     } catch (error) {
       const message =
-        error instanceof SyncError ? error.message : error instanceof Error ? error.message : "Falha";
+        error instanceof SyncError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Falha";
       const failures = (row?.consecutive_failures ?? 0) + 1;
       await client.from("lottery_next_draw" as never).upsert({
         lottery_id: lottery.id,
