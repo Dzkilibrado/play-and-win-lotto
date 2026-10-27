@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activeLotteries, getLotteryConfig } from "@/config/lotteries";
+import { activeLotteries, lotteryConfigs } from "@/config/lotteries";
 
 import { generateMysticGames } from "./generator";
 import { revealPhrase } from "./messages";
@@ -19,14 +19,14 @@ const clubs = ["FLAMENGO/RJ", "PALMEIRAS/SP", "SANTOS/SP", "CORINTHIANS/SP"];
 
 describe("Meu Destino — gerador", () => {
   it("é determinístico: mesmos dados, mesmos números", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const a = generateMysticGames(mega, base, { sizes: [6, 6, 7], currentYear: 2026 });
     const b = generateMysticGames(mega, base, { sizes: [6, 6, 7], currentYear: 2026 });
     expect(b).toEqual(a);
   });
 
   it("dados diferentes mudam os números", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const a = generateMysticGames(mega, base, { sizes: [6], currentYear: 2026 });
     const b = generateMysticGames(
       mega,
@@ -37,14 +37,14 @@ describe("Meu Destino — gerador", () => {
   });
 
   it("aumentar o orçamento só acrescenta jogos (os primeiros não mudam)", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const few = generateMysticGames(mega, base, { sizes: [6, 6], currentYear: 2026 });
     const many = generateMysticGames(mega, base, { sizes: [6, 6, 6, 6], currentYear: 2026 });
     expect(many.slice(0, 2)).toEqual(few);
   });
 
   it("jogo maior contém o menor do mesmo índice", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const small = generateMysticGames(mega, base, { sizes: [6], currentYear: 2026 })[0]!;
     const large = generateMysticGames(mega, base, { sizes: [9], currentYear: 2026 })[0]!;
     expect(small.numbers.every((n) => large.numbers.includes(n))).toBe(true);
@@ -79,18 +79,18 @@ describe("Meu Destino — gerador", () => {
   });
 
   it("Mês da Sorte e trevos usam chaves canônicas", () => {
-    const dia = generateMysticGames(getLotteryConfig("dia-de-sorte"), base, {
+    const dia = generateMysticGames(lotteryConfigs["dia-de-sorte"], base, {
       sizes: [7],
       currentYear: 2026,
     })[0]!;
     expect(dia.secondary[0]).toMatch(/^(0[1-9]|1[0-2])$/);
-    const mais = generateMysticGames(getLotteryConfig("mais-milionaria"), base, {
+    const mais = generateMysticGames(lotteryConfigs["mais-milionaria"], base, {
       sizes: [6],
       currentYear: 2026,
     })[0]!;
     expect(mais.secondary).toHaveLength(2);
     expect(mais.secondary.every((trevo) => /^[1-6]$/.test(trevo))).toBe(true);
-    const time = generateMysticGames(getLotteryConfig("timemania"), base, {
+    const time = generateMysticGames(lotteryConfigs["timemania"], base, {
       sizes: [10],
       clubOptions: clubs,
       currentYear: 2026,
@@ -99,7 +99,7 @@ describe("Meu Destino — gerador", () => {
   });
 
   it("quantidade de pessoas do bolão entra na leitura", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const solo = generateMysticGames(mega, base, { sizes: [6], currentYear: 2026 });
     const grupo = generateMysticGames(
       mega,
@@ -110,14 +110,14 @@ describe("Meu Destino — gerador", () => {
   });
 
   it("sem hora e cidade a leitura segue e é estável", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const semHora = { ...base, birthTime: null, birthPlace: null };
     const a = generateMysticGames(mega, semHora, { sizes: [6], currentYear: 2026 });
     expect(generateMysticGames(mega, semHora, { sizes: [6], currentYear: 2026 })).toEqual(a);
   });
 
   it("nome com acento, caixa e espaços extras dá o mesmo destino", () => {
-    const mega = getLotteryConfig("mega-sena");
+    const mega = lotteryConfigs["mega-sena"];
     const a = generateMysticGames(
       mega,
       { ...base, fullName: "José  da Silva" },
