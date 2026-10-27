@@ -313,6 +313,34 @@ export async function fetchOfficialDraw(
   throw lastError ?? new SyncError("UNAVAILABLE", "Falha desconhecida ao consultar a fonte.");
 }
 
+/** Informação de calendário do próximo concurso (consulta leve, sem validar resultado). */
+export interface NextDrawInfo {
+  lastContestNumber: number | null;
+  nextContestNumber: number | null;
+  nextDrawDate: string | null;
+  estimatedPrize: number | null;
+}
+
+export function parseNextDrawInfo(payload: Record<string, unknown>): NextDrawInfo {
+  return {
+    lastContestNumber: toNumberOrNull(payload["numero"]),
+    nextContestNumber: toNumberOrNull(payload["numeroConcursoProximo"]),
+    nextDrawDate: toIsoDate(payload["dataProximoConcurso"]),
+    estimatedPrize: toNumberOrNull(payload["valorEstimadoProximoConcurso"]),
+  };
+}
+
+/** Lê só o calendário do último concurso: funciona mesmo para modalidades sem adaptador completo. */
+export async function fetchNextDrawInfo(slug: LotterySlug): Promise<NextDrawInfo> {
+  const url = `${syncConfig.baseUrl}/${providerPath[slug]}`;
+  const payload = (await fetchJson(url)) as Record<string, unknown>;
+  const info = parseNextDrawInfo(payload);
+  if (info.nextContestNumber == null && info.lastContestNumber == null) {
+    throw new SyncError("INVALID_RESPONSE", "Resposta sem dados de concurso.");
+  }
+  return info;
+}
+
 function toNumberList(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   return (value as unknown[])

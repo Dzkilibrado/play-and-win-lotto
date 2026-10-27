@@ -466,3 +466,26 @@ describe("+Milionária: faixas conjuntas e trevos", () => {
     });
   });
 });
+
+describe("parseNextDrawInfo", () => {
+  it("lê o calendário do próximo concurso sem validar o resultado", async () => {
+    const { parseNextDrawInfo } = await import("./caixa.provider.server");
+    expect(
+      parseNextDrawInfo({
+        numero: 100,
+        numeroConcursoProximo: 101,
+        dataProximoConcurso: "30/10/2026",
+        valorEstimadoProximoConcurso: 1500000.5,
+      }),
+    ).toEqual({
+      lastContestNumber: 100,
+      nextContestNumber: 101,
+      nextDrawDate: "2026-10-30",
+      estimatedPrize: 1500000.5,
+    });
+  });
+  it("campo ausente vira null, nunca 0", async () => {
+    const { parseNextDrawInfo } = await import("./caixa.provider.server");
+    expect(parseNextDrawInfo({ numero: 5 }).estimatedPrize).toBeNull();
+  });
+});

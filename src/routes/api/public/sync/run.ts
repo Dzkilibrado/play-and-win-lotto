@@ -68,7 +68,17 @@ export const Route = createFileRoute("/api/public/sync/run")({
           (result) => result.attempted && (result.outcome === "inserted" || result.outcome === "updated"),
         );
         const checks = await runChecks(changed);
+        // Calendário do próximo sorteio de todas as modalidades (falha aqui
+        // nunca derruba a execução principal).
+        let nextDraws: unknown = [];
+        try {
+          const { refreshNextDraws } = await import("@/lib/sync/nextDrawRefresh.server");
+          nextDraws = await refreshNextDraws(admin, lotteries);
+        } catch {
+          nextDraws = [];
+        }
         return Response.json({
+          nextDraws,
           mode: advancedJob ? "job-and-latest" : "latest",
           job: advancedJob,
           results,

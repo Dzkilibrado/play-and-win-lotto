@@ -23,6 +23,7 @@ import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { appConfig } from "@/config/app.config";
 import type { HomeBlockKey } from "@/config/home.config";
 import { useHomePreferences } from "@/hooks/useHomePreferences";
+import { useNextDraws } from "@/hooks/useNextDraws";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { checkService } from "@/lib/services/checkService";
 import { gameService } from "@/lib/services/gameService";
@@ -81,6 +82,18 @@ function DashboardPage() {
     queryKey: ["latest-draws"],
     queryFn: () => lotteryDataService.getLatestDraws(),
     enabled: showsLotteryBlocks && enabled.has("next_draws"),
+  });
+
+  const nextDraws = useNextDraws((slug) => {
+    const draw = (latest.data ?? []).find((item) => item.lotteries?.slug === slug);
+    return draw
+      ? {
+          contestNumber: draw.next_contest_number,
+          drawDate: draw.next_draw_date,
+          estimatedPrize: draw.estimated_next_prize,
+          fetchedAt: null,
+        }
+      : null;
   });
 
   const recent = useQuery({
@@ -227,16 +240,14 @@ function DashboardPage() {
             <h2 id="next-contests" className="font-display text-base font-semibold text-text-primary">
               Próximos sorteios
             </h2>
-            {latest.isLoading ? (
+            {latest.isLoading || nextDraws.isLoading ? (
               <LoadingState rows={2} />
             ) : latest.isError ? (
               <ErrorState onRetry={() => latest.refetch()} />
             ) : (
               <ul className="grid gap-2 md:grid-cols-3">
                 {prefs.followedLotteries.map((lottery) => {
-                  const draw = (latest.data ?? []).find(
-                    (item) => item.lotteries?.slug === lottery.slug,
-                  );
+                  const view = nextDraws.viewOf(lottery.slug);
                   return (
                     <li
                       key={lottery.slug}
@@ -252,13 +263,15 @@ function DashboardPage() {
                           {lottery.name}
                         </p>
                         <p className="truncate text-xs text-text-secondary">
-                          {draw?.next_contest_number
-                            ? `Concurso ${draw.next_contest_number} · ${formatDate(draw.next_draw_date)}`
-                            : "Sem data disponível"}
+                          {view.kind === "ready"
+                            ? `Concurso ${view.contestNumber} · ${view.drawDate ? formatDate(view.drawDate) : "data a confirmar"}`
+                            : view.kind === "awaiting"
+                              ? "Aguardando atualização do canal oficial"
+                              : "Sem informação no momento"}
                         </p>
                       </div>
                       <span className="shrink-0 font-display text-xs font-semibold text-lottery sm:text-sm">
-                        {formatCurrency(draw?.estimated_next_prize ?? null)}
+                        {view.kind === "ready" ? formatCurrency(view.estimatedPrize) : "—"}
                       </span>
                     </li>
                   );
