@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { ErrorState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { LotteryAvailabilityPanel } from "@/components/admin/LotteryAvailabilityPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
@@ -108,14 +109,19 @@ function AdminPage() {
           <Users className="size-5" aria-hidden />
         </span>
         <span className="min-w-0">
-          <span className="block font-display text-sm font-semibold text-text-primary">Usuários</span>
-          <span className="block text-xs text-text-secondary">Contas, acessos e perfis cadastrados.</span>
+          <span className="block font-display text-sm font-semibold text-text-primary">
+            Usuários
+          </span>
+          <span className="block text-xs text-text-secondary">
+            Contas, acessos e perfis cadastrados.
+          </span>
         </span>
         <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
       </Link>
-       <FeatureFlagsPanel userId={user.id} />
-       <SyncPanel userId={user.id} />
-       <CheckPanel userId={user.id} />
+      <LotteryAvailabilityPanel />
+      <FeatureFlagsPanel userId={user.id} />
+      <SyncPanel userId={user.id} />
+      <CheckPanel userId={user.id} />
     </div>
   );
 }
@@ -134,10 +140,15 @@ function FeatureFlagsPanel({ userId }: { userId: string }) {
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
       <h2 className="font-display text-sm font-semibold text-text-primary">Sistema · Recursos</h2>
-      <p className="mt-1 text-xs text-text-secondary">Diagnóstico interno visível somente para administradores.</p>
+      <p className="mt-1 text-xs text-text-secondary">
+        Diagnóstico interno visível somente para administradores.
+      </p>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {Object.entries(flags.flags).map(([key, status]) => (
-          <li key={key} className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
+          <li
+            key={key}
+            className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm"
+          >
             <code className="min-w-0 truncate text-text-primary">{key}</code>
             <StatusBadge label={featureStatusLabel[status]} tone={featureTone[status]} />
           </li>
@@ -160,8 +171,14 @@ function CheckPanel({ userId }: { userId: string }) {
   const reprocessFn = useServerFn(reprocessDrawCheck);
   const scanFn = useServerFn(scanPendingChecks);
 
-  const overview = useQuery({ queryKey: ["admin", userId, "check-overview"], queryFn: () => overviewFn({}) });
-  const errors = useQuery({ queryKey: ["admin", userId, "check-errors"], queryFn: () => errorsFn({}) });
+  const overview = useQuery({
+    queryKey: ["admin", userId, "check-overview"],
+    queryFn: () => overviewFn({}),
+  });
+  const errors = useQuery({
+    queryKey: ["admin", userId, "check-errors"],
+    queryFn: () => errorsFn({}),
+  });
 
   const refresh = async () => {
     await Promise.all([
@@ -310,8 +327,14 @@ function SyncPanel({ userId }: { userId: string }) {
   const batchFn = useServerFn(runSyncBatch);
   const errorsFn = useServerFn(listSyncErrors);
 
-  const overview = useQuery({ queryKey: ["admin", userId, "sync-overview"], queryFn: () => overviewFn({}) });
-  const errors = useQuery({ queryKey: ["admin", userId, "sync-errors"], queryFn: () => errorsFn({}) });
+  const overview = useQuery({
+    queryKey: ["admin", userId, "sync-overview"],
+    queryFn: () => overviewFn({}),
+  });
+  const errors = useQuery({
+    queryKey: ["admin", userId, "sync-errors"],
+    queryFn: () => errorsFn({}),
+  });
 
   const refreshAll = async () => {
     await Promise.all([
@@ -333,7 +356,12 @@ function SyncPanel({ userId }: { userId: string }) {
       if (started.kind === "job" && input.type === "HISTORICAL") {
         let status = started.status;
         let guard = 0;
-        while (status !== "completed" && status !== "completed_with_errors" && status !== "failed" && guard < 500) {
+        while (
+          status !== "completed" &&
+          status !== "completed_with_errors" &&
+          status !== "failed" &&
+          guard < 500
+        ) {
           const step = await batchFn({ data: { jobId: started.jobId } });
           status = step.status;
           guard += 1;
@@ -369,14 +397,18 @@ function SyncPanel({ userId }: { userId: string }) {
           Atualização automática
         </h2>
         <p className="mt-1 text-xs text-text-secondary">
-          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte: {syncConfig.sourceLabel}
+          Sincronização automática: ATIVA · verifica somente quando necessário · Fonte:{" "}
+          {syncConfig.sourceLabel}
         </p>
         {progress && <p className="mt-2 text-xs text-info">{progress}</p>}
       </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
         {(overview.data ?? []).map((row) => (
-          <article key={row.lotteryId} className="space-y-3 rounded-xl border border-border bg-surface p-4">
+          <article
+            key={row.lotteryId}
+            className="space-y-3 rounded-xl border border-border bg-surface p-4"
+          >
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-display text-sm font-semibold text-text-primary">{row.name}</h3>
@@ -435,7 +467,9 @@ function SyncPanel({ userId }: { userId: string }) {
               <div>
                 <dt className="text-text-secondary">Última verificação</dt>
                 <dd className="font-medium text-text-primary">
-                  {formatDateTime(row.automation?.lastHealthCheckAt ?? row.automation?.lastAttemptAt)}
+                  {formatDateTime(
+                    row.automation?.lastHealthCheckAt ?? row.automation?.lastAttemptAt,
+                  )}
                 </dd>
               </div>
               <div>
@@ -483,17 +517,23 @@ function SyncPanel({ userId }: { userId: string }) {
           Histórico recente da automação
         </h2>
         {(overview.data ?? []).every((row) => row.runs.length === 0) ? (
-          <p className="mt-2 text-xs text-text-secondary">A primeira execução será registrada no próximo ciclo.</p>
+          <p className="mt-2 text-xs text-text-secondary">
+            A primeira execução será registrada no próximo ciclo.
+          </p>
         ) : (
           <ul className="mt-3 space-y-2 text-xs">
             {(overview.data ?? []).flatMap((row) =>
               row.runs.map((run) => (
-                <li key={run.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2">
+                <li
+                  key={run.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2"
+                >
                   <span className="font-medium text-text-primary">
                     {row.name} · concurso {run.contest_number ?? "—"}
                   </span>
                   <span className="text-text-secondary">
-                    {runOutcomeLabel[run.outcome ?? ""] ?? "Verificação concluída"} · {formatDateTime(run.started_at)}
+                    {runOutcomeLabel[run.outcome ?? ""] ?? "Verificação concluída"} ·{" "}
+                    {formatDateTime(run.started_at)}
                   </span>
                 </li>
               )),

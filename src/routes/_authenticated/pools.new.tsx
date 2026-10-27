@@ -13,6 +13,7 @@ import { appConfig } from "@/config/app.config";
 import { useSession } from "@/hooks/useAuth";
 import { formatCurrency } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { poolService } from "@/lib/services/poolService";
 
 interface NewPoolSearch {
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/pools/new")({
 });
 
 function NewPoolPage() {
+  const availability = useLotteryAvailability();
   const navigate = useNavigate();
   const { user } = useSession();
   const search = Route.useSearch();
@@ -69,7 +71,6 @@ function NewPoolPage() {
 
   const parsedTotal = totalQuotas.trim() === "" ? null : Number(totalQuotas);
   const total = parsedTotal === null ? 0 : Number(quotaValue) * parsedTotal;
-
 
   const create = useMutation({
     mutationFn: () =>
@@ -165,11 +166,17 @@ function NewPoolPage() {
               onChange={(event) => setLotteryId(event.target.value)}
             >
               <option value="">Escolha…</option>
-              {(lotteries.data ?? []).map((lottery) => (
-                <option key={lottery.id} value={lottery.id}>
-                  {lottery.name}
-                </option>
-              ))}
+              {(lotteries.data ?? [])
+                .filter(
+                  (lottery) =>
+                    lottery.id === lotteryId ||
+                    availability.availabilityOf(lottery.slug) === "ENABLED",
+                )
+                .map((lottery) => (
+                  <option key={lottery.id} value={lottery.id}>
+                    {lottery.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div className="space-y-1.5">
@@ -260,7 +267,8 @@ function NewPoolPage() {
 
         {total > 0 ? (
           <p className="text-sm text-text-secondary">
-            Arrecadação prevista: <strong className="text-text-primary">{formatCurrency(total)}</strong>
+            Arrecadação prevista:{" "}
+            <strong className="text-text-primary">{formatCurrency(total)}</strong>
           </p>
         ) : null}
 

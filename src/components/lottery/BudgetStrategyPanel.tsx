@@ -16,7 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { activeLotteries, type LotterySlug } from "@/config/lotteries";
+import { type LotterySlug } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -60,7 +61,13 @@ const profileOptions: { value: BudgetStrategyProfile; label: string; hint: strin
 
 export function BudgetStrategyPanel({ onApprove }: BudgetStrategyPanelProps) {
   const [budgetInput, setBudgetInput] = useState("");
-  const [selectedModalities, setSelectedModalities] = useState<LotterySlug[]>([]);
+  const { enabledLotteries: activeLotteries } = useLotteryAvailability();
+  const [selectedRaw, setSelectedModalities] = useState<LotterySlug[]>([]);
+  // Modalidade que ficou indisponível depois de marcada sai da conta.
+  const selectedModalities = useMemo(
+    () => selectedRaw.filter((slug) => activeLotteries.some((lottery) => lottery.slug === slug)),
+    [selectedRaw, activeLotteries],
+  );
   const [priority, setPriority] = useState<BudgetStrategyPriority>("max_games");
   const [profile, setProfile] = useState<BudgetStrategyProfile>("cost_benefit");
   const [result, setResult] = useState<BudgetStrategyResult | null>(null);

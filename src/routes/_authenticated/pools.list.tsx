@@ -10,6 +10,7 @@ import { PoolCard } from "@/components/pool/PoolCard";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { poolConfig } from "@/config/pools.config";
 import {
   applyPoolView,
@@ -79,6 +80,7 @@ function chipLabel(key: keyof ListSearch, value: string, lotteryName: (slug: str
 }
 
 function PoolsListPage() {
+  const { visibleLotteries } = useLotteryAvailability();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = Route.useRouteContext();
@@ -251,7 +253,7 @@ function PoolsListPage() {
                 onChange={(event) => setFilter({ lottery: event.target.value || undefined })}
               >
                 <option value="">Todas as loterias</option>
-                {activeLotteries.map((lottery) => (
+                {visibleLotteries.map((lottery) => (
                   <option key={lottery.slug} value={lottery.slug}>
                     {lottery.name}
                   </option>

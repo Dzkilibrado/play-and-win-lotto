@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { poolService, type PoolRow } from "@/lib/services/poolService";
 
@@ -38,6 +39,7 @@ export function PoolEditDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const availability = useLotteryAvailability();
   const lotteries = useQuery({
     queryKey: ["lotteries"],
     queryFn: () => lotteryDataService.listLotteries(),
@@ -123,7 +125,9 @@ export function PoolEditDialog({
         return;
       }
       if (parsedTotal !== null && (!Number.isInteger(parsedTotal) || parsedTotal < 1)) {
-        toast.error("Deixe o total de cotas em branco ou informe um número inteiro maior que zero.");
+        toast.error(
+          "Deixe o total de cotas em branco ou informe um número inteiro maior que zero.",
+        );
         return;
       }
       if (parsedTotal !== null && parsedTotal < quotasTaken) {
@@ -187,11 +191,17 @@ export function PoolEditDialog({
                   disabled={hasGames}
                   onChange={(event) => setLotteryId(event.target.value)}
                 >
-                  {(lotteries.data ?? []).map((lottery) => (
-                    <option key={lottery.id} value={lottery.id}>
-                      {lottery.name}
-                    </option>
-                  ))}
+                  {(lotteries.data ?? [])
+                    .filter(
+                      (lottery) =>
+                        lottery.id === pool.lottery_id ||
+                        availability.availabilityOf(lottery.slug) === "ENABLED",
+                    )
+                    .map((lottery) => (
+                      <option key={lottery.id} value={lottery.id}>
+                        {lottery.name}
+                      </option>
+                    ))}
                 </select>
                 {hasGames ? (
                   <p className="text-xs text-text-secondary">

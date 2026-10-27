@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { LotteryCard, type UpcomingContestInfo } from "@/components/lottery/LotteryCard";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
-import { activeLotteries } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 
 export const Route = createFileRoute("/_authenticated/lotteries")({
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/lotteries")({
 });
 
 function LotteriesPage() {
+  const { visibleLotteries, availabilityOf, noteOf } = useLotteryAvailability();
   const latest = useQuery({
     queryKey: ["latest-draws"],
     queryFn: () => lotteryDataService.getLatestDraws(),
@@ -50,7 +51,7 @@ function LotteriesPage() {
         <ErrorState onRetry={() => latest.refetch()} />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {activeLotteries.map((lottery) => {
+          {visibleLotteries.map((lottery) => {
             const draw = (latest.data ?? []).find((item) => item.lotteries?.slug === lottery.slug);
             const contest: UpcomingContestInfo = {
               contestNumber: draw?.next_contest_number ?? null,
@@ -58,7 +59,19 @@ function LotteriesPage() {
               estimatedPrize: draw?.estimated_next_prize ?? null,
               status: draw?.next_contest_number ? "ready" : "unavailable",
             };
-            return <LotteryCard key={lottery.slug} lottery={lottery} contest={contest} />;
+            const maintenance = availabilityOf(lottery.slug) === "MAINTENANCE";
+            return (
+              <div key={lottery.slug} className="space-y-2">
+                <LotteryCard lottery={lottery} contest={contest} />
+                {maintenance ? (
+                  <p className="rounded-lg bg-warning-soft p-2 text-xs text-warning" role="status">
+                    Em manutenção
+                    {noteOf(lottery.slug) ? ` — ${noteOf(lottery.slug)}` : ""}. Novos jogos e bolões
+                    estão pausados.
+                  </p>
+                ) : null}
+              </div>
+            );
           })}
         </div>
       )}

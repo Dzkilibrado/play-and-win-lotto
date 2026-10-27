@@ -26,6 +26,19 @@ export type LotteryColorKey =
   | "mais-milionaria"
   | "super-sete";
 
+/**
+ * Disponibilidade definida pelo administrador (coluna `lotteries.availability`).
+ * ENABLED = normal; MAINTENANCE = visível com aviso, sem novos jogos/bolões;
+ * DISABLED = oculta das listas e sem novos jogos/bolões.
+ */
+export type LotteryAvailability = "ENABLED" | "MAINTENANCE" | "DISABLED";
+
+export const lotteryAvailabilityLabels: Record<LotteryAvailability, string> = {
+  ENABLED: "Habilitada",
+  MAINTENANCE: "Em manutenção",
+  DISABLED: "Desabilitada",
+};
+
 export interface PrizeTierConfig {
   hits: number;
   label: string;
