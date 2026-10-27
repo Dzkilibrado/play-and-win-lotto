@@ -47,12 +47,41 @@ export interface PrizeTierConfig {
 /** Tipo da seleção secundária opcional de uma modalidade. */
 export type SecondaryPoolKind = "trevo" | "mes" | "time";
 
+export interface SecondaryOption {
+  /** Chave canônica gravada no jogo e no resultado (ex.: "03" para março). */
+  value: string;
+  label: string;
+}
+
 export interface SecondaryPoolConfig {
   kind: SecondaryPoolKind;
   label: string;
   universe: { min: number; max: number };
   selectable: { min: number; max: number; base: number };
+  /**
+   * Opções fixas da seleção (Mês da Sorte). Ausente quando as opções vêm do
+   * catálogo no banco (`lottery_secondary_options`), como os clubes da
+   * Timemania, que a lei renova a cada biênio.
+   */
+  options?: SecondaryOption[];
+  /** Nome do prêmio dessa seleção no resultado oficial. */
+  prizeLabel: string;
 }
+
+export const monthOptions: SecondaryOption[] = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+].map((label, index) => ({ value: String(index + 1).padStart(2, "0"), label }));
 
 export interface LotteryConfig {
   slug: LotterySlug;
@@ -216,6 +245,8 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
       label: "Mês da Sorte",
       universe: { min: 1, max: 12 },
       selectable: { min: 1, max: 1, base: 1 },
+      options: monthOptions,
+      prizeLabel: "Mês da Sorte",
     },
   },
   timemania: {
@@ -224,7 +255,8 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
     shortName: "Timemania",
     colorKey: "timemania",
     universe: { min: 1, max: 80 },
-    selectable: { min: 10, max: 15, base: 10 },
+    // Aposta fixa de 10 dezenas: a Timemania não tem apostas múltiplas.
+    selectable: { min: 10, max: 10, base: 10 },
     grid: { columns: 10 },
     prizeTiers: [
       { hits: 7, label: "7 acertos" },
@@ -237,12 +269,14 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
     isActive: false,
     sortOrder: 7,
     drawsPerContest: 1,
-    drawnCount: 10,
+    // Sorteio oficial: 7 dezenas (de 80) + 1 Time do Coração.
+    drawnCount: 7,
     secondary: {
       kind: "time",
       label: "Time do Coração",
       universe: { min: 1, max: 80 },
       selectable: { min: 1, max: 1, base: 1 },
+      prizeLabel: "Time do Coração",
     },
   },
   "mais-milionaria": {
@@ -266,6 +300,7 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
       label: "Trevo da Sorte",
       universe: { min: 1, max: 6 },
       selectable: { min: 2, max: 6, base: 2 },
+      prizeLabel: "Trevos",
     },
   },
   "super-sete": {
