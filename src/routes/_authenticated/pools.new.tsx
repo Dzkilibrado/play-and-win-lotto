@@ -72,7 +72,6 @@ function NewPoolPage() {
   const parsedTotal = totalQuotas.trim() === "" ? null : Number(totalQuotas);
   const total = parsedTotal === null ? 0 : Number(quotaValue) * parsedTotal;
 
-
   const create = useMutation({
     mutationFn: () =>
       poolService.create({
@@ -170,13 +169,14 @@ function NewPoolPage() {
               {(lotteries.data ?? [])
                 .filter(
                   (lottery) =>
-                    lottery.id === lotteryId || availability.availabilityOf(lottery.slug) === "ENABLED",
+                    lottery.id === lotteryId ||
+                    availability.availabilityOf(lottery.slug) === "ENABLED",
                 )
                 .map((lottery) => (
-                <option key={lottery.id} value={lottery.id}>
-                  {lottery.name}
-                </option>
-              ))}
+                  <option key={lottery.id} value={lottery.id}>
+                    {lottery.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div className="space-y-1.5">
@@ -267,7 +267,8 @@ function NewPoolPage() {
 
         {total > 0 ? (
           <p className="text-sm text-text-secondary">
-            Arrecadação prevista: <strong className="text-text-primary">{formatCurrency(total)}</strong>
+            Arrecadação prevista:{" "}
+            <strong className="text-text-primary">{formatCurrency(total)}</strong>
           </p>
         ) : null}
 

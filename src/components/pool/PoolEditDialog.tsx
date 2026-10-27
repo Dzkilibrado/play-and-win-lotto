@@ -125,7 +125,9 @@ export function PoolEditDialog({
         return;
       }
       if (parsedTotal !== null && (!Number.isInteger(parsedTotal) || parsedTotal < 1)) {
-        toast.error("Deixe o total de cotas em branco ou informe um número inteiro maior que zero.");
+        toast.error(
+          "Deixe o total de cotas em branco ou informe um número inteiro maior que zero.",
+        );
         return;
       }
       if (parsedTotal !== null && parsedTotal < quotasTaken) {
@@ -196,10 +198,10 @@ export function PoolEditDialog({
                         availability.availabilityOf(lottery.slug) === "ENABLED",
                     )
                     .map((lottery) => (
-                    <option key={lottery.id} value={lottery.id}>
-                      {lottery.name}
-                    </option>
-                  ))}
+                      <option key={lottery.id} value={lottery.id}>
+                        {lottery.name}
+                      </option>
+                    ))}
                 </select>
                 {hasGames ? (
                   <p className="text-xs text-text-secondary">
