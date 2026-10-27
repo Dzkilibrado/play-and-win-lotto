@@ -48,7 +48,8 @@ export const lotteryDataService = {
       .select("*")
       .order("sort_order", { ascending: true });
     if (error) throw error;
-    return data ?? [];
+    // Modalidade ainda não pronta (`is_active = false`) nunca aparece para o usuário.
+    return (data ?? []).filter((row) => row.is_active !== false);
   },
 
   async listFeatureFlags() {

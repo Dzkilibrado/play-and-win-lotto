@@ -13,6 +13,7 @@ import { appConfig } from "@/config/app.config";
 import { useSession } from "@/hooks/useAuth";
 import { formatCurrency } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { poolService } from "@/lib/services/poolService";
 
 interface NewPoolSearch {
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/pools/new")({
 });
 
 function NewPoolPage() {
+  const availability = useLotteryAvailability();
   const navigate = useNavigate();
   const { user } = useSession();
   const search = Route.useSearch();
@@ -165,7 +167,12 @@ function NewPoolPage() {
               onChange={(event) => setLotteryId(event.target.value)}
             >
               <option value="">Escolha…</option>
-              {(lotteries.data ?? []).map((lottery) => (
+              {(lotteries.data ?? [])
+                .filter(
+                  (lottery) =>
+                    lottery.id === lotteryId || availability.availabilityOf(lottery.slug) === "ENABLED",
+                )
+                .map((lottery) => (
                 <option key={lottery.id} value={lottery.id}>
                   {lottery.name}
                 </option>

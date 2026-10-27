@@ -8,6 +8,7 @@ const syncFunctions = readFileSync("src/lib/sync.functions.ts", "utf8");
 const checkFunctions = readFileSync("src/lib/check.functions.ts", "utf8");
 const featureFlagsHook = readFileSync("src/hooks/useFeatureFlags.tsx", "utf8");
 const usersRoute = readFileSync("src/routes/_authenticated/admin.users.tsx", "utf8");
+const lotteriesFunctions = readFileSync("src/lib/admin/lotteries.functions.ts", "utf8");
 const usersFunctions = readFileSync("src/lib/admin/users.functions.ts", "utf8");
 const activeAuthMiddleware = readFileSync("src/lib/auth/active-auth-middleware.ts", "utf8");
 const loginRoute = readFileSync("src/routes/login.tsx", "utf8");
@@ -66,6 +67,16 @@ describe("segregação ADMIN e USER", () => {
     expect(usersFunctions).toContain("data.targetUserId === context.userId");
     expect(usersFunctions).toContain("system_owner_user_id");
     expect(usersFunctions).toContain('rpc("admin_active_count")');
-    expect(usersFunctions).toContain('action: data.action === "BLOCK" ? "USER_BLOCKED" : "USER_UNBLOCKED"');
+    expect(usersFunctions).toContain(
+      'action: data.action === "BLOCK" ? "USER_BLOCKED" : "USER_UNBLOCKED"',
+    );
+  });
+
+  it("só ADMIN altera a disponibilidade das modalidades, e a gravação é auditada no banco", () => {
+    expect(lotteriesFunctions).toContain(".middleware([requireActiveSupabaseAuth])");
+    expect(lotteriesFunctions).toContain('rpc("has_role"');
+    expect(lotteriesFunctions).toContain("await assertAdmin(context as never)");
+    expect(lotteriesFunctions).toContain('"admin_set_lottery_availability"');
+    expect(adminRoute).toContain("<LotteryAvailabilityPanel />");
   });
 });

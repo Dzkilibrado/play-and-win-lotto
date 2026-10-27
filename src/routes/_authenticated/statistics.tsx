@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { activeLotteries, getLotteryConfig, type LotteryConfig } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { formatDate } from "@/lib/format";
 import { validateListSearch, type ListSearch } from "@/lib/searchFilters";
 import {
@@ -65,7 +66,8 @@ function StatisticsPage() {
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const tab = tabs.find((item) => item.id === search.tab)?.id ?? "overview";
-  const slug = search.lottery ?? activeLotteries[0]!.slug;
+  const { visibleLotteries } = useLotteryAvailability();
+  const slug = search.lottery ?? visibleLotteries[0]?.slug ?? activeLotteries[0]!.slug;
   const config = getLotteryConfig(slug)!;
   const window = windowOf(search.status);
 
@@ -104,7 +106,7 @@ function StatisticsPage() {
               value={slug}
               onChange={(event) => setSearch({ lottery: event.target.value, numbers: undefined })}
             >
-              {activeLotteries.map((lottery) => (
+              {visibleLotteries.map((lottery) => (
                 <option key={lottery.slug} value={lottery.slug}>
                   {lottery.name}
                 </option>

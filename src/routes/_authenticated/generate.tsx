@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { generationConfig } from "@/config/generation.config";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
+import { pickInitialLottery } from "@/lib/lotteryAvailability";
 import { useSession } from "@/hooks/useAuth";
 import { useHomePreferences } from "@/hooks/useHomePreferences";
 import { useGameGeneration } from "@/lib/engine/useGameGeneration";
@@ -78,7 +80,11 @@ function GeneratePage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = useSession();
 
-  const initialSlug = (search.lottery as LotterySlug | undefined) ?? activeLotteries[0]!.slug;
+  const availability = useLotteryAvailability();
+  const initialSlug =
+    pickInitialLottery(search.lottery as LotterySlug | undefined, availability.enabledLotteries) ??
+    (search.lottery as LotterySlug | undefined) ??
+    activeLotteries[0]!.slug;
   const [slug, setSlug] = useState<LotterySlug>(initialSlug);
   const rules = resolveRules(slug)!;
 
@@ -372,6 +378,10 @@ function GeneratePage() {
   };
 
   const saveGames = async (drafts: GeneratedGameDraft[]) => {
+    if (availability.availabilityOf(slug) !== "ENABLED") {
+      toast.error("Esta modalidade está indisponível no momento.");
+      return;
+    }
     if (!user?.id || !lotteryRow) {
       toast.error("Sessão não identificada. Entre novamente.");
       return;
@@ -536,8 +546,15 @@ function GeneratePage() {
           <section className="surface-card space-y-4 p-4">
             <div className="space-y-2">
               <Label>1. Modalidade</Label>
+              {availability.availabilityOf(slug) !== "ENABLED" ? (
+                <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning" role="alert">
+                  {rules.name} está indisponível no momento
+                  {availability.noteOf(slug) ? ` — ${availability.noteOf(slug)}` : ""}. Escolha
+                  outra modalidade para gerar e salvar jogos.
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2" role="tablist" aria-label="Modalidade">
-                {activeLotteries.map((item) => (
+                {availability.enabledLotteries.map((item) => (
                   <button
                     key={item.slug}
                     type="button"

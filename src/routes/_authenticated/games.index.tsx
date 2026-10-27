@@ -12,7 +12,7 @@ import { GameCard } from "@/components/lottery/GameCard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
-import { activeLotteries } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { resolveRules } from "@/lib/engine/rules";
 import { maxEqualGapStreak, maxGap } from "@/lib/engine/metrics";
 import type { GameAnalysisResult } from "@/lib/engine/types";
@@ -63,6 +63,7 @@ export function rowAnalysis(row: GameRow): GameAnalysisResult {
 }
 
 function GamesPage() {
+  const { visibleLotteries } = useLotteryAvailability();
   const { user } = Route.useRouteContext();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -175,7 +176,7 @@ function GamesPage() {
               onChange={(event) => setFilter({ lottery: event.target.value || undefined })}
             >
               <option value="">Todas as loterias</option>
-              {activeLotteries.map((lottery) => (
+              {visibleLotteries.map((lottery) => (
                 <option key={lottery.slug} value={lottery.slug}>
                   {lottery.name}
                 </option>

@@ -12,7 +12,8 @@ import { LotteryNumberGrid } from "@/components/lottery/LotteryNumberGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
-import { activeLotteries, getLotteryConfig, type LotterySlug } from "@/config/lotteries";
+import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
+import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeGame } from "@/lib/engine/analyzer";
 import { resolveRules } from "@/lib/engine/rules";
@@ -52,6 +53,7 @@ const kindLabel: Record<PhotoDocumentKind, string> = {
 };
 
 function ImportGamePage() {
+  const { enabledLotteries: activeLotteries } = useLotteryAvailability();
   const navigate = useNavigate();
   const { user } = useSession();
   const extract = useServerFn(extractGameFromPhoto);
