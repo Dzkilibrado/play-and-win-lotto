@@ -26,6 +26,7 @@ Pontos em aberto que exigem atenção. Atualizar ao resolver.
 
 ## Melhorias homologadas (análise dos 13 pontos)
 
-- Pacote 1 em andamento: próximo sorteio para todas as modalidades (feito neste PR), Loterias com cartões informativos (feito), intervalo menor em falha (feito para o calendário; falta o mesmo para a importação de resultados), **Monitor configurável** (ADMIN/SUPORTE escolhem indicadores e ordem), Administração em cartões, "Recursos do sistema" com **modo manutenção geral** (desligar tudo com urgência).
+- Pacote 1 em andamento: próximo sorteio para todas as modalidades (feito neste PR), Loterias com cartões informativos (feito), intervalo menor em falha (feito para o calendário; falta o mesmo para a importação de resultados), **Monitor configurável** (feito para ADMIN neste PR; SUPORTE e indicadores de chamados entram com Segurança/Atendimento), Administração em cartões (feito), "Recursos do sistema" com **modo manutenção geral** (desligar tudo com urgência).
 - Bolão/Orçamento: a escolha de Mês, Time e Trevos deve ser 100% automática, sem pedir nada ao usuário (hoje essas modalidades ficam fora do fluxo por orçamento).
 - Pendente: +Milionária ainda precisa de validação com resultado real (`trevosSorteados`).
+- Falta no Pacote 1: "Recursos do sistema" com modo manutenção geral e descrição clara de cada chave; intervalo curto em falha também para a importação de resultados; botões "em todas as loterias" na Atualização.
