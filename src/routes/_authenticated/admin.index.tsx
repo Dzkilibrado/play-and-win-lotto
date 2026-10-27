@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ErrorState, LoadingState } from "@/components/common/StateViews";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { LotteryAvailabilityPanel } from "@/components/admin/LotteryAvailabilityPanel";
+import { LotteryClubsPanel } from "@/components/admin/LotteryClubsPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { appConfig, featureStatusLabel, type FeatureStatus } from "@/config/app.config";
@@ -119,6 +120,7 @@ function AdminPage() {
         <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
       </Link>
       <LotteryAvailabilityPanel />
+      <LotteryClubsPanel />
       <FeatureFlagsPanel userId={user.id} />
       <SyncPanel userId={user.id} />
       <CheckPanel userId={user.id} />

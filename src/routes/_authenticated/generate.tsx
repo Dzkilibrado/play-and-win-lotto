@@ -13,12 +13,14 @@ import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
 import { SmartWeights, describeWeightSelection } from "@/components/lottery/SmartWeights";
 import { NumberSelectionCard } from "@/components/lottery/NumberSelectionCard";
+import { SecondaryPicker } from "@/components/lottery/SecondaryPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { appConfig } from "@/config/app.config";
 import { generationConfig } from "@/config/generation.config";
 import { activeLotteries, type LotterySlug } from "@/config/lotteries";
 import { useLotteryAvailability } from "@/hooks/useLotteryAvailability";
+import { useSecondaryOptions } from "@/hooks/useSecondaryOptions";
 import { pickInitialLottery } from "@/lib/lotteryAvailability";
 import { useSession } from "@/hooks/useAuth";
 import { useHomePreferences } from "@/hooks/useHomePreferences";
@@ -42,10 +44,7 @@ import {
   validateWeightSelection,
 } from "@/lib/engine/weights";
 import { statisticsService } from "@/lib/services/statisticsService";
-import {
-  buildStatisticsQuery,
-  resolveReferenceContest,
-} from "@/lib/services/statisticsReference";
+import { buildStatisticsQuery, resolveReferenceContest } from "@/lib/services/statisticsReference";
 
 import type { BudgetStrategyResult } from "@/lib/engine/budgetStrategy";
 import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
@@ -100,6 +99,8 @@ function GeneratePage() {
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showPriceHelp, setShowPriceHelp] = useState(false);
+  /** Mês da Sorte / Time do Coração escolhido (chave canônica); "" = não escolhido. */
+  const [secondary, setSecondary] = useState("");
   const [weightSelection, setWeightSelection] = useState(() => defaultWeightSelection());
   const { generating, generate, cancel } = useGameGeneration();
 
@@ -117,6 +118,8 @@ function GeneratePage() {
     queryFn: () => lotteryDataService.listLotteries(),
   });
   const lotteryRow = lotteriesQuery.data?.find((row) => row.slug === slug) ?? null;
+  const secondaryOptions = useSecondaryOptions(slug, lotteryRow?.id);
+  const secondaryMissing = secondaryOptions.supported && !secondary;
 
   const priceQuery = useQuery({
     queryKey: ["price", lotteryRow?.id, numbersCount],
@@ -130,13 +133,15 @@ function GeneratePage() {
   });
   const lastDraw = lastDrawQuery.data ?? null;
   const lastNumbers = lastDraw?.draw_numbers?.map((item) => item.number) ?? null;
-  const nextContest = lastDraw?.next_contest_number ?? (lastDraw ? lastDraw.contest_number + 1 : null);
+  const nextContest =
+    lastDraw?.next_contest_number ?? (lastDraw ? lastDraw.contest_number + 1 : null);
 
   const [pendingLottery, setPendingLottery] = useState<LotterySlug | null>(null);
 
   const changeLottery = (next: LotterySlug) => {
     const nextRules = resolveRules(next)!;
     setSlug(next);
+    setSecondary("");
     setNumbersCount(nextRules.selectable.base);
     setFixed([]);
     setExcluded([]);
@@ -181,8 +186,6 @@ function GeneratePage() {
     });
   };
 
-
-
   const requestLotteryChange = (next: LotterySlug) => {
     if (next === slug) return;
     if (!hasOptionalConfig) {
@@ -221,15 +224,13 @@ function GeneratePage() {
 
   const contestNumber = resolveReferenceContest(contestChoice, nextContest, customContest);
 
-
   /**
    * Referência do filtro "Repetidas do concurso anterior".
    * Com um concurso escolhido, o anterior é o imediatamente anterior a ele —
    * não simplesmente o último sorteio disponível.
    */
   const repeatedReference = filters.repeated.config.reference;
-  const referenceBefore =
-    repeatedReference === "latest-draw" ? null : (contestNumber ?? null);
+  const referenceBefore = repeatedReference === "latest-draw" ? null : (contestNumber ?? null);
 
   const previousDrawQuery = useQuery({
     queryKey: ["previous-draw", slug, referenceBefore],
@@ -256,9 +257,7 @@ function GeneratePage() {
 
   const pool = useMemo(
     () =>
-      universeNumbers(rules).filter(
-        (value) => !excluded.includes(value) && !fixed.includes(value),
-      ),
+      universeNumbers(rules).filter((value) => !excluded.includes(value) && !fixed.includes(value)),
     [rules, excluded, fixed],
   );
 
@@ -286,7 +285,6 @@ function GeneratePage() {
           contestNumber,
         }),
       ),
-
   });
   const statisticsSnapshot = statisticsQuery.data ?? null;
 
@@ -359,6 +357,12 @@ function GeneratePage() {
 
   const handleGenerate = async () => {
     if (generating) return;
+    if (secondaryMissing) {
+      toast.error(
+        `Escolha ${secondaryOptions.label ? `o ${secondaryOptions.label}` : "a seleção extra"} antes de criar os jogos.`,
+      );
+      return;
+    }
     try {
       const outcome = await generate(request, {
         lastDrawNumbers: lastNumbers,
@@ -386,6 +390,12 @@ function GeneratePage() {
       toast.error("Sessão não identificada. Entre novamente.");
       return;
     }
+    if (secondaryMissing) {
+      toast.error(
+        `Escolha ${secondaryOptions.label ? `o ${secondaryOptions.label}` : "a seleção extra"} antes de salvar.`,
+      );
+      return;
+    }
     setSaving(true);
     try {
       for (const draft of drafts) {
@@ -394,6 +404,7 @@ function GeneratePage() {
           lotteryId: lotteryRow.id,
           numbers: draft.numbers,
           analysis: draft.analysis,
+          secondarySelection: secondary ? [secondary] : [],
           contestNumber,
           drawId: null,
           price:
@@ -478,7 +489,9 @@ function GeneratePage() {
             <div
               className={cn(
                 "rounded-xl p-3 text-sm",
-                metrics.generated < metrics.requested ? "bg-warning-soft text-warning" : "bg-surface-secondary text-text-secondary",
+                metrics.generated < metrics.requested
+                  ? "bg-warning-soft text-warning"
+                  : "bg-surface-secondary text-text-secondary",
               )}
             >
               {metrics.generated < metrics.requested ? (
@@ -604,6 +617,20 @@ function GeneratePage() {
               />
             </div>
 
+            {secondaryOptions.supported && secondaryOptions.kind ? (
+              <SecondaryPicker
+                id="secondary-pick"
+                label={`${secondaryOptions.label} (vale para todos os jogos)`}
+                kind={secondaryOptions.kind}
+                options={secondaryOptions.options}
+                value={secondary}
+                onChange={(next) => {
+                  setSecondary(next);
+                  setGames(null);
+                }}
+                isLoading={secondaryOptions.isLoading}
+              />
+            ) : null}
           </section>
 
           <section className="surface-card space-y-3 p-4">
@@ -649,34 +676,34 @@ function GeneratePage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div id="fixos-card" className="scroll-mt-24">
-            <NumberSelectionCard
-              label="5. Fixar números (opcional)"
-              drawerTitle="Fixar números"
-              description="Escolha dezenas que deverão estar em todos os jogos."
-              drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
-              value={fixed}
-              onChange={(next) => {
-                setFixed(next);
-                setGames(null);
-              }}
-              rules={rules}
-              locked={excluded}
-              excludedMarks={excluded}
-              limit={numbersCount}
-              notice={(openDrawer) =>
-                fixed.length > numbersCount ? (
-                  <div className="space-y-2 rounded-lg bg-warning-soft p-3">
-                    <p className="text-xs text-warning">
-                      Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
-                      {numbersCount} dezenas.
-                    </p>
-                    <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
-                      Editar números fixos
-                    </Button>
-                  </div>
-                ) : null
-              }
-            />
+              <NumberSelectionCard
+                label="5. Fixar números (opcional)"
+                drawerTitle="Fixar números"
+                description="Escolha dezenas que deverão estar em todos os jogos."
+                drawerDescription="Selecione as dezenas que devem aparecer em todos os jogos. Dezenas já excluídas ficam bloqueadas."
+                value={fixed}
+                onChange={(next) => {
+                  setFixed(next);
+                  setGames(null);
+                }}
+                rules={rules}
+                locked={excluded}
+                excludedMarks={excluded}
+                limit={numbersCount}
+                notice={(openDrawer) =>
+                  fixed.length > numbersCount ? (
+                    <div className="space-y-2 rounded-lg bg-warning-soft p-3">
+                      <p className="text-xs text-warning">
+                        Você possui {fixed.length} números fixos, mas o jogo foi configurado para{" "}
+                        {numbersCount} dezenas.
+                      </p>
+                      <Button variant="outline" size="sm" className="h-9" onClick={openDrawer}>
+                        Editar números fixos
+                      </Button>
+                    </div>
+                  ) : null
+                }
+              />
             </div>
 
             <NumberSelectionCard
@@ -699,19 +726,18 @@ function GeneratePage() {
             />
           </div>
 
-
           <div id="filtros-card" className="scroll-mt-24">
-          <GenerationFilters
-            states={filters}
-            onChange={(next) => {
-              setFilters(next);
-              setGames(null);
-              setMetrics(null);
-            }}
-            context={filterContext}
-            issuesByFilter={issuesByFilter}
-            previousDrawLabel={previousDrawLabel}
-          />
+            <GenerationFilters
+              states={filters}
+              onChange={(next) => {
+                setFilters(next);
+                setGames(null);
+                setMetrics(null);
+              }}
+              context={filterContext}
+              issuesByFilter={issuesByFilter}
+              previousDrawLabel={previousDrawLabel}
+            />
           </div>
 
           <SmartWeights
@@ -728,8 +754,14 @@ function GeneratePage() {
             colorKey={rules.colorKey}
           />
 
-          <section className="surface-card space-y-4 p-4" aria-labelledby="generation-summary-title">
-            <h2 id="generation-summary-title" className="font-display text-base font-semibold text-text-primary">
+          <section
+            className="surface-card space-y-4 p-4"
+            aria-labelledby="generation-summary-title"
+          >
+            <h2
+              id="generation-summary-title"
+              className="font-display text-base font-semibold text-text-primary"
+            >
               Resumo
             </h2>
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -771,7 +803,6 @@ function GeneratePage() {
                 Limpar configurações opcionais
               </Button>
             ) : null}
-
 
             <button
               type="button"
@@ -817,9 +848,7 @@ function GeneratePage() {
               <p className="text-xs text-text-secondary">
                 {formatNumber(validation.possibilities)} jogos diferentes são possíveis com esta
                 configuração
-                {activeFilterCount > 0
-                  ? ` — os filtros escolhidos reduzem esse total.`
-                  : "."}
+                {activeFilterCount > 0 ? ` — os filtros escolhidos reduzem esse total.` : "."}
               </p>
             )}
 

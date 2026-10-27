@@ -227,16 +227,17 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
     colorKey: "dia-de-sorte",
     universe: { min: 1, max: 31 },
     selectable: { min: 7, max: 15, base: 7 },
-    grid: { columns: 31 },
+    // 31 dias do mês em semanas de 7 (como um calendário).
+    grid: { columns: 7 },
     prizeTiers: [
       { hits: 7, label: "7 acertos" },
       { hits: 6, label: "6 acertos" },
       { hits: 5, label: "5 acertos" },
       { hits: 4, label: "4 acertos" },
     ],
-    // Inativa: falta a seleção do Mês da Sorte (motor + tela + conferência) —
-    // ver acompanhamento no PR dedicado a esta modalidade.
-    isActive: false,
+    // Ativa, mas a administração a mantém DESABILITADA até validar o primeiro
+    // resultado real da Caixa (sincronização do Mês da Sorte).
+    isActive: true,
     sortOrder: 6,
     drawsPerContest: 1,
     drawnCount: 7,
@@ -265,8 +266,9 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
       { hits: 4, label: "4 acertos" },
       { hits: 3, label: "3 acertos" },
     ],
-    // Inativa: falta a seleção do Time do Coração (motor + tela + conferência).
-    isActive: false,
+    // Ativa, mas a administração a mantém DESABILITADA até cadastrar os clubes
+    // e validar o primeiro resultado real da Caixa.
+    isActive: true,
     sortOrder: 7,
     drawsPerContest: 1,
     // Sorteio oficial: 7 dezenas (de 80) + 1 Time do Coração.

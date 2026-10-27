@@ -5,6 +5,7 @@
  * PostgreSQL -> app. O frontend consulta SEMPRE o nosso banco; nenhuma
  * chamada a serviço externo acontece aqui.
  */
+import type { SecondaryOption } from "@/config/lotteries";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lottery, LotteryDraw } from "@/types/domain";
 
@@ -17,6 +18,11 @@ export interface DrawPrizeRow {
 }
 
 /** 2º sorteio de um concurso (Dupla Sena). */
+export interface SecondaryResult {
+  result: string[];
+  prize: { tier: string; winners: number | null; prize_per_winner: number | null } | null;
+}
+
 export interface SecondDraw {
   numbers: { number: number; position: number }[];
   prizes: DrawPrizeRow[];
@@ -153,6 +159,70 @@ export const lotteryDataService = {
       const rows = (numbers.data ?? []) as { number: number; position: number }[];
       if (rows.length === 0) return null;
       return { numbers: rows, prizes: (prizes.data ?? []) as DrawPrizeRow[] };
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Opções da seleção secundária guardadas no banco (clubes da Timemania).
+   * Leitura tolerante: se a tabela ainda não existir, devolve lista vazia.
+   */
+  async getSecondaryOptions(lotteryId: string): Promise<SecondaryOption[]> {
+    try {
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            eq: (
+              column: string,
+              value: string | boolean,
+            ) => {
+              eq: (
+                column: string,
+                value: string | boolean,
+              ) => {
+                order: (column: string) => PromiseLike<{ data: unknown; error: unknown }>;
+              };
+            };
+          };
+        };
+      };
+      const { data, error } = await client
+        .from("lottery_secondary_options")
+        .select("value, label")
+        .eq("lottery_id", lotteryId)
+        .eq("is_active", true)
+        .order("label");
+      if (error) return [];
+      return (data ?? []) as SecondaryOption[];
+    } catch {
+      return [];
+    }
+  },
+
+  /** Resultado oficial do Mês da Sorte / Time do Coração do concurso (tolerante). */
+  async getSecondaryResult(drawId: string): Promise<SecondaryResult | null> {
+    try {
+      const client = supabase as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            eq: (column: string, value: string) => PromiseLike<{ data: unknown; error: unknown }>;
+          };
+        };
+      };
+      const [draw, prizes] = await Promise.all([
+        client.from("lottery_draws").select("secondary_result").eq("id", drawId),
+        client
+          .from("draw_secondary_prizes")
+          .select("tier, winners, prize_per_winner")
+          .eq("draw_id", drawId),
+      ]);
+      if (draw.error || prizes.error) return null;
+      const result = ((draw.data as { secondary_result: string[] | null }[] | null)?.[0]
+        ?.secondary_result ?? []) as string[];
+      if (result.length === 0) return null;
+      const prize = ((prizes.data ?? []) as SecondaryResult["prize"][])[0] ?? null;
+      return { result, prize };
     } catch {
       return null;
     }

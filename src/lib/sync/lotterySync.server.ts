@@ -124,21 +124,41 @@ async function persistDraw(
       winners: prize.winners,
       prize_per_winner: prize.prizePerWinner,
     })),
-    // 2º sorteio (Dupla Sena), gravado na mesma transação; `null` nas demais.
-    _second: draw.secondDraw
+    // Parâmetros opcionais só viajam quando a modalidade os usa: assim as
+    // modalidades de sorteio único seguem chamando a função com a mesma
+    // assinatura de sempre, mesmo antes de uma migração mais nova ser aplicada.
+    ...(draw.secondDraw
       ? {
-          numbers: draw.secondDraw.numbers.map((number, index) => ({
-            number,
-            position: index + 1,
-          })),
-          prizes: draw.secondDraw.prizes.map((prize) => ({
-            tier: prize.tier,
-            hits: prize.hits,
-            winners: prize.winners,
-            prize_per_winner: prize.prizePerWinner,
-          })),
+          // 2º sorteio (Dupla Sena), gravado na mesma transação.
+          _second: {
+            numbers: draw.secondDraw.numbers.map((number, index) => ({
+              number,
+              position: index + 1,
+            })),
+            prizes: draw.secondDraw.prizes.map((prize) => ({
+              tier: prize.tier,
+              hits: prize.hits,
+              winners: prize.winners,
+              prize_per_winner: prize.prizePerWinner,
+            })),
+          },
         }
-      : null,
+      : {}),
+    ...(draw.secondary
+      ? {
+          // Mês da Sorte / Time do Coração, na mesma transação.
+          _secondary: {
+            result: draw.secondary.result,
+            prize: draw.secondary.prize
+              ? {
+                  tier: draw.secondary.prize.tier,
+                  winners: draw.secondary.prize.winners,
+                  prize_per_winner: draw.secondary.prize.prizePerWinner,
+                }
+              : null,
+          },
+        }
+      : {}),
   });
 
   if (error) throw new SyncError("PERSISTENCE", error.message);

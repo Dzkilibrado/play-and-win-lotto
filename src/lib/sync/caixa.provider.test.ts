@@ -231,3 +231,124 @@ describe("Dupla Sena: 2 sorteios por concurso", () => {
     expect(draw.secondDraw).toBeNull();
   });
 });
+
+describe("Dia de Sorte: Mês da Sorte", () => {
+  const numbers = ["02", "05", "11", "17", "23", "28", "31"];
+  const rateio = [
+    { faixa: 1, descricaoFaixa: "7 acertos", numeroDeGanhadores: 0, valorPremio: 0 },
+    { faixa: 2, descricaoFaixa: "6 acertos", numeroDeGanhadores: 3, valorPremio: 1500 },
+    { faixa: 3, descricaoFaixa: "5 acertos", numeroDeGanhadores: 90, valorPremio: 20 },
+    { faixa: 4, descricaoFaixa: "4 acertos", numeroDeGanhadores: 1000, valorPremio: 5 },
+    { faixa: 5, descricaoFaixa: "Mês de Sorte", numeroDeGanhadores: 800, valorPremio: 2.5 },
+  ];
+
+  it("lê o mês sorteado e a faixa própria, fora das faixas de dezenas", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      nomeTimeCoracaoMesSorte: "MARÇO",
+      listaRateioPremio: rateio,
+    });
+    const draw = await fetchOfficialDraw("dia-de-sorte", 900);
+    expect(draw.numbers).toHaveLength(7);
+    expect(draw.prizes.map((prize) => prize.hits)).toEqual([7, 6, 5, 4]);
+    expect(draw.secondary?.result).toEqual(["03"]);
+    expect(draw.secondary?.prize).toMatchObject({ winners: 800, prizePerWinner: 2.5 });
+  });
+
+  it("aceita mês sem faixa informada (valor pendente, nunca zero)", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      nomeTimeCoracaoMesSorte: "Janeiro",
+      listaRateioPremio: rateio.slice(0, 4),
+    });
+    const draw = await fetchOfficialDraw("dia-de-sorte", 900);
+    expect(draw.secondary?.result).toEqual(["01"]);
+    expect(draw.secondary?.prize).toBeNull();
+  });
+
+  it("recusa concurso sem o mês sorteado", async () => {
+    mockResponse({ ...basePayload, listaDezenas: numbers, listaRateioPremio: rateio });
+    await expect(fetchOfficialDraw("dia-de-sorte", 900)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa mês não reconhecido", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      nomeTimeCoracaoMesSorte: "Marteiro",
+      listaRateioPremio: rateio,
+    });
+    await expect(fetchOfficialDraw("dia-de-sorte", 900)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa faixa do mês duplicada", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      nomeTimeCoracaoMesSorte: "MARÇO",
+      listaRateioPremio: [...rateio, rateio[4]],
+    });
+    await expect(fetchOfficialDraw("dia-de-sorte", 900)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+});
+
+describe("Timemania: Time do Coração", () => {
+  const numbers = ["07", "15", "22", "40", "51", "63", "78"];
+  const rateio = [
+    { faixa: 1, descricaoFaixa: "7 acertos", numeroDeGanhadores: 0, valorPremio: 0 },
+    { faixa: 2, descricaoFaixa: "6 acertos", numeroDeGanhadores: 2, valorPremio: 60000 },
+    { faixa: 3, descricaoFaixa: "5 acertos", numeroDeGanhadores: 70, valorPremio: 700 },
+    { faixa: 4, descricaoFaixa: "4 acertos", numeroDeGanhadores: 900, valorPremio: 12 },
+    { faixa: 5, descricaoFaixa: "3 acertos", numeroDeGanhadores: 9000, valorPremio: 3.5 },
+    { faixa: 6, descricaoFaixa: "Time do Coração", numeroDeGanhadores: 40000, valorPremio: 1.5 },
+  ];
+
+  it("exige 7 dezenas sorteadas e normaliza o clube", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      nomeTimeCoracaoMesSorte: "Flamengo / RJ",
+      listaRateioPremio: rateio,
+    });
+    const draw = await fetchOfficialDraw("timemania", 2100);
+    expect(draw.numbers).toHaveLength(7);
+    expect(draw.prizes.map((prize) => prize.hits)).toEqual([7, 6, 5, 4, 3]);
+    expect(draw.secondary?.result).toEqual(["FLAMENGO/RJ"]);
+    expect(draw.secondary?.prize).toMatchObject({ winners: 40000, prizePerWinner: 1.5 });
+  });
+
+  it("recusa as 10 dezenas da aposta no lugar das 7 sorteadas", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: [...numbers, "80", "81", "82"].slice(0, 10),
+      nomeTimeCoracaoMesSorte: "FLAMENGO/RJ",
+      listaRateioPremio: rateio,
+    });
+    await expect(fetchOfficialDraw("timemania", 2100)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa concurso sem o Time do Coração", async () => {
+    mockResponse({ ...basePayload, listaDezenas: numbers, listaRateioPremio: rateio });
+    await expect(fetchOfficialDraw("timemania", 2100)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+});
+
+describe("modalidades sem seleção secundária", () => {
+  it("nunca trazem resultado secundário", async () => {
+    mockResponse({ ...basePayload, nomeTimeCoracaoMesSorte: "MARÇO", listaRateioPremio: [] });
+    const draw = await fetchOfficialDraw("mega-sena", 2500);
+    expect(draw.secondary).toBeNull();
+  });
+});

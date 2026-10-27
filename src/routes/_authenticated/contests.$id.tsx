@@ -1,3 +1,4 @@
+import { SecondaryResultSection } from "@/components/lottery/SecondaryResultSection";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
@@ -197,6 +198,12 @@ function ContestDetailPage() {
               </ul>
             )}
           </section>
+
+          <SecondaryResultSection
+            drawId={draw.id}
+            slug={draw.lotteries?.slug}
+            lotteryId={draw.lottery_id}
+          />
 
           <section className="rounded-xl border border-border bg-surface p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">
