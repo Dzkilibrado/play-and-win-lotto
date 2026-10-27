@@ -30,3 +30,5 @@ Pontos em aberto que exigem atenção. Atualizar ao resolver.
 - Bolão/Orçamento: a escolha de Mês, Time e Trevos deve ser 100% automática, sem pedir nada ao usuário (hoje essas modalidades ficam fora do fluxo por orçamento).
 - Pendente: +Milionária ainda precisa de validação com resultado real (`trevosSorteados`).
 - Falta no Pacote 1: "Recursos do sistema" com modo manutenção geral e descrição clara de cada chave; intervalo curto em falha também para a importação de resultados; botões "em todas as loterias" na Atualização.
+- Tabela legada `feature_flags` ("Sistema · Recursos"): descrições desatualizadas e não controla nada no app; saiu da Administração (substituída por "Controle do sistema" com modo manutenção real). Pode ser removida do banco depois.
+- Monitor: incluir indicador "Modo manutenção ligado".

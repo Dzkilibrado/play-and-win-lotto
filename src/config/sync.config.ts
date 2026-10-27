@@ -35,9 +35,9 @@ export const syncConfig = {
   /** Tentativas rápidas somente na primeira hora após o horário previsto. */
   postDrawIntervalMinutes: 10,
   postDrawFastWindowMinutes: 60,
-  /** Depois da janela rápida, reduz progressivamente a frequência. */
-  retryBackoffMinutes: [30, 60, 120] as const,
-  maxRetryDelayMinutes: 120,
+  /** Depois da janela rápida o intervalo cresce pouco e para em 30 min: falha nunca fica horas sem nova tentativa. */
+  retryBackoffMinutes: [10, 15, 30] as const,
+  maxRetryDelayMinutes: 30,
   /** Revisão posterior do concurso importado para detectar retificação oficial. */
   consistencyCheckDelayMinutes: 360,
   /** Atraso de publicação a partir do qual o painel pede atenção. */

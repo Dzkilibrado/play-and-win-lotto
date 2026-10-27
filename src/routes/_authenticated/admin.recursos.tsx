@@ -1,8 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 
-import { FeatureFlagsPanel } from "@/components/admin/AdminPanels";
-import { useSession } from "@/hooks/useAuth";
 import { AdminSection } from "@/components/admin/AdminSection";
+import { MaintenancePanel } from "@/components/admin/MaintenancePanel";
 import { appConfig } from "@/config/app.config";
 
 export const Route = createFileRoute("/_authenticated/admin/recursos")({
@@ -11,11 +11,8 @@ export const Route = createFileRoute("/_authenticated/admin/recursos")({
   },
   head: () => ({
     meta: [
-      { title: `Recursos do sistema — ${appConfig.name}` },
-      {
-        name: "description",
-        content: "Chaves que ligam ou desligam funções para todos os usuários.",
-      },
+      { title: `Controle do sistema — ${appConfig.name}` },
+      { name: "description", content: "Modo manutenção e disponibilidade geral do sistema." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -23,13 +20,26 @@ export const Route = createFileRoute("/_authenticated/admin/recursos")({
 });
 
 function Page() {
-  const { user } = useSession();
   return (
     <AdminSection
-      title="Recursos do sistema"
-      description="Chaves que ligam ou desligam funções para todos os usuários."
+      title="Controle do sistema"
+      description="Ações para situações de urgência, valendo para todos os usuários."
     >
-      <FeatureFlagsPanel userId={user.id} />
+      <MaintenancePanel />
+      <Link
+        to="/admin/loterias"
+        className="surface-card tappable flex min-h-16 items-center gap-3 p-4 hover:border-primary"
+      >
+        <span className="min-w-0">
+          <span className="block font-display text-sm font-semibold text-text-primary">
+            Disponibilidade por loteria
+          </span>
+          <span className="block text-xs text-text-secondary">
+            Habilitar, pausar ou desabilitar uma loteria específica.
+          </span>
+        </span>
+        <ChevronRight className="ml-auto size-5 shrink-0 text-text-secondary" aria-hidden />
+      </Link>
     </AdminSection>
   );
 }
