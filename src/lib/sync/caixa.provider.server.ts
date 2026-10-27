@@ -7,12 +7,7 @@ import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { providerPath, syncConfig } from "@/config/sync.config";
 
 export type SyncErrorType =
-  | "TIMEOUT"
-  | "UNAVAILABLE"
-  | "NOT_FOUND"
-  | "INVALID_RESPONSE"
-  | "VALIDATION"
-  | "PERSISTENCE";
+  "TIMEOUT" | "UNAVAILABLE" | "NOT_FOUND" | "INVALID_RESPONSE" | "VALIDATION" | "PERSISTENCE";
 
 export class SyncError extends Error {
   readonly type: SyncErrorType;
@@ -77,10 +72,16 @@ function toNumberLoose(value: unknown): number | null {
 
 /** Extrai o número de acertos da descrição da faixa. null = não interpretável. */
 function parseHits(description: string, faixa: unknown): number | null {
+  // Lotomania tem uma faixa de ZERO acertos ("nenhum acerto"/"0 acertos") —
+  // só o dígito "0" não aparece sozinho de forma confiável na descrição,
+  // então o texto precisa ser checado antes do regex genérico de dígitos.
+  const normalized = description.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (/\bnenhum\s+acerto/.test(normalized) || /\b0\s*acerto/.test(normalized)) return 0;
+
   const match = /(\d+)/.exec(description);
   if (match) {
     const hits = Number.parseInt(match[1]!, 10);
-    if (Number.isInteger(hits) && hits > 0) return hits;
+    if (Number.isInteger(hits) && hits >= 0) return hits;
   }
   void faixa;
   return null;
@@ -114,7 +115,11 @@ async function fetchJson(url: string): Promise<unknown> {
     try {
       return JSON.parse(text) as unknown;
     } catch {
-      throw new SyncError("INVALID_RESPONSE", "Resposta da fonte não é JSON válido.", text.slice(0, 160));
+      throw new SyncError(
+        "INVALID_RESPONSE",
+        "Resposta da fonte não é JSON válido.",
+        text.slice(0, 160),
+      );
     }
   } catch (error) {
     if (error instanceof SyncError) throw error;
@@ -135,7 +140,9 @@ function validate(slug: LotterySlug, draw: NormalizedDraw): void {
   if (!Number.isInteger(draw.contestNumber) || draw.contestNumber <= 0) {
     throw new SyncError("VALIDATION", "Número de concurso inválido.");
   }
-  const expected = config.selectable.base;
+  // Quantas dezenas o SORTEIO revela — normalmente igual à aposta simples,
+  // mas a Lotomania sorteia 20 de um universo de 100 com aposta de 50.
+  const expected = config.drawnCount;
   if (draw.numbers.length !== expected) {
     throw new SyncError(
       "VALIDATION",

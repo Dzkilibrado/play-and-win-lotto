@@ -73,4 +73,68 @@ describe("parser de faixas de premiação", () => {
       type: "VALIDATION",
     });
   });
+
+  it("interpreta 'nenhum acerto' como a faixa de 0 acertos", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0")),
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "20 acertos", numeroDeGanhadores: 0, valorPremio: 500000 },
+        { faixa: 2, descricaoFaixa: "Nenhum acerto", numeroDeGanhadores: 12, valorPremio: 5000 },
+      ],
+    });
+
+    const draw = await fetchOfficialDraw("lotomania", 2500);
+    const zeroTier = draw.prizes.find((prize) => prize.hits === 0);
+    expect(zeroTier).toMatchObject({ hits: 0, winners: 12, prizePerWinner: 5000 });
+  });
+
+  it("interpreta '0 acertos' (variação com dígito) como a faixa de 0 acertos", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0")),
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "0 acertos", numeroDeGanhadores: 7, valorPremio: 5000 },
+      ],
+    });
+
+    const draw = await fetchOfficialDraw("lotomania", 2500);
+    expect(draw.prizes[0]).toMatchObject({ hits: 0, winners: 7, prizePerWinner: 5000 });
+  });
+});
+
+describe("validação por drawnCount (Lotomania: sorteio de 20, aposta de 50)", () => {
+  it("aceita exatamente 20 dezenas sorteadas, mesmo com aposta simples de 50", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0")),
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "20 acertos", numeroDeGanhadores: 1, valorPremio: 1 },
+      ],
+    });
+
+    const draw = await fetchOfficialDraw("lotomania", 2500);
+    expect(draw.numbers).toHaveLength(20);
+  });
+
+  it("rejeita quando a fonte não traz as 20 dezenas esperadas da Lotomania", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: Array.from({ length: 19 }, (_, index) => String(index + 1).padStart(2, "0")),
+      listaRateioPremio: [],
+    });
+    await expect(fetchOfficialDraw("lotomania", 2500)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("continua exigindo 6 dezenas na Mega-Sena (drawnCount == selectable.base nas modalidades antigas)", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: Array.from({ length: 6 }, (_, index) => String(index + 1).padStart(2, "0")),
+      listaRateioPremio: [],
+    });
+    const draw = await fetchOfficialDraw("mega-sena", 2500);
+    expect(draw.numbers).toHaveLength(6);
+  });
 });

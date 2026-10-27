@@ -121,7 +121,9 @@ export function checkGame(input: CheckInput): CheckOutcome {
   const seen = new Set<number>();
 
   for (const tier of [...input.tiers].sort((a, b) => b.hits - a.hits)) {
-    if (!Number.isInteger(tier.hits) || tier.hits < 1) continue;
+    // hits=0 é uma faixa real (Lotomania premia "nenhum acerto") — só
+    // valores não inteiros ou negativos são de fato inválidos.
+    if (!Number.isInteger(tier.hits) || tier.hits < 0) continue;
     if (seen.has(tier.hits)) continue;
     // Faixa impossível para o tamanho da aposta simples desta modalidade.
     if (tier.hits > base) continue;

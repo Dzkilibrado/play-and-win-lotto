@@ -16,7 +16,7 @@ export type PhotoDocumentKind = "TICKET" | "RECEIPT" | "UNKNOWN";
 
 export interface PhotoExtraction {
   documentKind: PhotoDocumentKind;
-  /** slug da modalidade quando reconhecida: mega-sena | lotofacil | quina */
+  /** slug da modalidade quando reconhecida: mega-sena | lotofacil | quina | lotomania | dupla-sena */
   lotterySlug: string | null;
   contestNumber: number | null;
   numbers: number[];
@@ -38,7 +38,7 @@ interface RawExtraction {
   notes?: unknown;
 }
 
-const PROMPT = `Você analisa fotos de loterias brasileiras (Mega-Sena, Lotofácil e Quina).
+const PROMPT = `Você analisa fotos de loterias brasileiras (Mega-Sena, Lotofácil, Quina, Lotomania e Dupla Sena).
 
 Classifique a imagem em:
 - "TICKET": volante/canhoto de papel com dezenas marcadas à mão (quadradinhos pintados), sem comprovação de pagamento.
@@ -46,7 +46,7 @@ Classifique a imagem em:
 - "UNKNOWN": não é possível determinar.
 
 Extraia, sem inventar nada:
-- lottery: "mega-sena", "lotofacil", "quina" ou null.
+- lottery: "mega-sena", "lotofacil", "quina", "lotomania", "dupla-sena" ou null.
 - contest_number: número do concurso impresso (inteiro) ou null. Em volantes/canhotos normalmente não existe: use null. NUNCA deduza, calcule ou presuma o próximo concurso — só informe o número que estiver legível na imagem.
 - numbers: lista das dezenas marcadas/jogadas, como inteiros, sem repetição, em ordem crescente. Se não conseguir ler todas com segurança, retorne apenas as que tem certeza.
 - bet_amount: valor da aposta em reais (número) ou null.
@@ -61,7 +61,9 @@ function parseNumbers(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   const list = value
     .map((item) => Number(item))
-    .filter((item) => Number.isInteger(item) && item > 0 && item <= 99);
+    // Lotomania vai até 100 (as demais, até 80) — limite genérico generoso
+    // para não descartar dezenas válidas de nenhuma modalidade suportada.
+    .filter((item) => Number.isInteger(item) && item > 0 && item <= 100);
   return [...new Set(list)].sort((a, b) => a - b);
 }
 
@@ -78,6 +80,8 @@ function parseSlug(value: unknown): string | null {
   if (text === "mega-sena" || text === "megasena" || text === "mega sena") return "mega-sena";
   if (text === "lotofacil" || text === "lotofácil") return "lotofacil";
   if (text === "quina") return "quina";
+  if (text === "lotomania") return "lotomania";
+  if (text === "dupla-sena" || text === "dupla sena" || text === "duplasena") return "dupla-sena";
   return null;
 }
 

@@ -53,4 +53,16 @@ export const providerPath: Record<LotterySlug, string> = {
   "mega-sena": "megasena",
   lotofacil: "lotofacil",
   quina: "quina",
+  lotomania: "lotomania",
+  // As 5 abaixo ficam com sincronização desligada
+  // (`lottery_sync_state.enabled = false`, ver migração) até o adaptador
+  // aprender a ler o que cada uma precisa: segundo sorteio do mesmo
+  // concurso (Dupla Sena), ou trevo/mês/time/colunas (as outras 4). O
+  // caminho já está mapeado para quando isso acontecer, só não é chamado
+  // por enquanto.
+  "dupla-sena": "duplasena",
+  "dia-de-sorte": "diadesorte",
+  timemania: "timemania",
+  "mais-milionaria": "maismilionaria",
+  "super-sete": "supersete",
 };
