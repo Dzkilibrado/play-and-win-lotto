@@ -3,6 +3,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   RefreshCw,
+  ShieldCheck,
   SlidersHorizontal,
   Ticket,
   Users,
@@ -37,6 +38,7 @@ interface AdminCard {
     | "/admin/conferencia"
     | "/admin/loterias"
     | "/admin/users"
+    | "/admin/acessos"
     | "/admin/recursos";
   title: string;
   description: string;
@@ -67,6 +69,12 @@ const cards: AdminCard[] = [
     title: "Usuários",
     description: "Contas, acessos e perfis cadastrados.",
     icon: Users,
+  },
+  {
+    to: "/admin/acessos",
+    title: "Tipos de acesso",
+    description: "O que o Suporte pode ver e fazer.",
+    icon: ShieldCheck,
   },
   {
     to: "/admin/recursos",

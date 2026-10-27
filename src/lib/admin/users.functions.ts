@@ -8,18 +8,20 @@ const filtersSchema = z.object({
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().min(1).max(100).default(20),
   status: z.enum(["ACTIVE", "PENDING", "BLOCKED"]).nullable().default(null),
-  role: z.enum(["USER", "ADMIN"]).nullable().default(null),
+  role: z.enum(["USER", "SUPORTE", "ADMIN"]).nullable().default(null),
   provider: z.enum(["email", "google"]).nullable().default(null),
   createdPeriod: z.enum(["TODAY", "7D", "30D", "90D"]).nullable().default(null),
   accessPeriod: z.enum(["TODAY", "7D", "30D", "STALE", "NEVER"]).nullable().default(null),
-  sort: z.enum(["CREATED_DESC", "CREATED_ASC", "ACCESS_DESC", "NAME_ASC", "NAME_DESC"]).default("CREATED_DESC"),
+  sort: z
+    .enum(["CREATED_DESC", "CREATED_ASC", "ACCESS_DESC", "NAME_ASC", "NAME_DESC"])
+    .default("CREATED_DESC"),
 });
 
 const userSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   email: z.string(),
-  role: z.enum(["USER", "ADMIN"]),
+  role: z.enum(["USER", "SUPORTE", "ADMIN"]),
   status: z.enum(["ACTIVE", "PENDING", "BLOCKED"]),
   providers: z.array(z.string()),
   createdAt: z.string(),
@@ -27,16 +29,18 @@ const userSchema = z.object({
   isSystemOwner: z.boolean(),
 });
 
-const accessActionSchema = z.object({
-  targetUserId: z.string().uuid(),
-  action: z.enum(["BLOCK", "UNBLOCK"]),
-  reason: z.enum(["ADMIN_REQUEST", "SECURITY", "MISUSE", "OTHER"]).nullable().default(null),
-  reasonDetails: z.string().trim().max(160).nullable().default(null),
-}).superRefine((value, context) => {
-  if (value.reason === "OTHER" && !value.reasonDetails) {
-    context.addIssue({ code: "custom", path: ["reasonDetails"], message: "Descreva o motivo." });
-  }
-});
+const accessActionSchema = z
+  .object({
+    targetUserId: z.string().uuid(),
+    action: z.enum(["BLOCK", "UNBLOCK"]),
+    reason: z.enum(["ADMIN_REQUEST", "SECURITY", "MISUSE", "OTHER"]).nullable().default(null),
+    reasonDetails: z.string().trim().max(160).nullable().default(null),
+  })
+  .superRefine((value, context) => {
+    if (value.reason === "OTHER" && !value.reasonDetails) {
+      context.addIssue({ code: "custom", path: ["reasonDetails"], message: "Descreva o motivo." });
+    }
+  });
 
 const responseSchema = z.object({
   items: z.array(userSchema),
@@ -49,6 +53,7 @@ const responseSchema = z.object({
     pending: z.number().int().nonnegative(),
     blocked: z.number().int().nonnegative(),
     users: z.number().int().nonnegative(),
+    support: z.number().int().nonnegative().default(0),
     admins: z.number().int().nonnegative(),
   }),
   availableProviders: z.array(z.string()),
@@ -60,29 +65,38 @@ export type AdminUsersResult = z.infer<typeof responseSchema>;
 export const sendAdminPasswordRecovery = createServerFn({ method: "POST" })
   .middleware([requireActiveSupabaseAuth])
   .inputValidator((input) => z.object({ targetUserId: z.string().uuid() }).strict().parse(input))
-  .handler(async ({ data, context }) => performAdminRecovery(data.targetUserId, {
-    authorize: async () => {
-      const { data: allowed, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "ADMIN" });
-      return !error && allowed === true;
-    },
-    target: async (id) => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: result, error } = await supabaseAdmin.auth.admin.getUserById(id);
-      return error ? null : result.user;
-    },
-    audit: async (id) => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin.from("audit_logs").insert({
-        user_id: context.userId, entity_id: id, entity_type: "USER_PASSWORD_RECOVERY",
-        action: "PASSWORD_RESET_REQUESTED_BY_ADMIN", metadata: null,
-      });
-      if (error) throw new Error("A solicitação não pôde ser registrada. Nenhum e-mail foi enviado.");
-    },
-    send: async (email) => {
-      const { sendOfficialRecovery } = await import("@/lib/auth/recovery.server");
-      await sendOfficialRecovery(email);
-    },
-  }));
+  .handler(async ({ data, context }) =>
+    performAdminRecovery(data.targetUserId, {
+      authorize: async () => {
+        const { data: allowed, error } = await context.supabase.rpc("has_role", {
+          _user_id: context.userId,
+          _role: "ADMIN",
+        });
+        return !error && allowed === true;
+      },
+      target: async (id) => {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: result, error } = await supabaseAdmin.auth.admin.getUserById(id);
+        return error ? null : result.user;
+      },
+      audit: async (id) => {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { error } = await supabaseAdmin.from("audit_logs").insert({
+          user_id: context.userId,
+          entity_id: id,
+          entity_type: "USER_PASSWORD_RECOVERY",
+          action: "PASSWORD_RESET_REQUESTED_BY_ADMIN",
+          metadata: null,
+        });
+        if (error)
+          throw new Error("A solicitação não pôde ser registrada. Nenhum e-mail foi enviado.");
+      },
+      send: async (email) => {
+        const { sendOfficialRecovery } = await import("@/lib/auth/recovery.server");
+        await sendOfficialRecovery(email);
+      },
+    }),
+  );
 
 export const listAdminUsers = createServerFn({ method: "GET" })
   .middleware([requireActiveSupabaseAuth])
@@ -127,10 +141,15 @@ export const changeAdminUserAccess = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: settings, error: settingsError }, { data: targetResult, error: targetError }] = await Promise.all([
-      supabaseAdmin.from("system_settings").select("system_owner_user_id").eq("singleton", true).maybeSingle(),
-      supabaseAdmin.auth.admin.getUserById(data.targetUserId),
-    ]);
+    const [{ data: settings, error: settingsError }, { data: targetResult, error: targetError }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("system_settings")
+          .select("system_owner_user_id")
+          .eq("singleton", true)
+          .maybeSingle(),
+        supabaseAdmin.auth.admin.getUserById(data.targetUserId),
+      ]);
     if (settingsError) throw new Error("Não foi possível validar o responsável principal.");
     if (targetError || !targetResult.user) throw new Error("Usuário não encontrado.");
     if (settings?.system_owner_user_id === data.targetUserId && data.action === "BLOCK") {
@@ -138,10 +157,18 @@ export const changeAdminUserAccess = createServerFn({ method: "POST" })
     }
 
     const currentlyBlocked = Boolean(
-      targetResult.user.banned_until && new Date(targetResult.user.banned_until).getTime() > Date.now(),
+      targetResult.user.banned_until &&
+      new Date(targetResult.user.banned_until).getTime() > Date.now(),
     );
-    if ((data.action === "BLOCK" && currentlyBlocked) || (data.action === "UNBLOCK" && !currentlyBlocked)) {
-      throw new Error(data.action === "BLOCK" ? "Este usuário já está bloqueado." : "Este usuário já está com acesso ativo.");
+    if (
+      (data.action === "BLOCK" && currentlyBlocked) ||
+      (data.action === "UNBLOCK" && !currentlyBlocked)
+    ) {
+      throw new Error(
+        data.action === "BLOCK"
+          ? "Este usuário já está bloqueado."
+          : "Este usuário já está com acesso ativo.",
+      );
     }
 
     if (data.action === "BLOCK") {
@@ -151,19 +178,28 @@ export const changeAdminUserAccess = createServerFn({ method: "POST" })
         .eq("user_id", data.targetUserId);
       if (targetRolesError) throw new Error("Não foi possível validar as permissões da conta.");
       if ((targetRoles ?? []).some((row) => row.role === "ADMIN")) {
-        const { data: activeAdmins, error: adminsError } = await supabaseAdmin.rpc("admin_active_count");
+        const { data: activeAdmins, error: adminsError } =
+          await supabaseAdmin.rpc("admin_active_count");
         if (adminsError) throw new Error("Não foi possível validar a continuidade administrativa.");
-        if (Number(activeAdmins) <= 1) throw new Error("O último administrador ativo não pode ser bloqueado.");
+        if (Number(activeAdmins) <= 1)
+          throw new Error("O último administrador ativo não pode ser bloqueado.");
       }
     }
 
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(data.targetUserId, {
-      ban_duration: data.action === "BLOCK" ? "876000h" : "none",
-    });
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      data.targetUserId,
+      {
+        ban_duration: data.action === "BLOCK" ? "876000h" : "none",
+      },
+    );
     if (updateError) throw new Error("Não foi possível atualizar o acesso deste usuário.");
 
     const auditMetadata = data.reason
-      ? { target_user_id: data.targetUserId, reason: data.reason, ...(data.reasonDetails ? { reason_details: data.reasonDetails } : {}) }
+      ? {
+          target_user_id: data.targetUserId,
+          reason: data.reason,
+          ...(data.reasonDetails ? { reason_details: data.reasonDetails } : {}),
+        }
       : { target_user_id: data.targetUserId };
     const { error: auditError } = await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -179,5 +215,8 @@ export const changeAdminUserAccess = createServerFn({ method: "POST" })
       throw new Error("A alteração não foi concluída porque a auditoria não pôde ser registrada.");
     }
 
-    return { ok: true, status: data.action === "BLOCK" ? "BLOCKED" as const : "ACTIVE" as const };
+    return {
+      ok: true,
+      status: data.action === "BLOCK" ? ("BLOCKED" as const) : ("ACTIVE" as const),
+    };
   });
