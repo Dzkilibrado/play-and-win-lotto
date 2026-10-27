@@ -32,3 +32,15 @@ Pontos em aberto que exigem atenção. Atualizar ao resolver.
 - Falta no Pacote 1: "Recursos do sistema" com modo manutenção geral e descrição clara de cada chave; intervalo curto em falha também para a importação de resultados; botões "em todas as loterias" na Atualização.
 - Tabela legada `feature_flags` ("Sistema · Recursos"): descrições desatualizadas e não controla nada no app; saiu da Administração (substituída por "Controle do sistema" com modo manutenção real). Pode ser removida do banco depois.
 - Monitor: incluir indicador "Modo manutenção ligado".
+
+## Meu Destino (concluído)
+- Modo "Meu Destino" em Criar jogos (formulário, conferência, animação, resultado, leitura repetida, salvar e criar bolão). Motor em `src/lib/mystic/`, regras em `docs/MEU_DESTINO.md`, tabela `mystic_readings`.
+- Pendente de validação em uso real: ascendente (exige hora e cidade) e leitura de bolão (grupo).
+- Entretenimento: não altera a chance de acerto; o aviso é sempre exibido.
+
+## Próximas etapas (ordem combinada)
+1. Administração + Usuários e Segurança (tipos de acesso, gestão LGPD) — em andamento.
+2. Início + Notificações + Configurações.
+3. Atendimento (chamados) + página pública.
+4. Novo Bolão + Importação Excel.
+5. Estatísticas (novas análises, simulações, exportação Excel).
