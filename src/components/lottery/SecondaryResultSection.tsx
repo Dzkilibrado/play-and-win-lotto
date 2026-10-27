@@ -35,7 +35,11 @@ export function SecondaryResultSection({
       <p className="mt-2 text-sm text-text-primary">
         Sorteado: <span className="font-medium">{drawn}</span>
       </p>
-      {prize ? (
+      {secondary.kind === "trevo" ? (
+        <p className="mt-2 text-xs text-text-secondary">
+          Os trevos não têm prêmio próprio: entram nas faixas conjuntas com as dezenas.
+        </p>
+      ) : prize ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
           <span className="font-medium text-text-primary">{prize.tier}</span>
           <span className="text-xs text-text-secondary">

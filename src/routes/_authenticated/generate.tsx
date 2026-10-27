@@ -100,7 +100,7 @@ function GeneratePage() {
   const [saving, setSaving] = useState(false);
   const [showPriceHelp, setShowPriceHelp] = useState(false);
   /** Mês da Sorte / Time do Coração escolhido (chave canônica); "" = não escolhido. */
-  const [secondary, setSecondary] = useState("");
+  const [secondary, setSecondary] = useState<string[]>([]);
   const [weightSelection, setWeightSelection] = useState(() => defaultWeightSelection());
   const { generating, generate, cancel } = useGameGeneration();
 
@@ -119,12 +119,17 @@ function GeneratePage() {
   });
   const lotteryRow = lotteriesQuery.data?.find((row) => row.slug === slug) ?? null;
   const secondaryOptions = useSecondaryOptions(slug, lotteryRow?.id);
-  const secondaryMissing = secondaryOptions.supported && !secondary;
+  const secondaryMissing =
+    secondaryOptions.supported && secondary.length < secondaryOptions.minSelect;
+  /** Trevos mudam o preço; mês e clube não (0). Antes de escolher, mostra o preço-base. */
+  const secondaryPriceKey =
+    secondaryOptions.kind === "trevo" ? Math.max(secondary.length, secondaryOptions.minSelect) : 0;
 
   const priceQuery = useQuery({
-    queryKey: ["price", lotteryRow?.id, numbersCount],
+    queryKey: ["price", lotteryRow?.id, numbersCount, secondaryPriceKey],
     enabled: Boolean(lotteryRow?.id),
-    queryFn: () => lotteryDataService.getActivePrice(lotteryRow!.id, numbersCount),
+    queryFn: () =>
+      lotteryDataService.getActivePrice(lotteryRow!.id, numbersCount, secondaryPriceKey),
   });
 
   const lastDrawQuery = useQuery({
@@ -141,7 +146,7 @@ function GeneratePage() {
   const changeLottery = (next: LotterySlug) => {
     const nextRules = resolveRules(next)!;
     setSlug(next);
-    setSecondary("");
+    setSecondary([]);
     setNumbersCount(nextRules.selectable.base);
     setFixed([]);
     setExcluded([]);
@@ -404,7 +409,7 @@ function GeneratePage() {
           lotteryId: lotteryRow.id,
           numbers: draft.numbers,
           analysis: draft.analysis,
-          secondarySelection: secondary ? [secondary] : [],
+          secondarySelection: secondary,
           contestNumber,
           drawId: null,
           price:
@@ -624,6 +629,8 @@ function GeneratePage() {
                 kind={secondaryOptions.kind}
                 options={secondaryOptions.options}
                 value={secondary}
+                min={secondaryOptions.minSelect}
+                max={secondaryOptions.maxSelect}
                 onChange={(next) => {
                   setSecondary(next);
                   setGames(null);

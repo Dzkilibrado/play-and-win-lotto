@@ -44,7 +44,7 @@ describe("disponibilidade das modalidades", () => {
       expect(active.has(lottery.slug)).toBe(true);
     }
     expect(visibleLotteries(buildAvailabilityMap([])).map((l) => l.slug)).not.toContain(
-      "mais-milionaria",
+      "super-sete",
     );
   });
 

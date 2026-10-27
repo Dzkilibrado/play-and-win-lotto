@@ -108,3 +108,28 @@ describe("faixas conjuntas da +Milionária", () => {
     ).toThrow();
   });
 });
+
+describe("conferência do concurso +Milionária (contexto)", () => {
+  it("usa os trevos do jogo e grava as faixas conjuntas na decomposição", async () => {
+    const { buildCheckPayload, evaluateGame } = await import("./gameCheck.server");
+    const context = {
+      drawId: "d",
+      lotteryId: "l",
+      slug: "mais-milionaria",
+      contestNumber: 1,
+      drawNumbers,
+      baseSize: 6,
+      tiers,
+      secondDraw: null,
+      secondary: null,
+      joint: { drawClovers, defs: maisMilionariaTiers },
+      sourceUpdatedAt: null,
+      tiersFromOfficialSource: true,
+    };
+    const result = evaluateGame([1, 2, 3, 4, 5, 6], context, ["2", "5"]);
+    const payload = buildCheckPayload(context, result);
+    expect(payload.breakdown.map((entry) => entry.hits_required)).toEqual([62]);
+    expect(payload.prize_tier_hits).toBe(62);
+    expect(payload.is_prized).toBe(true);
+  });
+});
