@@ -93,7 +93,9 @@ describe("parser de faixas de premiação", () => {
     mockResponse({
       ...basePayload,
       listaDezenas: Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0")),
-      listaRateioPremio: [{ faixa: 1, descricaoFaixa: "0 acertos", numeroDeGanhadores: 7, valorPremio: 5000 }],
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "0 acertos", numeroDeGanhadores: 7, valorPremio: 5000 },
+      ],
     });
 
     const draw = await fetchOfficialDraw("lotomania", 2500);
@@ -106,7 +108,9 @@ describe("validação por drawnCount (Lotomania: sorteio de 20, aposta de 50)", 
     mockResponse({
       ...basePayload,
       listaDezenas: Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0")),
-      listaRateioPremio: [{ faixa: 1, descricaoFaixa: "20 acertos", numeroDeGanhadores: 1, valorPremio: 1 }],
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "20 acertos", numeroDeGanhadores: 1, valorPremio: 1 },
+      ],
     });
 
     const draw = await fetchOfficialDraw("lotomania", 2500);

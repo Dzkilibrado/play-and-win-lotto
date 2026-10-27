@@ -7,12 +7,7 @@ import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { providerPath, syncConfig } from "@/config/sync.config";
 
 export type SyncErrorType =
-  | "TIMEOUT"
-  | "UNAVAILABLE"
-  | "NOT_FOUND"
-  | "INVALID_RESPONSE"
-  | "VALIDATION"
-  | "PERSISTENCE";
+  "TIMEOUT" | "UNAVAILABLE" | "NOT_FOUND" | "INVALID_RESPONSE" | "VALIDATION" | "PERSISTENCE";
 
 export class SyncError extends Error {
   readonly type: SyncErrorType;
@@ -80,10 +75,7 @@ function parseHits(description: string, faixa: unknown): number | null {
   // Lotomania tem uma faixa de ZERO acertos ("nenhum acerto"/"0 acertos") —
   // só o dígito "0" não aparece sozinho de forma confiável na descrição,
   // então o texto precisa ser checado antes do regex genérico de dígitos.
-  const normalized = description
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+  const normalized = description.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   if (/\bnenhum\s+acerto/.test(normalized) || /\b0\s*acerto/.test(normalized)) return 0;
 
   const match = /(\d+)/.exec(description);
@@ -123,7 +115,11 @@ async function fetchJson(url: string): Promise<unknown> {
     try {
       return JSON.parse(text) as unknown;
     } catch {
-      throw new SyncError("INVALID_RESPONSE", "Resposta da fonte não é JSON válido.", text.slice(0, 160));
+      throw new SyncError(
+        "INVALID_RESPONSE",
+        "Resposta da fonte não é JSON válido.",
+        text.slice(0, 160),
+      );
     }
   } catch (error) {
     if (error instanceof SyncError) throw error;
