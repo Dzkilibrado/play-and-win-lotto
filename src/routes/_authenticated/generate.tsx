@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { NumberStepper } from "@/components/common/NumberStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BudgetGenerationFlow } from "@/components/lottery/BudgetGenerationFlow";
+import { MeuDestinoFlow } from "@/components/destino/MeuDestinoFlow";
 import { BudgetStrategyPanel } from "@/components/lottery/BudgetStrategyPanel";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
@@ -110,7 +111,7 @@ function GeneratePage() {
    * geração condicionada é a próxima etapa, após homologação desta.
    * O fluxo manual (padrão) permanece inteiramente inalterado.
    */
-  const [mode, setMode] = useState<"manual" | "budget">("manual");
+  const [mode, setMode] = useState<"manual" | "budget" | "destino">("manual");
   const [budgetApproved, setBudgetApproved] = useState<BudgetStrategyResult | null>(null);
 
   const lotteriesQuery = useQuery({
@@ -459,9 +460,18 @@ function GeneratePage() {
         >
           Por orçamento
         </Button>
+        <Button
+          variant={mode === "destino" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("destino")}
+        >
+          Meu Destino
+        </Button>
       </div>
 
-      {mode === "budget" ? (
+      {mode === "destino" ? (
+        <MeuDestinoFlow />
+      ) : mode === "budget" ? (
         budgetApproved ? (
           <BudgetGenerationFlow result={budgetApproved} onBack={() => setBudgetApproved(null)} />
         ) : (
@@ -869,8 +879,9 @@ function GeneratePage() {
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                   Gerando jogos…
                 </span>
-              ) : (
-                gamesCount === 1 ? "Criar 1 jogo" : `Criar ${formatNumber(gamesCount)} jogos`
+              ) : // prettier-ignore
+              gamesCount === 1 ? "Criar 1 jogo" : (
+                `Criar ${formatNumber(gamesCount)} jogos`
               )}
             </Button>
             {generating ? (
