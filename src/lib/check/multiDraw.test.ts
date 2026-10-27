@@ -97,6 +97,7 @@ describe("payload da conferência", () => {
     baseSize: 6,
     tiers: tiers({ 4: 100, 3: 10 }),
     secondDraw: null,
+    secondary: null,
     sourceUpdatedAt: null,
     tiersFromOfficialSource: true,
   };

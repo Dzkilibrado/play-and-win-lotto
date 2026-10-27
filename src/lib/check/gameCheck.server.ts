@@ -18,6 +18,7 @@ import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import type { Database } from "@/integrations/supabase/types";
 import { CheckError, type CheckOutcome, type OfficialTier } from "./checkEngine";
 import { checkGameAcrossDraws, type MultiDrawOutcome } from "./multiDraw";
+import { checkSecondary, type SecondaryPrize } from "./secondary";
 
 type Admin = SupabaseClient<Database>;
 
@@ -43,6 +44,8 @@ export interface DrawContext {
   tiers: OfficialTier[];
   /** 2º sorteio do concurso (Dupla Sena); `null` nas modalidades de sorteio único. */
   secondDraw: { drawNumbers: number[]; tiers: OfficialTier[] } | null;
+  /** Seleção secundária oficial (Mês da Sorte, Time do Coração); `null` nas demais. */
+  secondary: { label: string; result: string[]; prize: SecondaryPrize | null } | null;
   sourceUpdatedAt: string | null;
   tiersFromOfficialSource: boolean;
 }
@@ -52,7 +55,7 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
   const { data, error } = await admin
     .from("lottery_draws")
     .select(
-      "id, lottery_id, contest_number, source_updated_at, draw_numbers(number), draw_prizes(id, tier, hits, prize_per_winner), draw_second_numbers(number), draw_second_prizes(tier, hits, prize_per_winner), lotteries!inner(slug)",
+      "id, lottery_id, contest_number, source_updated_at, draw_numbers(number), draw_prizes(id, tier, hits, prize_per_winner), draw_second_numbers(number), draw_second_prizes(tier, hits, prize_per_winner), secondary_result, draw_secondary_prizes(tier, prize_per_winner), lotteries!inner(slug)",
     )
     .eq("id", drawId)
     .maybeSingle();
@@ -68,6 +71,8 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     draw_prizes: { id: string; tier: string; hits: number; prize_per_winner: number | null }[];
     draw_second_numbers: { number: number }[] | null;
     draw_second_prizes: { tier: string; hits: number; prize_per_winner: number | null }[] | null;
+    secondary_result: string[] | null;
+    draw_secondary_prizes: { tier: string; prize_per_winner: number | null }[] | null;
     lotteries: { slug: string } | null;
   };
 
@@ -124,6 +129,25 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     };
   }
 
+  let secondary: DrawContext["secondary"] = null;
+  if (hasSimpleSecondary(config)) {
+    const result = row.secondary_result ?? [];
+    if (result.length === 0) {
+      // Sem o resultado do Mês/Time, um jogo premiado só por ele seria dado como perdido.
+      throw new CheckError(
+        "NO_DRAW_NUMBERS",
+        `${config.secondary.label}: resultado oficial do concurso ainda não registrado.`,
+      );
+    }
+    const prizeRow = (row.draw_secondary_prizes ?? [])[0] ?? null;
+    secondary = {
+      label: config.secondary.prizeLabel,
+      result,
+      // Sem id: `game_prize_breakdown.draw_prize_id` só aponta para `draw_prizes`.
+      prize: prizeRow ? { drawPrizeId: null, prizePerWinner: prizeRow.prize_per_winner } : null,
+    };
+  }
+
   return {
     drawId: row.id,
     lotteryId: row.lottery_id,
@@ -133,13 +157,18 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     baseSize: config.selectable.base,
     tiers,
     secondDraw,
+    secondary,
     sourceUpdatedAt: row.source_updated_at,
     tiersFromOfficialSource: official.length > 0,
   };
 }
 
 /** Confere o jogo contra todos os sorteios do concurso (1, ou 2 na Dupla Sena). */
-export function evaluateGame(gameNumbers: number[], context: DrawContext): MultiDrawOutcome {
+export function evaluateGame(
+  gameNumbers: number[],
+  context: DrawContext,
+  secondarySelection: string[] = [],
+): MultiDrawOutcome {
   const draws = [{ sequence: 1, drawNumbers: context.drawNumbers, tiers: context.tiers }];
   if (context.secondDraw) {
     draws.push({
@@ -148,7 +177,25 @@ export function evaluateGame(gameNumbers: number[], context: DrawContext): Multi
       tiers: context.secondDraw.tiers,
     });
   }
-  return checkGameAcrossDraws({ gameNumbers, baseSize: context.baseSize, draws });
+  const multi = checkGameAcrossDraws({ gameNumbers, baseSize: context.baseSize, draws });
+  if (!context.secondary) return multi;
+  return {
+    ...multi,
+    aggregate: checkSecondary(multi.aggregate, {
+      selection: secondarySelection,
+      result: context.secondary.result,
+      label: context.secondary.label,
+      prize: context.secondary.prize,
+    }),
+  };
+}
+
+function hasSimpleSecondary(config: ReturnType<typeof getLotteryConfig>): config is NonNullable<
+  ReturnType<typeof getLotteryConfig>
+> & {
+  secondary: NonNullable<NonNullable<ReturnType<typeof getLotteryConfig>>["secondary"]>;
+} {
+  return !!config?.secondary && config.secondary.kind !== "trevo";
 }
 
 /** Corpo do `apply_game_check`. O detalhe por sorteio só vai com 2+ sorteios. */
@@ -192,6 +239,7 @@ export function buildCheckPayload(context: DrawContext, result: MultiDrawOutcome
 interface GameRow {
   id: string;
   status: string;
+  secondary_selection: string[] | null;
   game_numbers: { number: number }[];
   game_check_results:
     { checked_at: string; calculation_version: number; source_updated_at: string | null }[] | null;
@@ -272,7 +320,7 @@ export async function checkDrawBatch(
     const { data, error } = await admin
       .from("generated_games")
       .select(
-        "id, status, game_numbers(number), game_check_results(checked_at, calculation_version, source_updated_at)",
+        "id, status, secondary_selection, game_numbers(number), game_check_results(checked_at, calculation_version, source_updated_at)",
       )
       .eq("lottery_id", context.lotteryId)
       .eq("contest_number", context.contestNumber)
@@ -295,6 +343,7 @@ export async function checkDrawBatch(
         const outcome = evaluateGame(
           (game.game_numbers ?? []).map((item) => item.number),
           context,
+          game.secondary_selection ?? [],
         );
         const { error: rpcError } = await (admin as unknown as Rpc).rpc("apply_game_check", {
           _game_id: game.id,
@@ -320,7 +369,9 @@ export async function checkDrawBatch(
 export async function checkSingleGame(admin: Admin, gameId: string) {
   const { data, error } = await admin
     .from("generated_games")
-    .select("id, status, contest_number, lottery_id, game_numbers(number), lotteries!inner(slug)")
+    .select(
+      "id, status, contest_number, lottery_id, secondary_selection, game_numbers(number), lotteries!inner(slug)",
+    )
     .eq("id", gameId)
     .maybeSingle();
   if (error) throw new CheckError("INVALID_GAME", error.message);
@@ -332,6 +383,7 @@ export async function checkSingleGame(admin: Admin, gameId: string) {
     contest_number: number | null;
     lottery_id: string;
     game_numbers: { number: number }[];
+    secondary_selection: string[] | null;
     lotteries: { slug: string } | null;
   };
 
@@ -364,6 +416,7 @@ export async function checkSingleGame(admin: Admin, gameId: string) {
     const outcome = evaluateGame(
       (game.game_numbers ?? []).map((item) => item.number),
       context,
+      game.secondary_selection ?? [],
     );
     const { error: rpcError } = await (admin as unknown as Rpc).rpc("apply_game_check", {
       _game_id: game.id,
