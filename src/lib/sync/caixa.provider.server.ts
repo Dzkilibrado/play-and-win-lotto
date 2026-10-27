@@ -5,6 +5,7 @@
  */
 import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import { providerPath, syncConfig } from "@/config/sync.config";
+import { clubKey, monthKeyFromName } from "@/lib/secondaryKeys";
 
 export type SyncErrorType =
   "TIMEOUT" | "UNAVAILABLE" | "NOT_FOUND" | "INVALID_RESPONSE" | "VALIDATION" | "PERSISTENCE";
@@ -44,6 +45,11 @@ export interface NormalizedDraw {
   prizes: NormalizedPrize[];
   /** 2º sorteio do concurso (Dupla Sena); `null` nas modalidades de sorteio único. */
   secondDraw: { numbers: number[]; prizes: NormalizedPrize[] } | null;
+  /** Mês da Sorte / Time do Coração sorteado e sua faixa; `null` nas demais. */
+  secondary: {
+    result: string[];
+    prize: { tier: string; winners: number | null; prizePerWinner: number | null } | null;
+  } | null;
   isLatest: boolean;
   raw: { source: string };
 }
@@ -130,6 +136,13 @@ function parseHits(
   return null;
 }
 
+/** Faixa própria do Mês da Sorte / Time do Coração dentro do rateio oficial. */
+const SECONDARY_PRIZE_MARK = /\b(?:mes\s+(?:de|da)\s+sorte|time\s+(?:do|de)\s+coracao)\b/;
+
+function isSecondaryPrizeDescription(description: string): boolean {
+  return SECONDARY_PRIZE_MARK.test(plain(description));
+}
+
 function cleanText(value: unknown): string | null {
   if (typeof value !== "string") return null;
   // eslint-disable-next-line no-control-regex
@@ -179,6 +192,14 @@ async function fetchJson(url: string): Promise<unknown> {
 function validate(slug: LotterySlug, draw: NormalizedDraw): void {
   const config = getLotteryConfig(slug);
   if (!config) throw new SyncError("VALIDATION", `Modalidade desconhecida: ${slug}.`);
+
+  const expectsSecondary = !!config.secondary && config.secondary.kind !== "trevo";
+  if (expectsSecondary && !draw.secondary) {
+    throw new SyncError(
+      "VALIDATION",
+      `${config.secondary?.label}: resultado ausente na resposta oficial.`,
+    );
+  }
 
   if (!Number.isInteger(draw.contestNumber) || draw.contestNumber <= 0) {
     throw new SyncError("VALIDATION", "Número de concurso inválido.");
@@ -324,9 +345,52 @@ function normalize(payload: Record<string, unknown>, slug: LotterySlug): Normali
   const rawNumbers = isMultiDraw ? ascending : ordered.length > 0 ? ordered : ascending;
   const numbers = toNumberList(rawNumbers);
 
-  const rateio = Array.isArray(payload["listaRateioPremio"])
+  const allRateio = Array.isArray(payload["listaRateioPremio"])
     ? (payload["listaRateioPremio"] as Record<string, unknown>[])
     : [];
+
+  // Mês da Sorte / Time do Coração: faixa própria, fora das faixas de dezenas
+  // (senão a descrição "Time do Coração" seria rejeitada como faixa ilegível).
+  const secondaryConfig =
+    config?.secondary && config.secondary.kind !== "trevo" ? config.secondary : null;
+  const rateio = secondaryConfig
+    ? allRateio.filter(
+        (item) => !isSecondaryPrizeDescription(cleanText(item["descricaoFaixa"]) ?? ""),
+      )
+    : allRateio;
+  let secondary: NormalizedDraw["secondary"] = null;
+  if (secondaryConfig) {
+    const secondaryItems = allRateio.filter((item) =>
+      isSecondaryPrizeDescription(cleanText(item["descricaoFaixa"]) ?? ""),
+    );
+    if (secondaryItems.length > 1) {
+      throw new SyncError("VALIDATION", `${secondaryConfig.label}: faixa duplicada na resposta.`);
+    }
+    const drawnName = cleanText(payload["nomeTimeCoracaoMesSorte"]);
+    const key = drawnName
+      ? secondaryConfig.kind === "mes"
+        ? monthKeyFromName(drawnName)
+        : clubKey(drawnName)
+      : null;
+    if (!key) {
+      throw new SyncError(
+        "VALIDATION",
+        `${secondaryConfig.label}: resultado ausente ou não reconhecido (${drawnName ?? "vazio"}).`,
+        JSON.stringify(payload["nomeTimeCoracaoMesSorte"] ?? null).slice(0, 120),
+      );
+    }
+    const item = secondaryItems[0];
+    secondary = {
+      result: [key],
+      prize: item
+        ? {
+            tier: cleanText(item["descricaoFaixa"]) ?? secondaryConfig.prizeLabel,
+            winners: toNumberLoose(item["numeroDeGanhadores"]),
+            prizePerWinner: toNumberLoose(item["valorPremio"]),
+          }
+        : null,
+    };
+  }
 
   let prizes: NormalizedPrize[];
   let secondDraw: NormalizedDraw["secondDraw"] = null;
@@ -366,6 +430,7 @@ function normalize(payload: Record<string, unknown>, slug: LotterySlug): Normali
     numbers,
     prizes,
     secondDraw,
+    secondary,
     isLatest: payload["ultimoConcurso"] === true,
     raw: { source: syncConfig.provider },
   };

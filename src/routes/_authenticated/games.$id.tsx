@@ -1,3 +1,4 @@
+import { GameSecondaryLine } from "@/components/lottery/GameSecondaryLine";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -219,6 +220,12 @@ function GameDetailPage() {
             createdAt={game.created_at}
             origin={originLabel(game.source)}
             defaultExpanded
+          />
+
+          <GameSecondaryLine
+            slug={game.lotteries?.slug}
+            lotteryId={game.lottery_id}
+            selection={game.secondary_selection}
           />
 
           {check.data ? (

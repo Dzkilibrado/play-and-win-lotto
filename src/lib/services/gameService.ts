@@ -9,10 +9,7 @@ import {
   activeFilterIds,
   type GenerationConstraints,
 } from "@/lib/engine/filters";
-import {
-  sanitizeStrategySnapshot,
-  type StrategySnapshot,
-} from "@/lib/engine/weights";
+import { sanitizeStrategySnapshot, type StrategySnapshot } from "@/lib/engine/weights";
 import type { GameAnalysisResult } from "@/lib/engine/types";
 import type { GameOrigin } from "@/lib/games/gameStatus";
 import type { GameStatus } from "@/types/domain";
@@ -29,6 +26,8 @@ export interface SaveGameInput {
   lotteryId: string;
   numbers: number[];
   analysis: GameAnalysisResult;
+  /** Mês da Sorte / Time do Coração (chave canônica); vazio nas demais modalidades. */
+  secondarySelection?: string[];
   contestNumber: number | null;
   drawId: string | null;
   price: PriceSnapshot | null;
@@ -67,6 +66,8 @@ export interface GameRow {
   contest_number: number | null;
   draw_id: string | null;
   numbers_count: number;
+  /** Mês da Sorte / Time do Coração (chave canônica); vazio nas demais modalidades. */
+  secondary_selection?: string[] | null;
   status: GameStatus;
   cost: number | null;
   notes: string | null;
@@ -90,7 +91,6 @@ export interface GameAnalysisRow {
   row_distribution: unknown;
   column_distribution: unknown;
 }
-
 
 /** Rastreabilidade do preço aplicado, sem duplicar a tabela de preços. */
 function priceNote(price: PriceSnapshot | null, analysis: GameAnalysisResult) {
@@ -133,16 +133,20 @@ export const gameService = {
         contest_number: input.contestNumber,
         draw_id: input.drawId,
         numbers_count: input.numbers.length,
+        // Coluna criada na migração da seleção secundária (types.ts é gerado).
+        ...((input.secondarySelection?.length
+          ? { secondary_selection: input.secondarySelection }
+          : {}) as Record<string, never>),
         status: (input.status ?? "PLANNED") as GameStatus,
         source: input.source ?? "GENERATED",
         image_path: input.imagePath ?? null,
         generation_constraints:
           constraints || strategy
-            ? (({
+            ? ({
                 version: constraints ? constraints.version : generationRulesVersion,
                 ...(constraints ? { filters: constraints.filters } : {}),
                 ...(strategy ? { strategy } : {}),
-              }) as never)
+              } as never)
             : null,
         generation_rules_version: constraints || strategy ? generationRulesVersion : null,
         cost: input.price ? input.price.price : null,
@@ -258,4 +262,3 @@ export const gameService = {
     return data.signedUrl;
   },
 };
-

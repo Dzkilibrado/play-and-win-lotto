@@ -1,3 +1,5 @@
+import { SecondaryPicker } from "@/components/lottery/SecondaryPicker";
+import { useSecondaryOptions } from "@/hooks/useSecondaryOptions";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -71,6 +73,8 @@ function ImportGamePage() {
   const [contestText, setContestText] = useState("");
   const [dateText, setDateText] = useState("");
   const [numbers, setNumbers] = useState<number[]>([]);
+  /** Mês da Sorte / Time do Coração do jogo (chave canônica); "" = não informado. */
+  const [secondary, setSecondary] = useState("");
   const [readingNotes, setReadingNotes] = useState<string | null>(null);
   const [uncertain, setUncertain] = useState<string[]>([]);
 
@@ -104,6 +108,10 @@ function ImportGamePage() {
     queryKey: ["lotteries"],
     queryFn: () => lotteryDataService.listLotteries(),
   });
+  const secondaryOptions = useSecondaryOptions(
+    slug || undefined,
+    lotteriesQuery.data?.find((row) => row.slug === slug)?.id,
+  );
 
   const issues = useMemo(() => {
     const list: string[] = [];
@@ -136,7 +144,6 @@ function ImportGamePage() {
 
   const suggestedStatus: GameStatus =
     kind === "RECEIPT" ? statusForReceipt(situation) : ("PLANNED" as GameStatus);
-
 
   const onPick = async (picked: File | null) => {
     setFileError(null);
@@ -185,6 +192,12 @@ function ImportGamePage() {
       toast.error("Modalidade indisponível no momento.");
       return;
     }
+    if (secondaryOptions.supported && !secondary) {
+      toast.error(
+        `Informe ${secondaryOptions.label ? `o ${secondaryOptions.label}` : "a seleção extra"} do jogo.`,
+      );
+      return;
+    }
 
     setBusy(true);
     try {
@@ -207,6 +220,7 @@ function ImportGamePage() {
         lotteryId: lotteryRow.id,
         numbers,
         analysis,
+        secondarySelection: secondary ? [secondary] : [],
         contestNumber: hasContest ? contestNumber : null,
         drawId: contestQuery.data?.drawId ?? null,
         price: price
@@ -371,7 +385,10 @@ function ImportGamePage() {
                   id="import-lottery"
                   className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm"
                   value={slug}
-                  onChange={(event) => setSlug(event.target.value as LotterySlug)}
+                  onChange={(event) => {
+                    setSlug(event.target.value as LotterySlug);
+                    setSecondary("");
+                  }}
                 >
                   <option value="">Selecione</option>
                   {activeLotteries.map((lottery) => (
@@ -394,10 +411,20 @@ function ImportGamePage() {
               </div>
             </div>
 
+            {secondaryOptions.supported && secondaryOptions.kind ? (
+              <SecondaryPicker
+                id="import-secondary"
+                label={secondaryOptions.label ?? ""}
+                kind={secondaryOptions.kind}
+                options={secondaryOptions.options}
+                value={secondary}
+                onChange={setSecondary}
+                isLoading={secondaryOptions.isLoading}
+              />
+            ) : null}
+
             <div className="space-y-2 rounded-lg bg-surface-secondary p-3">
-              <p className="text-xs font-medium text-text-primary">
-                Selecionar outro concurso
-              </p>
+              <p className="text-xs font-medium text-text-primary">Selecionar outro concurso</p>
               <p className="text-xs text-text-secondary">
                 Digite o número acima, use o atalho do próximo concurso ou procure pela data do
                 sorteio.
@@ -452,7 +479,9 @@ function ImportGamePage() {
             {hasContest && situation === "pending" ? (
               <p className="text-xs text-text-secondary">
                 Concurso ainda não sorteado
-                {contestQuery.data?.drawDate ? ` (previsto para ${contestQuery.data.drawDate})` : ""}
+                {contestQuery.data?.drawDate
+                  ? ` (previsto para ${contestQuery.data.drawDate})`
+                  : ""}
                 .
               </p>
             ) : null}
@@ -466,7 +495,6 @@ function ImportGamePage() {
                 concurso for publicado, a situação passa a ser validada.
               </p>
             ) : null}
-
           </section>
 
           <section className="surface-card space-y-3 p-4">
@@ -508,7 +536,6 @@ function ImportGamePage() {
                     : "Comprovante registrado. Ainda não foi possível validar a situação deste concurso; ela será reavaliada quando o concurso entrar na nossa base."
                 : "Canhoto não comprova aposta paga, então o jogo entra como planejado, mesmo com o concurso informado."}
             </p>
-
           </section>
 
           <div className="flex flex-wrap gap-2">
