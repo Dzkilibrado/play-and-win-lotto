@@ -43,6 +43,16 @@ function ContestDetailPage() {
   const ascending = [...numbers].sort((a, b) => a.number - b.number);
   const prizes = [...(draw?.draw_prizes ?? [])].sort((a, b) => b.hits - a.hits);
 
+  const isMultiDraw = (config?.drawsPerContest ?? 1) > 1;
+  const secondDraw = useQuery({
+    queryKey: ["contest-second-draw", id],
+    enabled: isMultiDraw && Boolean(draw),
+    queryFn: () => lotteryDataService.getSecondDraw(id),
+  });
+  const second = secondDraw.data ?? null;
+  const secondAscending = [...(second?.numbers ?? [])].sort((a, b) => a.number - b.number);
+  const secondPrizes = [...(second?.prizes ?? [])].sort((a, b) => b.hits - a.hits);
+
   const myChecks = useQuery({
     queryKey: privateQueryKeys.contestChecks(user.id, id),
     queryFn: () => checkService.getChecksForDraw(id),
@@ -81,7 +91,7 @@ function ContestDetailPage() {
           <section className="rounded-xl border border-border bg-surface p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-sm font-semibold text-text-primary">
-                Dezenas sorteadas
+                {isMultiDraw ? "Dezenas sorteadas · 1º sorteio" : "Dezenas sorteadas"}
               </h2>
               <StatusBadge
                 tone={draw.is_accumulated ? "warning" : "success"}
@@ -94,9 +104,23 @@ function ContestDetailPage() {
               ))}
             </div>
             <p className="mt-2 text-xs text-text-secondary">
-              Ordem de sorteio: {numbers.map((item) => String(item.number).padStart(2, "0")).join(" · ")}
+              Ordem de sorteio:{" "}
+              {numbers.map((item) => String(item.number).padStart(2, "0")).join(" · ")}
             </p>
           </section>
+
+          {isMultiDraw && second ? (
+            <section className="rounded-xl border border-border bg-surface p-4">
+              <h2 className="font-display text-sm font-semibold text-text-primary">
+                Dezenas sorteadas · 2º sorteio
+              </h2>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {secondAscending.map((item) => (
+                  <NumberBall key={item.number} value={item.number} variant="lottery" />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="grid gap-3 sm:grid-cols-2">
             <Info label="Local do sorteio" value={draw.draw_location ?? "—"} />
@@ -134,9 +158,13 @@ function ContestDetailPage() {
               Seus jogos neste concurso
             </h2>
             {checksState === "loading" ? (
-              <div className="mt-3"><LoadingState rows={1} label="Carregando seus jogos…" /></div>
+              <div className="mt-3">
+                <LoadingState rows={1} label="Carregando seus jogos…" />
+              </div>
             ) : checksState === "error" ? (
-              <div className="mt-3"><ErrorState onRetry={() => void myChecks.refetch()} /></div>
+              <div className="mt-3">
+                <ErrorState onRetry={() => void myChecks.refetch()} />
+              </div>
             ) : myGames.length === 0 ? (
               <p className="mt-2 text-xs text-text-secondary">
                 Você não tem jogos conferidos neste concurso.
@@ -172,7 +200,7 @@ function ContestDetailPage() {
 
           <section className="rounded-xl border border-border bg-surface p-4">
             <h2 className="font-display text-sm font-semibold text-text-primary">
-              Premiação por faixa
+              {isMultiDraw ? "Premiação por faixa · 1º sorteio" : "Premiação por faixa"}
             </h2>
             {prizes.length === 0 ? (
               <p className="mt-2 text-xs text-text-secondary">
@@ -197,6 +225,36 @@ function ContestDetailPage() {
               </div>
             )}
           </section>
+
+          {isMultiDraw && second ? (
+            <section className="rounded-xl border border-border bg-surface p-4">
+              <h2 className="font-display text-sm font-semibold text-text-primary">
+                Premiação por faixa · 2º sorteio
+              </h2>
+              {secondPrizes.length === 0 ? (
+                <p className="mt-2 text-xs text-text-secondary">
+                  A fonte oficial não informou o rateio do 2º sorteio.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {secondPrizes.map((prize) => (
+                    <div
+                      key={prize.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium text-text-primary">{prize.tier}</span>
+                      <span className="text-xs text-text-secondary">
+                        {formatNumber(prize.winners)} ganhador(es)
+                      </span>
+                      <span className="font-medium text-text-primary">
+                        {formatCurrency(prize.prize_per_winner)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
         </div>
       )}
     </div>

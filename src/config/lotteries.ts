@@ -164,12 +164,14 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
       { hits: 6, label: "Sena" },
       { hits: 5, label: "Quina" },
       { hits: 4, label: "Quadra" },
+      // Fonte oficial: os dois sorteios também pagam o Terno (3 acertos).
+      { hits: 3, label: "Terno" },
     ],
-    // Ativa para criação manual, geração, orçamento e conferência — só a
-    // SINCRONIZAÇÃO automática de resultados oficiais fica desligada por
-    // enquanto (`lottery_sync_state.enabled = false`), porque gravar os 2
-    // sorteios do mesmo concurso exige estender `persist_official_draw`,
-    // deixado para o PR dedicado desta modalidade.
+    // Ativa. Cada concurso tem 2 sorteios: o 1º fica em `draw_numbers`/
+    // `draw_prizes` e o 2º em `draw_second_numbers`/`draw_second_prizes`.
+    // A sincronização automática continua desligada
+    // (`lottery_sync_state.enabled = false`) até o formato do 2º sorteio na
+    // fonte oficial ser confirmado com um payload real.
     isActive: true,
     sortOrder: 5,
     // Cada concurso tem 2 sorteios independentes; cada jogo é conferido contra os dois.

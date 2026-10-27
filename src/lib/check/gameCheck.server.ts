@@ -16,7 +16,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { checkConfig } from "@/config/check.config";
 import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
 import type { Database } from "@/integrations/supabase/types";
-import { CheckError, checkGame, type OfficialTier } from "./checkEngine";
+import { CheckError, type CheckOutcome, type OfficialTier } from "./checkEngine";
+import { checkGameAcrossDraws, type MultiDrawOutcome } from "./multiDraw";
 
 type Admin = SupabaseClient<Database>;
 
@@ -40,6 +41,8 @@ export interface DrawContext {
   drawNumbers: number[];
   baseSize: number;
   tiers: OfficialTier[];
+  /** 2º sorteio do concurso (Dupla Sena); `null` nas modalidades de sorteio único. */
+  secondDraw: { drawNumbers: number[]; tiers: OfficialTier[] } | null;
   sourceUpdatedAt: string | null;
   tiersFromOfficialSource: boolean;
 }
@@ -49,7 +52,7 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
   const { data, error } = await admin
     .from("lottery_draws")
     .select(
-      "id, lottery_id, contest_number, source_updated_at, draw_numbers(number), draw_prizes(id, tier, hits, prize_per_winner), lotteries!inner(slug)",
+      "id, lottery_id, contest_number, source_updated_at, draw_numbers(number), draw_prizes(id, tier, hits, prize_per_winner), draw_second_numbers(number), draw_second_prizes(tier, hits, prize_per_winner), lotteries!inner(slug)",
     )
     .eq("id", drawId)
     .maybeSingle();
@@ -63,6 +66,8 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     source_updated_at: string | null;
     draw_numbers: { number: number }[];
     draw_prizes: { id: string; tier: string; hits: number; prize_per_winner: number | null }[];
+    draw_second_numbers: { number: number }[] | null;
+    draw_second_prizes: { tier: string; hits: number; prize_per_winner: number | null }[] | null;
     lotteries: { slug: string } | null;
   };
 
@@ -92,6 +97,33 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
         prizePerWinner: null,
       }));
 
+  let secondDraw: DrawContext["secondDraw"] = null;
+  if (config.drawsPerContest > 1) {
+    const secondNumbers = (row.draw_second_numbers ?? []).map((item) => item.number);
+    if (secondNumbers.length === 0) {
+      // Conferir só o 1º sorteio daria um resultado parcial como se fosse final.
+      throw new CheckError("NO_DRAW_NUMBERS", "2º sorteio do concurso ainda sem dezenas oficiais.");
+    }
+    const secondOfficial = row.draw_second_prizes ?? [];
+    secondDraw = {
+      drawNumbers: secondNumbers,
+      // Sem id: `game_prize_breakdown.draw_prize_id` só aponta para `draw_prizes`.
+      tiers: secondOfficial.length
+        ? secondOfficial.map((prize) => ({
+            drawPrizeId: null,
+            tier: prize.tier,
+            hits: prize.hits,
+            prizePerWinner: prize.prize_per_winner,
+          }))
+        : config.prizeTiers.map((tier) => ({
+            drawPrizeId: null,
+            tier: tier.label,
+            hits: tier.hits,
+            prizePerWinner: null,
+          })),
+    };
+  }
+
   return {
     drawId: row.id,
     lotteryId: row.lottery_id,
@@ -100,8 +132,60 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     drawNumbers,
     baseSize: config.selectable.base,
     tiers,
+    secondDraw,
     sourceUpdatedAt: row.source_updated_at,
     tiersFromOfficialSource: official.length > 0,
+  };
+}
+
+/** Confere o jogo contra todos os sorteios do concurso (1, ou 2 na Dupla Sena). */
+export function evaluateGame(gameNumbers: number[], context: DrawContext): MultiDrawOutcome {
+  const draws = [{ sequence: 1, drawNumbers: context.drawNumbers, tiers: context.tiers }];
+  if (context.secondDraw) {
+    draws.push({
+      sequence: 2,
+      drawNumbers: context.secondDraw.drawNumbers,
+      tiers: context.secondDraw.tiers,
+    });
+  }
+  return checkGameAcrossDraws({ gameNumbers, baseSize: context.baseSize, draws });
+}
+
+/** Corpo do `apply_game_check`. O detalhe por sorteio só vai com 2+ sorteios. */
+export function buildCheckPayload(context: DrawContext, result: MultiDrawOutcome) {
+  const outcome: CheckOutcome = result.aggregate;
+  return {
+    contest_number: context.contestNumber,
+    hits: outcome.hits,
+    matched_numbers: outcome.matchedNumbers,
+    is_prized: outcome.isPrized,
+    prize_tier_hits: outcome.prizeTierHits,
+    prize_label: outcome.prizeLabel,
+    total_prize: outcome.totalPrize,
+    amount_pending: outcome.amountPending,
+    calculation_version: outcome.calculationVersion,
+    source_updated_at: context.sourceUpdatedAt,
+    breakdown: outcome.breakdown.map((entry) => ({
+      draw_prize_id: entry.drawPrizeId,
+      tier: entry.tier,
+      hits_required: entry.hitsRequired,
+      winning_combinations: entry.winningCombinations,
+      prize_per_combination: entry.prizePerCombination,
+      total_for_tier: entry.totalForTier,
+    })),
+    ...(result.draws.length > 1
+      ? {
+          draws: result.draws.map((item) => ({
+            draw_sequence: item.sequence,
+            hits: item.outcome.hits,
+            matched_numbers: item.outcome.matchedNumbers,
+            is_prized: item.outcome.isPrized,
+            prize_label: item.outcome.prizeLabel,
+            total_prize: item.outcome.totalPrize,
+            amount_pending: item.outcome.amountPending,
+          })),
+        }
+      : {}),
   };
 }
 
@@ -110,8 +194,7 @@ interface GameRow {
   status: string;
   game_numbers: { number: number }[];
   game_check_results:
-    | { checked_at: string; calculation_version: number; source_updated_at: string | null }[]
-    | null;
+    { checked_at: string; calculation_version: number; source_updated_at: string | null }[] | null;
 }
 
 /** Situações elegíveis: um jogo apenas planejado nunca é conferido. */
@@ -209,39 +292,18 @@ export async function checkDrawBatch(
         continue;
       }
       try {
-        const outcome = checkGame({
-          gameNumbers: (game.game_numbers ?? []).map((item) => item.number),
-          drawNumbers: context.drawNumbers,
-          baseSize: context.baseSize,
-          tiers: context.tiers,
-        });
+        const outcome = evaluateGame(
+          (game.game_numbers ?? []).map((item) => item.number),
+          context,
+        );
         const { error: rpcError } = await (admin as unknown as Rpc).rpc("apply_game_check", {
           _game_id: game.id,
           _draw_id: context.drawId,
-          _payload: {
-            contest_number: context.contestNumber,
-            hits: outcome.hits,
-            matched_numbers: outcome.matchedNumbers,
-            is_prized: outcome.isPrized,
-            prize_tier_hits: outcome.prizeTierHits,
-            prize_label: outcome.prizeLabel,
-            total_prize: outcome.totalPrize,
-            amount_pending: outcome.amountPending,
-            calculation_version: outcome.calculationVersion,
-            source_updated_at: context.sourceUpdatedAt,
-            breakdown: outcome.breakdown.map((entry) => ({
-              draw_prize_id: entry.drawPrizeId,
-              tier: entry.tier,
-              hits_required: entry.hitsRequired,
-              winning_combinations: entry.winningCombinations,
-              prize_per_combination: entry.prizePerCombination,
-              total_for_tier: entry.totalForTier,
-            })),
-          },
+          _payload: buildCheckPayload(context, outcome),
         });
         if (rpcError) throw new Error(rpcError.message);
         processed += 1;
-        if (outcome.isPrized) prized += 1;
+        if (outcome.aggregate.isPrized) prized += 1;
       } catch (checkFailure) {
         failed += 1;
         await recordCheckError(admin, jobId, game.id, context.drawId, checkFailure);
@@ -299,38 +361,21 @@ export async function checkSingleGame(admin: Admin, gameId: string) {
   }
 
   try {
-    const outcome = checkGame({
-      gameNumbers: (game.game_numbers ?? []).map((item) => item.number),
-      drawNumbers: context.drawNumbers,
-      baseSize: context.baseSize,
-      tiers: context.tiers,
-    });
+    const outcome = evaluateGame(
+      (game.game_numbers ?? []).map((item) => item.number),
+      context,
+    );
     const { error: rpcError } = await (admin as unknown as Rpc).rpc("apply_game_check", {
       _game_id: game.id,
       _draw_id: context.drawId,
-      _payload: {
-        contest_number: context.contestNumber,
-        hits: outcome.hits,
-        matched_numbers: outcome.matchedNumbers,
-        is_prized: outcome.isPrized,
-        prize_tier_hits: outcome.prizeTierHits,
-        prize_label: outcome.prizeLabel,
-        total_prize: outcome.totalPrize,
-        amount_pending: outcome.amountPending,
-        calculation_version: outcome.calculationVersion,
-        source_updated_at: context.sourceUpdatedAt,
-        breakdown: outcome.breakdown.map((entry) => ({
-          draw_prize_id: entry.drawPrizeId,
-          tier: entry.tier,
-          hits_required: entry.hitsRequired,
-          winning_combinations: entry.winningCombinations,
-          prize_per_combination: entry.prizePerCombination,
-          total_for_tier: entry.totalForTier,
-        })),
-      },
+      _payload: buildCheckPayload(context, outcome),
     });
     if (rpcError) throw new Error(rpcError.message);
-    return { ok: true as const, hits: outcome.hits, isPrized: outcome.isPrized };
+    return {
+      ok: true as const,
+      hits: outcome.aggregate.hits,
+      isPrized: outcome.aggregate.isPrized,
+    };
   } catch (failure) {
     await recordCheckError(admin, null, game.id, context.drawId, failure);
     throw failure;
@@ -402,11 +447,7 @@ export async function runCheckJob(admin: Admin, jobId: string, force = false) {
         processed: row.processed + result.processed,
         prized: row.prized + result.prized,
         failed: failedTotal,
-        status: finished
-          ? failedTotal > 0
-            ? "completed_with_errors"
-            : "completed"
-          : "running",
+        status: finished ? (failedTotal > 0 ? "completed_with_errors" : "completed") : "running",
         finished_at: finished ? new Date().toISOString() : null,
         last_activity_at: new Date().toISOString(),
         locked_at: finished ? null : new Date().toISOString(),
