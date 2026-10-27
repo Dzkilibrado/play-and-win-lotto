@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { NumberStepper } from "@/components/common/NumberStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BudgetStrategyPanel } from "@/components/lottery/BudgetStrategyPanel";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
 import { SmartWeights, describeWeightSelection } from "@/components/lottery/SmartWeights";
@@ -93,6 +94,14 @@ function GeneratePage() {
   const [showPriceHelp, setShowPriceHelp] = useState(false);
   const [weightSelection, setWeightSelection] = useState(() => defaultWeightSelection());
   const { generating, generate, cancel } = useGameGeneration();
+
+  /**
+   * Fluxo por orçamento (Etapa 1+2+3): apenas captura valor, modalidades e
+   * apresenta a estratégia calculada para aprovação. Não gera jogos — a
+   * geração condicionada é a próxima etapa, após homologação desta.
+   * O fluxo manual (padrão) permanece inteiramente inalterado.
+   */
+  const [mode, setMode] = useState<"manual" | "budget">("manual");
 
   const lotteriesQuery = useQuery({
     queryKey: ["lotteries"],
@@ -406,7 +415,32 @@ function GeneratePage() {
         description="Escolha a modalidade, as dezenas e gere quantos jogos quiser. Nada é salvo sem sua confirmação."
       />
 
-      {games ? (
+      <div className="flex gap-2" role="tablist" aria-label="Como montar os jogos">
+        <Button
+          variant={mode === "manual" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("manual")}
+        >
+          Manual
+        </Button>
+        <Button
+          variant={mode === "budget" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMode("budget")}
+        >
+          Por orçamento
+        </Button>
+      </div>
+
+      {mode === "budget" ? (
+        <BudgetStrategyPanel
+          onApprove={() => {
+            toast.info(
+              "Estratégia aprovada. A geração automática a partir dela ainda está em homologação — em breve ficará disponível aqui.",
+            );
+          }}
+        />
+      ) : games ? (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={generating} onClick={() => void handleGenerate()}>
