@@ -5,8 +5,8 @@ const adminRoute = readFileSync("src/routes/_authenticated/admin.index.tsx", "ut
 // As telas internas da Administração (cada função em sua rota) e os painéis
 // compartilhados também precisam respeitar a mesma segregação.
 const adminPanels = readFileSync("src/components/admin/AdminPanels.tsx", "utf8");
-const adminSubRoutes = ["atualizacao", "conferencia", "loterias", "recursos"].map((name) =>
-  readFileSync(`src/routes/_authenticated/admin.${name}.tsx`, "utf8"),
+const adminSubRoutes = ["atualizacao", "conferencia", "loterias", "recursos", "acessos"].map(
+  (name) => readFileSync(`src/routes/_authenticated/admin.${name}.tsx`, "utf8"),
 );
 const authenticatedLayout = readFileSync("src/routes/_authenticated/route.tsx", "utf8");
 const moreRoute = readFileSync("src/routes/_authenticated/more.tsx", "utf8");
@@ -88,5 +88,44 @@ describe("segregação ADMIN e USER", () => {
     expect(lotteriesFunctions).toContain("await assertAdmin(context as never)");
     expect(lotteriesFunctions).toContain('"admin_set_lottery_availability"');
     expect(adminSubRoutes.join("\n")).toContain("<LotteryAvailabilityPanel />");
+  });
+});
+
+describe("tipos de acesso e troca de perfil", () => {
+  const accessFunctions = readFileSync("src/lib/admin/access.functions.ts", "utf8");
+  const migration = readFileSync(
+    "supabase/migrations/20261027280000_f1a6c9d2-3b47-48e5-a0d9-7c2e5b1f8a64.sql",
+    "utf8",
+  );
+
+  it("revalida ADMIN no servidor antes de ler ou gravar permissões e perfis", () => {
+    expect(accessFunctions.match(/\.middleware\(\[requireActiveSupabaseAuth\]\)/g)).toHaveLength(3);
+    expect(accessFunctions.match(/await requireAdmin\(context\)/g)).toHaveLength(3);
+  });
+
+  it("a troca de perfil protege o último administrador, o responsável principal e a própria conta", () => {
+    expect(migration).toContain(
+      "O último administrador ativo não pode perder o acesso de administrador.",
+    );
+    expect(migration).toContain("O responsável principal não pode ter o tipo de acesso alterado.");
+    expect(migration).toContain("Você não pode alterar o seu próprio tipo de acesso.");
+    expect(migration).toContain("pg_advisory_xact_lock");
+  });
+
+  it("as funções de escrita só são executáveis pelo service_role", () => {
+    for (const fn of [
+      "admin_set_user_role",
+      "admin_set_role_permissions",
+      "admin_get_role_permissions",
+    ]) {
+      expect(migration).toMatch(
+        new RegExp(`GRANT EXECUTE ON FUNCTION public\\.${fn}\\([^)]*\\) TO service_role;`),
+      );
+    }
+  });
+
+  it("a tela de usuários usa nomes em português para os tipos de acesso", () => {
+    expect(usersRoute).toContain("accessRoleLabel");
+    expect(usersRoute).not.toContain('<option value="USER">USER</option>');
   });
 });

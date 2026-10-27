@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
 import { Route as BTokenRouteImport } from './routes/b.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminAcessosRouteImport } from './routes/_authenticated/admin.acessos'
 import { Route as AuthenticatedAdminAtualizacaoRouteImport } from './routes/_authenticated/admin.atualizacao'
 import { Route as AuthenticatedAdminConferenciaRouteImport } from './routes/_authenticated/admin.conferencia'
 import { Route as AuthenticatedAdminLoteriasRouteImport } from './routes/_authenticated/admin.loterias'
@@ -146,6 +147,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminAcessosRoute =
+  AuthenticatedAdminAcessosRouteImport.update({
+    id: '/admin/acessos',
+    path: '/admin/acessos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminAtualizacaoRoute =
   AuthenticatedAdminAtualizacaoRouteImport.update({
     id: '/admin/atualizacao',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
   '/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
   '/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
@@ -290,6 +298,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
   '/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
   '/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
@@ -329,6 +338,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
   '/b/$token': typeof BTokenRoute
+  '/_authenticated/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/_authenticated/admin/atualizacao': typeof AuthenticatedAdminAtualizacaoRoute
   '/_authenticated/admin/conferencia': typeof AuthenticatedAdminConferenciaRoute
   '/_authenticated/admin/loterias': typeof AuthenticatedAdminLoteriasRoute
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/statistics'
     | '/b/$token'
+    | '/admin/acessos'
     | '/admin/atualizacao'
     | '/admin/conferencia'
     | '/admin/loterias'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/statistics'
     | '/b/$token'
+    | '/admin/acessos'
     | '/admin/atualizacao'
     | '/admin/conferencia'
     | '/admin/loterias'
@@ -443,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/statistics'
     | '/b/$token'
+    | '/_authenticated/admin/acessos'
     | '/_authenticated/admin/atualizacao'
     | '/_authenticated/admin/conferencia'
     | '/_authenticated/admin/loterias'
@@ -619,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/acessos': {
+      id: '/_authenticated/admin/acessos'
+      path: '/admin/acessos'
+      fullPath: '/admin/acessos'
+      preLoaderRoute: typeof AuthenticatedAdminAcessosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/atualizacao': {
       id: '/_authenticated/admin/atualizacao'
       path: '/admin/atualizacao'
@@ -744,6 +764,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
+  AuthenticatedAdminAcessosRoute: typeof AuthenticatedAdminAcessosRoute
   AuthenticatedAdminAtualizacaoRoute: typeof AuthenticatedAdminAtualizacaoRoute
   AuthenticatedAdminConferenciaRoute: typeof AuthenticatedAdminConferenciaRoute
   AuthenticatedAdminLoteriasRoute: typeof AuthenticatedAdminLoteriasRoute
@@ -771,6 +792,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
+  AuthenticatedAdminAcessosRoute: AuthenticatedAdminAcessosRoute,
   AuthenticatedAdminAtualizacaoRoute: AuthenticatedAdminAtualizacaoRoute,
   AuthenticatedAdminConferenciaRoute: AuthenticatedAdminConferenciaRoute,
   AuthenticatedAdminLoteriasRoute: AuthenticatedAdminLoteriasRoute,

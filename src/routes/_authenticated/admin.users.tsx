@@ -17,7 +17,15 @@ import {
   DrawerHeader, DrawerTitle, DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  accessRoleLabel,
+  accessRoles,
+  roleChangeReasons,
+  type AccessRole,
+  type RoleChangeReason,
+} from "@/config/accessModules";
 import { appConfig } from "@/config/app.config";
+import { changeAdminUserRole } from "@/lib/admin/access.functions";
 import { changeAdminUserAccess, listAdminUsers, type AdminUsersResult } from "@/lib/admin/users.functions";
 import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
 import { cn } from "@/lib/utils";
@@ -26,7 +34,7 @@ import { AdminPasswordRecoveryAction } from "@/components/auth/AdminPasswordReco
 const searchSchema = z.object({
   page: z.coerce.number().int().positive().optional().catch(undefined),
   status: z.enum(["ACTIVE", "PENDING", "BLOCKED"]).optional().catch(undefined),
-  role: z.enum(["USER", "ADMIN"]).optional().catch(undefined),
+  role: z.enum(["USER", "SUPORTE", "ADMIN"]).optional().catch(undefined),
   provider: z.enum(["email", "google"]).optional().catch(undefined),
   created: z.enum(["TODAY", "7D", "30D", "90D"]).optional().catch(undefined),
   access: z.enum(["TODAY", "7D", "30D", "STALE", "NEVER"]).optional().catch(undefined),
@@ -73,14 +81,78 @@ function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone
   return <span className={cn("inline-flex rounded-full px-2 py-1 text-[11px] font-semibold", tones[tone])}>{children}</span>;
 }
 
-function UserBadges({ role, status }: { role: "USER" | "ADMIN"; status: keyof typeof statusLabel }) {
-  return <div className="flex flex-wrap gap-1.5"><Badge tone={role === "ADMIN" ? "info" : "neutral"}>{role}</Badge><Badge tone={status === "ACTIVE" ? "success" : status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[status]}</Badge></div>;
+function roleTone(role: AccessRole) {
+  return role === "ADMIN" ? "info" : role === "SUPORTE" ? "warning" : "neutral";
+}
+
+function UserBadges({ role, status }: { role: AccessRole; status: keyof typeof statusLabel }) {
+  return <div className="flex flex-wrap gap-1.5"><Badge tone={roleTone(role)}>{accessRoleLabel[role]}</Badge><Badge tone={status === "ACTIVE" ? "success" : status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[status]}</Badge></div>;
 }
 
 type AdminUser = AdminUsersResult["items"][number];
 
 function UserActions({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
-  return <div className="flex min-w-0 flex-col items-start gap-1"><UserAccessAction item={item} currentUserId={currentUserId} /><AdminPasswordRecoveryAction id={item.id} providers={item.providers} /></div>;
+  return <div className="flex min-w-0 flex-col items-start gap-1"><UserRoleAction item={item} currentUserId={currentUserId} /><UserAccessAction item={item} currentUserId={currentUserId} /><AdminPasswordRecoveryAction id={item.id} providers={item.providers} /></div>;
+}
+
+function UserRoleAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<AccessRole | "">("");
+  const [reason, setReason] = useState<RoleChangeReason | "">("");
+  const [details, setDetails] = useState("");
+  const protectedAccount = item.id === currentUserId || item.isSystemOwner;
+  const options = accessRoles.filter((value) => value !== item.role);
+  const mutation = useMutation({
+    mutationFn: () => changeAdminUserRole({ data: {
+      targetUserId: item.id,
+      role: role as AccessRole,
+      reason: reason || null,
+      reasonDetails: details.trim() || null,
+    } }),
+    onSuccess: async () => {
+      setOpen(false);
+      setRole("");
+      setReason("");
+      setDetails("");
+      await queryClient.invalidateQueries({ queryKey: ["admin", currentUserId, "users"] });
+      toast.success("Tipo de acesso alterado.");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível alterar o tipo de acesso."),
+  });
+
+  if (item.status === "PENDING" || protectedAccount) return null;
+
+  return <>
+    <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Alterar tipo de acesso</Button>
+    <Dialog open={open} onOpenChange={(next) => { if (!mutation.isPending) setOpen(next); }}>
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alterar tipo de acesso</DialogTitle>
+          <DialogDescription>
+            Tipo atual: {accessRoleLabel[item.role]}. A mudança vale na próxima vez que a pessoa abrir o aplicativo e fica registrada na auditoria.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <SelectField label="Novo tipo de acesso" value={role} onChange={(value) => setRole(value as AccessRole | "")}>
+            <option value="">Escolha uma opção</option>
+            {options.map((value) => <option key={value} value={value}>{accessRoleLabel[value]}</option>)}
+          </SelectField>
+          <SelectField label="Motivo (opcional)" value={reason} onChange={(value) => setReason(value as RoleChangeReason | "")}>
+            <option value="">Não informar</option>
+            {roleChangeReasons.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </SelectField>
+          {reason === "OTHER" && <label className="block space-y-1.5 text-sm"><span className="text-text-secondary">Descrição curta</span><Input value={details} onChange={(event) => setDetails(event.target.value)} maxLength={160} required /></label>}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>Cancelar</Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || !role || (reason === "OTHER" && !details.trim())}>
+            {mutation.isPending ? "Salvando…" : "Confirmar alteração"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>;
 }
 
 function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
@@ -165,7 +237,7 @@ function AdminUsersPage() {
 
   const filterFields = <div className="grid gap-4 sm:grid-cols-2">
     <SelectField label="Status" value={search.status ?? ""} onChange={(value) => setSearch({ status: value as Search["status"] || undefined })}><option value="">Todos</option><option value="ACTIVE">Ativo</option><option value="PENDING">Pendente de confirmação</option><option value="BLOCKED">Bloqueado</option></SelectField>
-    <SelectField label="Role" value={search.role ?? ""} onChange={(value) => setSearch({ role: value as Search["role"] || undefined })}><option value="">Todos</option><option value="USER">USER</option><option value="ADMIN">ADMIN</option></SelectField>
+    <SelectField label="Tipo de acesso" value={search.role ?? ""} onChange={(value) => setSearch({ role: value as Search["role"] || undefined })}><option value="">Todos</option>{accessRoles.map((value) => <option key={value} value={value}>{accessRoleLabel[value]}</option>)}</SelectField>
     <SelectField label="Método de acesso" value={search.provider ?? ""} onChange={(value) => setSearch({ provider: value as Search["provider"] || undefined })}><option value="">Todos</option>{data?.availableProviders.map((provider) => <option key={provider} value={provider}>{providerLabel[provider] ?? provider}</option>)}</SelectField>
     <SelectField label="Cadastro" value={search.created ?? ""} onChange={(value) => setSearch({ created: value as Search["created"] || undefined })}><option value="">Todos</option><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="30D">Últimos 30 dias</option><option value="90D">Últimos 90 dias</option></SelectField>
     <SelectField label="Último acesso" value={search.access ?? ""} onChange={(value) => setSearch({ access: value as Search["access"] || undefined })}><option value="">Todos</option><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="30D">Últimos 30 dias</option><option value="STALE">Sem acesso recente</option><option value="NEVER">Nunca acessou</option></SelectField>
@@ -174,9 +246,9 @@ function AdminUsersPage() {
   return <div className="min-w-0 space-y-4">
     <PageHeader title="Usuários" description="Consulta administrativa de contas cadastradas." />
     {query.isLoading ? <LoadingState rows={5} label="Carregando usuários" /> : query.isError ? <ErrorState onRetry={() => query.refetch()} /> : !data ? <LoadingState rows={5} label="Carregando usuários" /> : <>
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Indicadores de usuários">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-6" aria-label="Indicadores de usuários">
         {[
-          ["Total", data.summary.total, {}], ["Ativos", data.summary.active, { status: "ACTIVE" }], ["Bloqueados", data.summary.blocked, { status: "BLOCKED" }], ["USER", data.summary.users, { role: "USER" }], ["ADMIN", data.summary.admins, { role: "ADMIN" }],
+          ["Total", data.summary.total, {}], ["Ativos", data.summary.active, { status: "ACTIVE" }], ["Bloqueados", data.summary.blocked, { status: "BLOCKED" }], ["Usuários", data.summary.users, { role: "USER" }], ["Suporte", data.summary.support, { role: "SUPORTE" }], ["Administradores", data.summary.admins, { role: "ADMIN" }],
         ].map(([label, count, patch]) => <button key={String(label)} type="button" onClick={() => setSearch(patch as Partial<Search>)} className="surface-card tappable min-h-16 p-3 text-left hover:border-primary"><span className="block text-xs text-text-secondary">{label as string}</span><strong className="font-display text-xl text-text-primary">{count as number}</strong></button>)}
       </section>
 
@@ -193,7 +265,7 @@ function AdminUsersPage() {
         <div className="space-y-2 xl:hidden">
           {data.items.map((item) => <article key={item.id} className="surface-card min-w-0 space-y-3 p-4"><div className="min-w-0"><h2 className="truncate font-display text-sm font-semibold">{item.name}</h2><p className="truncate text-xs text-text-secondary">{item.email}</p></div><UserBadges role={item.role} status={item.status} /><dl className="grid grid-cols-2 gap-3 text-xs"><div><dt className="text-text-secondary">Acesso</dt><dd>{item.providers.map((p) => providerLabel[p] ?? p).join(" + ") || "Não informado"}</dd></div><div><dt className="text-text-secondary">Cadastro</dt><dd>{formatDate(item.createdAt)}</dd></div><div className="col-span-2"><dt className="text-text-secondary">Último acesso</dt><dd>{formatAccess(item.lastAccessAt)}</dd></div></dl><div className="border-t border-border pt-3"><UserActions item={item} currentUserId={user.id} /></div></article>)}
         </div>
-        <div className="surface-card hidden overflow-hidden xl:block"><Table><TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>E-mail</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead>Acesso</TableHead><TableHead>Cadastro</TableHead><TableHead>Último acesso</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{data.items.map((item) => <TableRow key={item.id}><TableCell className="max-w-40 truncate font-medium">{item.name}</TableCell><TableCell>{item.email}</TableCell><TableCell><Badge tone={item.role === "ADMIN" ? "info" : "neutral"}>{item.role}</Badge></TableCell><TableCell><Badge tone={item.status === "ACTIVE" ? "success" : item.status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[item.status]}</Badge></TableCell><TableCell>{item.providers.map((p) => providerLabel[p] ?? p).join(" + ") || "Não informado"}</TableCell><TableCell>{formatDate(item.createdAt)}</TableCell><TableCell>{formatAccess(item.lastAccessAt)}</TableCell><TableCell className="max-w-56"><UserActions item={item} currentUserId={user.id} /></TableCell></TableRow>)}</TableBody></Table></div>
+        <div className="surface-card hidden overflow-hidden xl:block"><Table><TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>E-mail</TableHead><TableHead>Tipo de acesso</TableHead><TableHead>Status</TableHead><TableHead>Acesso</TableHead><TableHead>Cadastro</TableHead><TableHead>Último acesso</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{data.items.map((item) => <TableRow key={item.id}><TableCell className="max-w-40 truncate font-medium">{item.name}</TableCell><TableCell>{item.email}</TableCell><TableCell><Badge tone={roleTone(item.role)}>{accessRoleLabel[item.role]}</Badge></TableCell><TableCell><Badge tone={item.status === "ACTIVE" ? "success" : item.status === "BLOCKED" ? "danger" : "warning"}>{statusLabel[item.status]}</Badge></TableCell><TableCell>{item.providers.map((p) => providerLabel[p] ?? p).join(" + ") || "Não informado"}</TableCell><TableCell>{formatDate(item.createdAt)}</TableCell><TableCell>{formatAccess(item.lastAccessAt)}</TableCell><TableCell className="max-w-56"><UserActions item={item} currentUserId={user.id} /></TableCell></TableRow>)}</TableBody></Table></div>
       </>}
       <footer className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary"><span>{data.total} usuário(s)</span><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setSearch({ page: page - 1 })}><ChevronLeft aria-hidden />Anterior</Button><span aria-live="polite">Página {page} de {Math.max(1, Math.ceil(data.total / pageSize))}</span><Button variant="outline" size="sm" disabled={page * pageSize >= data.total} onClick={() => setSearch({ page: page + 1 })}>Próxima<ChevronRight aria-hidden /></Button></div></footer>
     </>}
