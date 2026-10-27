@@ -14,10 +14,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { checkConfig } from "@/config/check.config";
-import { getLotteryConfig, type LotterySlug } from "@/config/lotteries";
+import { getLotteryConfig, type JointTierDef, type LotterySlug } from "@/config/lotteries";
 import type { Database } from "@/integrations/supabase/types";
 import { CheckError, type CheckOutcome, type OfficialTier } from "./checkEngine";
 import { checkGameAcrossDraws, type MultiDrawOutcome } from "./multiDraw";
+import { checkJointGame } from "./joint";
 import { checkSecondary, type SecondaryPrize } from "./secondary";
 
 type Admin = SupabaseClient<Database>;
@@ -46,6 +47,8 @@ export interface DrawContext {
   secondDraw: { drawNumbers: number[]; tiers: OfficialTier[] } | null;
   /** Seleção secundária oficial (Mês da Sorte, Time do Coração); `null` nas demais. */
   secondary: { label: string; result: string[]; prize: SecondaryPrize | null } | null;
+  /** Faixas conjuntas dezenas + trevos (+Milionária); `null` nas demais. */
+  joint: { drawClovers: number[]; defs: JointTierDef[] } | null;
   sourceUpdatedAt: string | null;
   tiersFromOfficialSource: boolean;
 }
@@ -148,6 +151,19 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     };
   }
 
+  let joint: DrawContext["joint"] = null;
+  if (config.jointTiers) {
+    const clovers = (row.secondary_result ?? []).map((value) => Number.parseInt(value, 10));
+    if (clovers.length !== (config.secondary?.selectable.base ?? 2) || clovers.some(Number.isNaN)) {
+      // Sem os 2 trevos sorteados, só as faixas "+ 2 trevos" ficariam erradas em silêncio.
+      throw new CheckError(
+        "NO_DRAW_NUMBERS",
+        "Trevos sorteados do concurso ainda não registrados.",
+      );
+    }
+    joint = { drawClovers: clovers, defs: config.jointTiers };
+  }
+
   return {
     drawId: row.id,
     lotteryId: row.lottery_id,
@@ -158,6 +174,7 @@ export async function loadDrawContext(admin: Admin, drawId: string): Promise<Dra
     tiers,
     secondDraw,
     secondary,
+    joint,
     sourceUpdatedAt: row.source_updated_at,
     tiersFromOfficialSource: official.length > 0,
   };
@@ -169,6 +186,19 @@ export function evaluateGame(
   context: DrawContext,
   secondarySelection: string[] = [],
 ): MultiDrawOutcome {
+  if (context.joint) {
+    const outcome = checkJointGame({
+      gameNumbers,
+      gameClovers: secondarySelection.map((value) => Number.parseInt(value, 10)),
+      drawNumbers: context.drawNumbers,
+      drawClovers: context.joint.drawClovers,
+      baseSize: context.baseSize,
+      cloverBase: context.joint.drawClovers.length,
+      defs: context.joint.defs,
+      tiers: context.tiers,
+    });
+    return { aggregate: outcome, draws: [{ sequence: 1, outcome }] };
+  }
   const draws = [{ sequence: 1, drawNumbers: context.drawNumbers, tiers: context.tiers }];
   if (context.secondDraw) {
     draws.push({

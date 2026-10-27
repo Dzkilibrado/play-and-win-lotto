@@ -68,6 +68,38 @@ export interface SecondaryPoolConfig {
   prizeLabel: string;
 }
 
+/**
+ * Faixa conjunta (dezenas + trevos) da +Milionária. A chave numérica
+ * (`numberHits * 10 + maior número de trevos aceito`) é o que vai em
+ * `draw_prizes.hits`, `game_prize_breakdown.hits_required` e
+ * `game_check_results.prize_tier_hits` — única por faixa, sem mudar o esquema.
+ */
+export interface JointTierDef {
+  key: number;
+  label: string;
+  numberHits: number;
+  /** Quantos trevos acertados (entre os 2 sorteados) a faixa aceita. */
+  cloverHits: number[];
+}
+
+function jointTier(numberHits: number, cloverHits: number[], label: string): JointTierDef {
+  return { key: numberHits * 10 + Math.max(...cloverHits), label, numberHits, cloverHits };
+}
+
+/** Faixas oficiais da +Milionária, da mais alta para a mais baixa. */
+export const maisMilionariaTiers: JointTierDef[] = [
+  jointTier(6, [2], "6 acertos + 2 trevos"),
+  jointTier(6, [0, 1], "6 acertos + 1 ou nenhum trevo"),
+  jointTier(5, [2], "5 acertos + 2 trevos"),
+  jointTier(5, [0, 1], "5 acertos + 1 ou nenhum trevo"),
+  jointTier(4, [2], "4 acertos + 2 trevos"),
+  jointTier(4, [0, 1], "4 acertos + 1 ou nenhum trevo"),
+  jointTier(3, [2], "3 acertos + 2 trevos"),
+  jointTier(3, [1], "3 acertos + 1 trevo"),
+  jointTier(2, [2], "2 acertos + 2 trevos"),
+  jointTier(2, [1], "2 acertos + 1 trevo"),
+];
+
 export const monthOptions: SecondaryOption[] = [
   "Janeiro",
   "Fevereiro",
@@ -110,6 +142,8 @@ export interface LotteryConfig {
    * Ausente = modalidade usa só o pool principal de dezenas.
    */
   secondary?: SecondaryPoolConfig;
+  /** Faixas conjuntas (dezenas + trevos); ausente = faixa por número de acertos. */
+  jointTiers?: JointTierDef[];
 }
 
 export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
@@ -289,19 +323,22 @@ export const lotteryConfigs: Record<LotterySlug, LotteryConfig> = {
     universe: { min: 1, max: 50 },
     selectable: { min: 6, max: 12, base: 6 },
     grid: { columns: 10 },
-    // Faixas reais são conjuntas (dezenas + trevos) — não cabem no modelo de
-    // faixa única (`hits`) usado pelas demais modalidades. Preenchidas
-    // quando o motor de faixa conjunta entrar, junto com a seleção de trevos.
-    prizeTiers: [],
+    // Faixas conjuntas (dezenas + trevos): `hits` é a chave da faixa, não um número de acertos.
+    prizeTiers: maisMilionariaTiers.map((tier) => ({ hits: tier.key, label: tier.label })),
+    jointTiers: maisMilionariaTiers,
     isActive: false,
     sortOrder: 8,
     drawsPerContest: 1,
     drawnCount: 6,
     secondary: {
       kind: "trevo",
-      label: "Trevo da Sorte",
+      label: "Trevos",
       universe: { min: 1, max: 6 },
       selectable: { min: 2, max: 6, base: 2 },
+      options: [1, 2, 3, 4, 5, 6].map((value) => ({
+        value: String(value),
+        label: `Trevo ${value}`,
+      })),
       prizeLabel: "Trevos",
     },
   },

@@ -352,3 +352,117 @@ describe("modalidades sem seleção secundária", () => {
     expect(draw.secondary).toBeNull();
   });
 });
+
+describe("+Milionária: faixas conjuntas e trevos", () => {
+  const numbers = ["04", "13", "27", "33", "41", "50"];
+  const rateio = [
+    { faixa: 1, descricaoFaixa: "6 acertos + 2 trevos", numeroDeGanhadores: 0, valorPremio: 0 },
+    {
+      faixa: 2,
+      descricaoFaixa: "6 acertos + 1 ou nenhum trevo",
+      numeroDeGanhadores: 0,
+      valorPremio: 0,
+    },
+    {
+      faixa: 3,
+      descricaoFaixa: "5 acertos + 2 trevos",
+      numeroDeGanhadores: 2,
+      valorPremio: 178823.03,
+    },
+    {
+      faixa: 4,
+      descricaoFaixa: "5 acertos + 1 ou nenhum trevo",
+      numeroDeGanhadores: 25,
+      valorPremio: 6358.15,
+    },
+    {
+      faixa: 5,
+      descricaoFaixa: "4 acertos + 2 trevos",
+      numeroDeGanhadores: 97,
+      valorPremio: 1755.74,
+    },
+    {
+      faixa: 6,
+      descricaoFaixa: "4 acertos + 1 ou nenhum trevo",
+      numeroDeGanhadores: 1565,
+      valorPremio: 108.82,
+    },
+    { faixa: 7, descricaoFaixa: "3 acertos + 2 trevos", numeroDeGanhadores: 1740, valorPremio: 50 },
+    { faixa: 8, descricaoFaixa: "3 acertos + 1 trevo", numeroDeGanhadores: 14774, valorPremio: 24 },
+    {
+      faixa: 9,
+      descricaoFaixa: "2 acertos + 2 trevos",
+      numeroDeGanhadores: 13823,
+      valorPremio: 12,
+    },
+    {
+      faixa: 10,
+      descricaoFaixa: "2 acertos + 1 trevo",
+      numeroDeGanhadores: 116616,
+      valorPremio: 6,
+    },
+  ];
+
+  it("lê as 10 faixas conjuntas com chaves distintas e os 2 trevos", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      trevosSorteados: ["5", "2"],
+      listaRateioPremio: rateio,
+    });
+    const draw = await fetchOfficialDraw("mais-milionaria", 400);
+    expect(draw.prizes.map((prize) => prize.hits)).toEqual([
+      62, 61, 52, 51, 42, 41, 32, 31, 22, 21,
+    ]);
+    expect(draw.prizes[2]).toMatchObject({ winners: 2, prizePerWinner: 178823.03 });
+    expect(draw.secondary?.result).toEqual(["2", "5"]);
+    expect(draw.secondary?.prize).toBeNull();
+  });
+
+  it("recusa concurso sem os trevos sorteados", async () => {
+    mockResponse({ ...basePayload, listaDezenas: numbers, listaRateioPremio: rateio });
+    await expect(fetchOfficialDraw("mais-milionaria", 400)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa trevos repetidos ou fora de 1 a 6", async () => {
+    for (const trevosSorteados of [["2", "2"], ["2", "7"], ["3"]]) {
+      mockResponse({
+        ...basePayload,
+        listaDezenas: numbers,
+        trevosSorteados,
+        listaRateioPremio: rateio,
+      });
+      await expect(fetchOfficialDraw("mais-milionaria", 400)).rejects.toMatchObject({
+        type: "VALIDATION",
+      });
+    }
+  });
+
+  it("recusa faixa conjunta que não casa exatamente com nenhuma configurada", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      trevosSorteados: ["2", "5"],
+      listaRateioPremio: [
+        { faixa: 1, descricaoFaixa: "3 acertos + 0 trevo", numeroDeGanhadores: 1, valorPremio: 1 },
+      ],
+    });
+    await expect(fetchOfficialDraw("mais-milionaria", 400)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+
+  it("recusa faixa conjunta duplicada", async () => {
+    mockResponse({
+      ...basePayload,
+      listaDezenas: numbers,
+      trevosSorteados: ["2", "5"],
+      listaRateioPremio: [rateio[2], rateio[2]],
+    });
+    await expect(fetchOfficialDraw("mais-milionaria", 400)).rejects.toMatchObject({
+      type: "VALIDATION",
+    });
+  });
+});
