@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { NumberStepper } from "@/components/common/NumberStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { BudgetGenerationFlow } from "@/components/lottery/BudgetGenerationFlow";
 import { BudgetStrategyPanel } from "@/components/lottery/BudgetStrategyPanel";
 import { GameCard } from "@/components/lottery/GameCard";
 import { GenerationFilters } from "@/components/lottery/GenerationFilters";
@@ -44,6 +45,7 @@ import {
   resolveReferenceContest,
 } from "@/lib/services/statisticsReference";
 
+import type { BudgetStrategyResult } from "@/lib/engine/budgetStrategy";
 import type { GeneratedGameDraft, GenerationMetrics } from "@/lib/engine/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
@@ -102,6 +104,7 @@ function GeneratePage() {
    * O fluxo manual (padrão) permanece inteiramente inalterado.
    */
   const [mode, setMode] = useState<"manual" | "budget">("manual");
+  const [budgetApproved, setBudgetApproved] = useState<BudgetStrategyResult | null>(null);
 
   const lotteriesQuery = useQuery({
     queryKey: ["lotteries"],
@@ -433,13 +436,11 @@ function GeneratePage() {
       </div>
 
       {mode === "budget" ? (
-        <BudgetStrategyPanel
-          onApprove={() => {
-            toast.info(
-              "Estratégia aprovada. A geração automática a partir dela ainda está em homologação — em breve ficará disponível aqui.",
-            );
-          }}
-        />
+        budgetApproved ? (
+          <BudgetGenerationFlow result={budgetApproved} onBack={() => setBudgetApproved(null)} />
+        ) : (
+          <BudgetStrategyPanel onApprove={(result) => setBudgetApproved(result)} />
+        )
       ) : games ? (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">

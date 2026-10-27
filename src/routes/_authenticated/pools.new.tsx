@@ -15,7 +15,20 @@ import { formatCurrency } from "@/lib/format";
 import { lotteryDataService } from "@/lib/services/lotteryDataService";
 import { poolService } from "@/lib/services/poolService";
 
+interface NewPoolSearch {
+  /** Pré-seleciona a modalidade quando chegando do fluxo "Criar jogo por orçamento". */
+  lotteryId?: string;
+  /** IDs de jogos já salvos (separados por vírgula) a anexar após criar o bolão. */
+  gameIds?: string;
+}
+
 export const Route = createFileRoute("/_authenticated/pools/new")({
+  validateSearch: (search: Record<string, unknown>): NewPoolSearch => {
+    const result: NewPoolSearch = {};
+    if (typeof search["lotteryId"] === "string") result.lotteryId = search["lotteryId"];
+    if (typeof search["gameIds"] === "string") result.gameIds = search["gameIds"];
+    return result;
+  },
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
@@ -32,13 +45,20 @@ export const Route = createFileRoute("/_authenticated/pools/new")({
 function NewPoolPage() {
   const navigate = useNavigate();
   const { user } = useSession();
+  const search = Route.useSearch();
 
   const lotteries = useQuery({
     queryKey: ["lotteries"],
     queryFn: () => lotteryDataService.listLotteries(),
   });
 
-  const [lotteryId, setLotteryId] = useState("");
+  // Jogos já gerados/salvos (ex.: fluxo "Criar jogo por orçamento") a
+  // anexar após criar o bolão. A modalidade vem travada nesse caso: um
+  // bolão só pode referenciar jogos da mesma modalidade.
+  const pendingGameIds = search.gameIds ? search.gameIds.split(",").filter(Boolean) : [];
+  const lockedLotteryId = pendingGameIds.length > 0 ? (search.lotteryId ?? "") : null;
+
+  const [lotteryId, setLotteryId] = useState(search.lotteryId ?? "");
   const [name, setName] = useState("");
   const [contest, setContest] = useState("");
   const [drawDate, setDrawDate] = useState("");
@@ -64,8 +84,23 @@ function NewPoolPage() {
         paymentDeadline: deadline || null,
         notes: notes.trim() || null,
       }),
-    onSuccess: (id) => {
-      toast.success("Bolão criado");
+    onSuccess: async (id) => {
+      if (pendingGameIds.length > 0) {
+        try {
+          await poolService.attachGames(id, pendingGameIds);
+          toast.success(
+            pendingGameIds.length === 1
+              ? "Bolão criado com o jogo anexado."
+              : `Bolão criado com os ${pendingGameIds.length} jogos anexados.`,
+          );
+        } catch (error) {
+          toast.error(
+            `Bolão criado, mas não foi possível anexar os jogos: ${userErrorMessage(error as Error)}`,
+          );
+        }
+      } else {
+        toast.success("Bolão criado");
+      }
       void navigate({ to: "/pools/$id", params: { id } });
     },
     onError: (error: Error) => toast.error(userErrorMessage(error)),
@@ -108,6 +143,16 @@ function NewPoolPage() {
         }
       />
 
+      {pendingGameIds.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {pendingGameIds.length === 1 ? "1 jogo" : `${pendingGameIds.length} jogos`} gerado
+          {pendingGameIds.length === 1 ? "" : "s"} por orçamento será
+          {pendingGameIds.length === 1 ? "" : "ão"} anexado
+          {pendingGameIds.length === 1 ? "" : "s"} a este bolão ao criar. A modalidade está travada
+          porque os jogos já foram gerados para ela.
+        </p>
+      )}
+
       <div className="surface-card space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -116,6 +161,7 @@ function NewPoolPage() {
               id="pool-lottery"
               className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-primary"
               value={lotteryId}
+              disabled={lockedLotteryId !== null}
               onChange={(event) => setLotteryId(event.target.value)}
             >
               <option value="">Escolha…</option>
