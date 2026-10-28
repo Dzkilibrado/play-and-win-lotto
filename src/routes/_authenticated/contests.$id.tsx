@@ -66,11 +66,6 @@ function ContestDetailPage() {
       <PageHeader
         title={draw ? `${draw.lotteries?.name} · Concurso ${draw.contest_number}` : "Concurso"}
         description={draw ? formatDate(draw.draw_date) : ""}
-        actions={
-          <Button asChild variant="outline" size="sm" className="h-11">
-            <Link to="/contests">Voltar</Link>
-          </Button>
-        }
       />
 
       {contest.isLoading ? (

@@ -184,11 +184,6 @@ function GameDetailPage() {
       <PageHeader
         title={game ? gameDisplayName(game.sequence_number) : "Detalhe do jogo"}
         description="Dezenas, análise e situação registrada por você."
-        actions={
-          <Button asChild variant="outline" size="sm" className="h-11">
-            <Link to="/games">Voltar</Link>
-          </Button>
-        }
       />
 
       {queryState === "loading" ? <LoadingState /> : null}

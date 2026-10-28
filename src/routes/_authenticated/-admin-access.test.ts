@@ -99,8 +99,8 @@ describe("tipos de acesso e troca de perfil", () => {
   );
 
   it("revalida ADMIN no servidor antes de ler ou gravar permissões e perfis", () => {
-    expect(accessFunctions.match(/\.middleware\(\[requireActiveSupabaseAuth\]\)/g)).toHaveLength(3);
-    expect(accessFunctions.match(/await requireAdmin\(context\)/g)).toHaveLength(3);
+    expect(accessFunctions.match(/\.middleware\(\[requireActiveSupabaseAuth\]\)/g)).toHaveLength(4);
+    expect(accessFunctions.match(/await requireAdmin\(context\)/g)).toHaveLength(4);
   });
 
   it("a troca de perfil protege o último administrador, o responsável principal e a própria conta", () => {
@@ -127,5 +127,41 @@ describe("tipos de acesso e troca de perfil", () => {
   it("a tela de usuários usa nomes em português para os tipos de acesso", () => {
     expect(usersRoute).toContain("accessRoleLabel");
     expect(usersRoute).not.toContain('<option value="USER">USER</option>');
+  });
+});
+
+describe("exclusão de conta pelo ADMIN", () => {
+  const accessFunctions = readFileSync("src/lib/admin/access.functions.ts", "utf8");
+  const deletion = readFileSync(
+    "supabase/migrations/20261028100000_a7d3e5f1-2c68-4b90-8e14-6f0b9c3d2a75.sql",
+    "utf8",
+  );
+
+  it("exige ADMIN no servidor, motivo e confirmação digitada", () => {
+    expect(accessFunctions).toContain("export const deleteAdminUser");
+    expect(accessFunctions).toContain('confirmation: z.literal("EXCLUIR")');
+    expect(accessFunctions).toContain('rpc("admin_prepare_user_deletion"');
+  });
+
+  it("o banco protege a própria conta, o responsável principal, ADMIN/SUPORTE e bolão com participantes", () => {
+    expect(deletion).toContain("Você não pode excluir a sua própria conta.");
+    expect(deletion).toContain("O responsável principal não pode ser excluído.");
+    expect(deletion).toContain("Altere o tipo de acesso para Usuário antes de excluir esta conta.");
+    expect(deletion).toContain("dona de bolão com participantes");
+    expect(deletion).toMatch(
+      /GRANT EXECUTE ON FUNCTION public\.admin_prepare_user_deletion\([^)]*\) TO service_role;/,
+    );
+  });
+
+  it("a auditoria da exclusão não guarda dados pessoais", () => {
+    const audit = deletion.slice(deletion.indexOf("INSERT INTO public.audit_logs"));
+    expect(audit).not.toMatch(/email|display_name|phone/i);
+  });
+});
+
+describe("Controle do sistema", () => {
+  it("não duplica o acesso à disponibilidade por loteria", () => {
+    const recursos = readFileSync("src/routes/_authenticated/admin.recursos.tsx", "utf8");
+    expect(recursos).not.toContain("/admin/loterias");
   });
 });

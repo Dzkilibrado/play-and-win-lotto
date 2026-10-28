@@ -1,10 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import {
   activeLotteries,
@@ -30,65 +38,54 @@ const hint: Record<LotteryAvailability, string> = {
   MAINTENANCE:
     "Aparece com aviso de manutenção. Ninguém cria jogos ou bolões novos; o que já existe continua visível.",
   DISABLED:
-    "Some das listas. Ninguém cria jogos ou bolões novos; o que o usuário já tem continua consultável.",
+    "Fica só para consulta (concursos, prêmios e histórico). Ninguém cria jogos ou bolões novos.",
 };
 
-function LotteryRow({ lottery }: { lottery: LotteryConfig }) {
+function LotteryEditor({ lottery, onClose }: { lottery: LotteryConfig; onClose: () => void }) {
   const queryClient = useQueryClient();
   const current = useLotteryAvailability();
   const saved = current.availabilityOf(lottery.slug);
   const savedNote = current.noteOf(lottery.slug) ?? "";
-  const [status, setStatus] = useState<LotteryAvailability | null>(null);
-  const [note, setNote] = useState<string | null>(null);
+  const [status, setStatus] = useState<LotteryAvailability>(saved);
+  const [note, setNote] = useState(savedNote);
   const save = useServerFn(setLotteryAvailability);
 
-  const selected = status ?? saved;
-  const noteValue = note ?? savedNote;
-  const dirty = selected !== saved || (note !== null && note.trim() !== savedNote.trim());
+  const dirty = status !== saved || note.trim() !== savedNote.trim();
 
   const mutation = useMutation({
-    mutationFn: () =>
-      save({
-        data: { slug: lottery.slug, status: selected, note: noteValue.trim() || null },
-      }),
+    mutationFn: () => save({ data: { slug: lottery.slug, status, note: note.trim() || null } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: lotteryAvailabilityKey });
-      setStatus(null);
-      setNote(null);
-      toast.success(`${lottery.name}: ${lotteryAvailabilityLabels[selected].toLowerCase()}.`);
+      toast.success(`${lottery.name}: ${lotteryAvailabilityLabels[status].toLowerCase()}.`);
+      onClose();
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "Não foi possível salvar."),
   });
 
   return (
-    <li className="space-y-3 rounded-lg border border-border p-3" data-lottery={lottery.colorKey}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-display text-sm font-semibold text-text-primary">{lottery.name}</span>
-        <StatusBadge label={lotteryAvailabilityLabels[saved]} tone={tone[saved]} />
-      </div>
-
-      <div className="flex flex-wrap gap-2" role="group" aria-label={`Situação de ${lottery.name}`}>
+    <div className="space-y-4 px-4 pb-6">
+      <div className="space-y-2" role="group" aria-label={`Situação de ${lottery.name}`}>
         {options.map((option) => (
           <button
             key={option}
             type="button"
-            aria-pressed={selected === option}
+            aria-pressed={status === option}
             onClick={() => setStatus(option)}
             className={cn(
-              "touch-target rounded-full px-4 text-sm font-medium transition-colors",
-              selected === option
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface-secondary text-text-secondary",
+              "flex w-full min-h-14 flex-col items-start rounded-xl border px-4 py-2 text-left transition-colors",
+              status === option ? "border-primary bg-primary/10" : "border-border bg-surface",
             )}
           >
-            {lotteryAvailabilityLabels[option]}
+            <span className="text-sm font-semibold text-text-primary">
+              {lotteryAvailabilityLabels[option]}
+            </span>
+            <span className="text-xs text-text-secondary">{hint[option]}</span>
           </button>
         ))}
       </div>
-      <p className="text-xs text-text-secondary">{hint[selected]}</p>
 
-      {selected !== "ENABLED" ? (
+      {status !== "ENABLED" ? (
         <div className="space-y-1">
           <label
             className="text-xs font-medium text-text-secondary"
@@ -98,7 +95,7 @@ function LotteryRow({ lottery }: { lottery: LotteryConfig }) {
           </label>
           <Input
             id={`note-${lottery.slug}`}
-            value={noteValue}
+            value={note}
             maxLength={200}
             onChange={(event) => setNote(event.target.value)}
             placeholder="Ex.: Voltamos em breve."
@@ -106,38 +103,97 @@ function LotteryRow({ lottery }: { lottery: LotteryConfig }) {
         </div>
       ) : null}
 
-      <Button
-        size="sm"
-        className="h-11"
-        disabled={!dirty || mutation.isPending}
-        onClick={() => mutation.mutate()}
-      >
-        {mutation.isPending ? "Salvando…" : "Salvar alteração"}
-      </Button>
-    </li>
+      <div className="flex gap-2">
+        <Button variant="outline" className="h-12 flex-1" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button
+          className="h-12 flex-1"
+          disabled={!dirty || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? "Salvando…" : "Salvar"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
 /** Habilitar, desabilitar ou pôr em manutenção cada modalidade (somente ADMIN). */
 export function LotteryAvailabilityPanel() {
+  const current = useLotteryAvailability();
+  const [editing, setEditing] = useState<LotteryConfig | null>(null);
+
+  const counts = options.map((option) => ({
+    option,
+    total: activeLotteries.filter((lottery) => current.availabilityOf(lottery.slug) === option)
+      .length,
+  }));
+
   return (
-    <section className="surface-card space-y-3 p-4" aria-labelledby="lottery-availability-title">
+    <section className="space-y-3" aria-labelledby="lottery-availability-title">
       <div>
         <h2
           id="lottery-availability-title"
-          className="font-display text-sm font-semibold text-text-primary"
+          className="font-display text-base font-semibold text-text-primary"
         >
           Modalidades
         </h2>
         <p className="text-xs text-text-secondary">
-          Escolha, uma a uma, o que o usuário vê. A trava vale também no banco de dados.
+          Toque em uma modalidade para mudar a situação. A trava vale também no banco de dados.
         </p>
       </div>
-      <ul className="space-y-3">
-        {activeLotteries.map((lottery) => (
-          <LotteryRow key={lottery.slug} lottery={lottery} />
+
+      <ul className="flex flex-wrap gap-2" aria-label="Resumo">
+        {counts.map(({ option, total }) => (
+          <li key={option}>
+            <StatusBadge
+              label={`${total} ${lotteryAvailabilityLabels[option].toLowerCase()}`}
+              tone={tone[option]}
+            />
+          </li>
         ))}
       </ul>
+
+      <ul className="surface-card divide-y divide-border overflow-hidden">
+        {activeLotteries.map((lottery) => {
+          const status = current.availabilityOf(lottery.slug);
+          return (
+            <li key={lottery.slug} data-lottery={lottery.colorKey}>
+              <button
+                type="button"
+                onClick={() => setEditing(lottery)}
+                className="flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-surface-secondary"
+                aria-label={`${lottery.name}: ${lotteryAvailabilityLabels[status]}. Alterar situação`}
+              >
+                <span className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-text-primary">
+                  {lottery.name}
+                </span>
+                <StatusBadge label={lotteryAvailabilityLabels[status]} tone={tone[status]} />
+                <ChevronRight className="size-4 shrink-0 text-text-secondary" aria-hidden />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <Drawer open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DrawerContent className="max-h-[90vh] overflow-y-auto">
+          {editing ? (
+            <>
+              <DrawerHeader>
+                <DrawerTitle>{editing.name}</DrawerTitle>
+                <DrawerDescription>Escolha o que o usuário vê.</DrawerDescription>
+              </DrawerHeader>
+              <LotteryEditor
+                key={editing.slug}
+                lottery={editing}
+                onClose={() => setEditing(null)}
+              />
+            </>
+          ) : null}
+        </DrawerContent>
+      </Drawer>
     </section>
   );
 }
