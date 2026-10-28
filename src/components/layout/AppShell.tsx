@@ -1,3 +1,4 @@
+import { BackBar } from "@/components/layout/BackBar";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Menu } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -5,21 +6,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ThemeSelector } from "@/components/layout/ThemeSelector";
 import { Brand } from "@/components/brand/Brand";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { appConfig } from "@/config/app.config";
-import {
-  adminNav,
-  desktopNav,
-  moreNavItem,
-  primaryNav,
-  type NavItem,
-} from "@/config/navigation";
+import { adminNav, desktopNav, moreNavItem, primaryNav, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void) | undefined }) {
@@ -98,11 +87,7 @@ export function AppHeader({
               <Menu className="size-5" aria-hidden />
             </Button>
           </SheetTrigger>
-          <SheetContent
-            id="mobile-navigation"
-            side="left"
-            className="w-72 overflow-y-auto p-0"
-          >
+          <SheetContent id="mobile-navigation" side="left" className="w-72 overflow-y-auto p-0">
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle className="text-left">
                 <span onClick={closeMenu}>
@@ -188,7 +173,10 @@ export function AppShell({
 
       <div className="lg:pl-64">
         <AppHeader isAdmin={isAdmin} onSignOut={onSignOut} />
-        <main className="mx-auto w-full max-w-5xl px-4 pb-24 pt-4 lg:pb-10">{children}</main>
+        <main className="mx-auto w-full max-w-5xl px-4 pb-24 pt-4 lg:pb-10">
+          <BackBar />
+          {children}
+        </main>
       </div>
 
       <BottomNavigation />

@@ -56,7 +56,9 @@ async function adminRpc(): Promise<RpcClient> {
 
 /** Mensagens do banco já são em português e seguras para exibir; as demais viram texto genérico. */
 function friendly(message: string, fallback: string): string {
-  return /^(Você|O |Esta |Descreva|Usuário|Somente|Módulo|Acesso|Motivo|Permissões)/.test(message)
+  return /^(Você|O |Esta |Descreva|Usuário|Somente|Módulo|Acesso|Motivo|Permissões|Altere|Informe)/.test(
+    message,
+  )
     ? message
     : fallback;
 }
@@ -110,4 +112,51 @@ export const changeAdminUserRole = createServerFn({ method: "POST" })
     if (error)
       throw new Error(friendly(error.message, "Não foi possível alterar o tipo de acesso."));
     return { ok: true as const, role: data.role };
+  });
+
+const deleteUserSchema = z
+  .object({
+    targetUserId: z.string().uuid(),
+    reason: z.enum(["TEST_ACCOUNT", "OWNER_REQUEST", "OTHER"]),
+    reasonDetails: z.string().trim().max(160).nullable().default(null),
+    confirmation: z.literal("EXCLUIR"),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.reason === "OTHER" && !value.reasonDetails) {
+      context.addIssue({ code: "custom", path: ["reasonDetails"], message: "Descreva o motivo." });
+    }
+  });
+
+/**
+ * Exclui uma conta de forma definitiva. As proteções (própria conta, responsável principal,
+ * ADMIN/SUPORTE, bolão com participantes) e a auditoria ficam no banco; aqui só se remove a conta.
+ */
+export const deleteAdminUser = createServerFn({ method: "POST" })
+  .middleware([requireActiveSupabaseAuth])
+  .inputValidator((input) => deleteUserSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const client = await adminRpc();
+    const { error } = await client.rpc("admin_prepare_user_deletion", {
+      _actor: context.userId,
+      _target: data.targetUserId,
+      _reason: data.reason,
+      _details: data.reasonDetails,
+    });
+    if (error) throw new Error(friendly(error.message, "Não foi possível excluir a conta."));
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(data.targetUserId);
+    if (deleteError) {
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: context.userId,
+        entity_type: "USER_ACCOUNT",
+        entity_id: data.targetUserId,
+        action: "USER_DELETE_FAILED",
+        metadata: null,
+      });
+      throw new Error("A conta não pôde ser excluída. Nada foi apagado.");
+    }
+    return { ok: true as const };
   });

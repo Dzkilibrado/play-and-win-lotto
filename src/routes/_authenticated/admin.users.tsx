@@ -1,57 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, SlidersHorizontal, Users } from "lucide-react";
-import { z } from "zod";
+import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { z } from "zod";
 
+import { UserDialogs, type UserDialog } from "@/components/admin/users/UserDialogs";
+import { UserFilters, activeFilterCount } from "@/components/admin/users/UserFilters";
+import { UserRow } from "@/components/admin/users/UserRow";
+import { Chip, providerLabel } from "@/components/admin/users/userUi";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateViews";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  accessRoleLabel,
-  accessRoles,
-  roleChangeReasons,
-  type AccessRole,
-  type RoleChangeReason,
-} from "@/config/accessModules";
+import { accessRoleLabel } from "@/config/accessModules";
 import { appConfig } from "@/config/app.config";
-import { changeAdminUserRole } from "@/lib/admin/access.functions";
-import {
-  changeAdminUserAccess,
-  listAdminUsers,
-  type AdminUsersResult,
-} from "@/lib/admin/users.functions";
+import { listAdminUsers } from "@/lib/admin/users.functions";
 import { privateQueryKeys } from "@/lib/query/privateQueryKeys";
-import { cn } from "@/lib/utils";
-import { AdminPasswordRecoveryAction } from "@/components/auth/AdminPasswordRecoveryAction";
 
 const searchSchema = z.object({
   page: z.coerce.number().int().positive().optional().catch(undefined),
@@ -95,325 +58,22 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: AdminUsersPage,
 });
 
-const statusLabel = { ACTIVE: "Ativo", PENDING: "Pendente", BLOCKED: "Bloqueado" } as const;
-const providerLabel: Record<string, string> = { email: "E-mail/Senha", google: "Google" };
 const pageSize = 20;
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(
-    new Date(value),
-  );
-}
-
-function formatAccess(value: string | null) {
-  if (!value) return "Nunca acessou";
-  const date = new Date(value);
-  const now = new Date();
-  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
-  const time = new Intl.DateTimeFormat("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Sao_Paulo",
-  }).format(date);
-  const current = day.format(now);
-  const target = day.format(date);
-  if (target === current) return `Hoje, ${time}`;
-  const yesterday = new Date(now.getTime() - 86_400_000);
-  if (target === day.format(yesterday)) return `Ontem, ${time}`;
-  return formatDate(value);
-}
-
-function Badge({
-  children,
-  tone = "neutral",
-}: {
-  children: React.ReactNode;
-  tone?: "neutral" | "success" | "warning" | "danger" | "info";
-}) {
-  const tones = {
-    neutral: "bg-surface-secondary text-text-primary",
-    success: "bg-success-soft text-success",
-    warning: "bg-warning-soft text-warning",
-    danger: "bg-danger-soft text-danger",
-    info: "bg-info-soft text-info",
-  };
-  return (
-    <span
-      className={cn("inline-flex rounded-full px-2 py-1 text-[11px] font-semibold", tones[tone])}
-    >
-      {children}
-    </span>
-  );
-}
-
-function roleTone(role: AccessRole) {
-  return role === "ADMIN" ? "info" : role === "SUPORTE" ? "warning" : "neutral";
-}
-
-function UserBadges({ role, status }: { role: AccessRole; status: keyof typeof statusLabel }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      <Badge tone={roleTone(role)}>{accessRoleLabel[role]}</Badge>
-      <Badge tone={status === "ACTIVE" ? "success" : status === "BLOCKED" ? "danger" : "warning"}>
-        {statusLabel[status]}
-      </Badge>
-    </div>
-  );
-}
-
-type AdminUser = AdminUsersResult["items"][number];
-
-function UserActions({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
-  return (
-    <div className="flex min-w-0 flex-col items-start gap-1">
-      <UserRoleAction item={item} currentUserId={currentUserId} />
-      <UserAccessAction item={item} currentUserId={currentUserId} />
-      <AdminPasswordRecoveryAction id={item.id} providers={item.providers} />
-    </div>
-  );
-}
-
-function UserRoleAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [role, setRole] = useState<AccessRole | "">("");
-  const [reason, setReason] = useState<RoleChangeReason | "">("");
-  const [details, setDetails] = useState("");
-  const protectedAccount = item.id === currentUserId || item.isSystemOwner;
-  const options = accessRoles.filter((value) => value !== item.role);
-  const mutation = useMutation({
-    mutationFn: () =>
-      changeAdminUserRole({
-        data: {
-          targetUserId: item.id,
-          role: role as AccessRole,
-          reason: reason || null,
-          reasonDetails: details.trim() || null,
-        },
-      }),
-    onSuccess: async () => {
-      setOpen(false);
-      setRole("");
-      setReason("");
-      setDetails("");
-      await queryClient.invalidateQueries({ queryKey: ["admin", currentUserId, "users"] });
-      toast.success("Tipo de acesso alterado.");
-    },
-    onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : "Não foi possível alterar o tipo de acesso.",
-      ),
-  });
-
-  if (item.status === "PENDING" || protectedAccount) return null;
-
-  return (
-    <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        Alterar tipo de acesso
-      </Button>
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (!mutation.isPending) setOpen(next);
-        }}
-      >
-        <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Alterar tipo de acesso</DialogTitle>
-            <DialogDescription>
-              Tipo atual: {accessRoleLabel[item.role]}. A mudança vale na próxima vez que a pessoa
-              abrir o aplicativo e fica registrada na auditoria.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <SelectField
-              label="Novo tipo de acesso"
-              value={role}
-              onChange={(value) => setRole(value as AccessRole | "")}
-            >
-              <option value="">Escolha uma opção</option>
-              {options.map((value) => (
-                <option key={value} value={value}>
-                  {accessRoleLabel[value]}
-                </option>
-              ))}
-            </SelectField>
-            <SelectField
-              label="Motivo (opcional)"
-              value={reason}
-              onChange={(value) => setReason(value as RoleChangeReason | "")}
-            >
-              <option value="">Não informar</option>
-              {roleChangeReasons.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
-            {reason === "OTHER" && (
-              <label className="block space-y-1.5 text-sm">
-                <span className="text-text-secondary">Descrição curta</span>
-                <Input
-                  value={details}
-                  onChange={(event) => setDetails(event.target.value)}
-                  maxLength={160}
-                  required
-                />
-              </label>
-            )}
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending || !role || (reason === "OTHER" && !details.trim())}
-            >
-              {mutation.isPending ? "Salvando…" : "Confirmar alteração"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function UserAccessAction({ item, currentUserId }: { item: AdminUser; currentUserId: string }) {
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<"" | "ADMIN_REQUEST" | "SECURITY" | "MISUSE" | "OTHER">("");
-  const [details, setDetails] = useState("");
-  const isBlocking = item.status === "ACTIVE";
-  const protectedAccount = item.id === currentUserId || item.isSystemOwner;
-  const mutation = useMutation({
-    mutationFn: () =>
-      changeAdminUserAccess({
-        data: {
-          targetUserId: item.id,
-          action: isBlocking ? "BLOCK" : "UNBLOCK",
-          reason: reason || null,
-          reasonDetails: details.trim() || null,
-        },
-      }),
-    onSuccess: async () => {
-      setOpen(false);
-      setReason("");
-      setDetails("");
-      await queryClient.invalidateQueries({ queryKey: ["admin", currentUserId, "users"] });
-      toast.success(isBlocking ? "Acesso bloqueado." : "Acesso restaurado.");
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o acesso."),
-  });
-
-  if (item.status === "PENDING") return null;
-  if (protectedAccount && isBlocking) {
-    return (
-      <span className="text-xs text-text-secondary">
-        {item.isSystemOwner ? "Responsável principal" : "Conta atual"}
-      </span>
-    );
-  }
-
-  return (
-    <>
-      <Button
-        variant={isBlocking ? "outline" : "secondary"}
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
-        {isBlocking ? "Bloquear acesso" : "Desbloquear acesso"}
-      </Button>
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (!mutation.isPending) setOpen(next);
-        }}
-      >
-        <DialogContent className="max-h-[calc(100dvh-1.5rem)] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {isBlocking ? "Bloquear acesso deste usuário?" : "Restaurar acesso deste usuário?"}
-            </DialogTitle>
-            <DialogDescription>
-              {isBlocking
-                ? "O usuário não poderá entrar no Gestor da Sorte enquanto estiver bloqueado. Seus dados e registros serão preservados."
-                : "O usuário poderá entrar novamente com as credenciais já existentes."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <SelectField
-              label="Motivo (opcional)"
-              value={reason}
-              onChange={(value) => setReason(value as typeof reason)}
-            >
-              <option value="">Não informar</option>
-              <option value="ADMIN_REQUEST">Solicitação do administrador</option>
-              <option value="SECURITY">Segurança</option>
-              <option value="MISUSE">Uso indevido</option>
-              <option value="OTHER">Outro</option>
-            </SelectField>
-            {reason === "OTHER" && (
-              <label className="block space-y-1.5 text-sm">
-                <span className="text-text-secondary">Descrição curta</span>
-                <Input
-                  value={details}
-                  onChange={(event) => setDetails(event.target.value)}
-                  maxLength={160}
-                  required
-                />
-              </label>
-            )}
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={mutation.isPending}>
-              Cancelar
-            </Button>
-            <Button
-              variant={isBlocking ? "destructive" : "default"}
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending || (reason === "OTHER" && !details.trim())}
-            >
-              {mutation.isPending ? "Salvando…" : isBlocking ? "Bloquear acesso" : "Desbloquear"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block min-w-0 space-y-1.5 text-sm">
-      <span className="text-text-secondary">{label}</span>
-      <select
-        className="touch-target w-full rounded-lg border border-border bg-surface px-3 text-sm text-text-primary"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
+const sortOptions: [NonNullable<Search["sort"]>, string][] = [
+  ["CREATED_DESC", "Cadastro mais recente"],
+  ["CREATED_ASC", "Cadastro mais antigo"],
+  ["ACCESS_DESC", "Último acesso"],
+  ["NAME_ASC", "Nome A–Z"],
+  ["NAME_DESC", "Nome Z–A"],
+];
 
 function AdminUsersPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const { user } = Route.useRouteContext();
+  const [dialog, setDialog] = useState<UserDialog>(null);
+
   const page = search.page ?? 1;
   const filters = {
     page,
@@ -431,82 +91,25 @@ function AdminUsersPage() {
     staleTime: 30_000,
   });
   const data = query.data;
+
   const setSearch = (patch: Partial<Search>) =>
     navigate({ search: (previous) => ({ ...previous, ...patch, page: patch.page ?? undefined }) });
-  const activeCount = [
-    search.status,
-    search.role,
-    search.provider,
-    search.created,
-    search.access,
-  ].filter(Boolean).length;
-  const clearFilters = () => navigate({ search: { sort: search.sort } });
+  const clearFilters = () => navigate({ search: { sort: search.sort, status: search.status } });
+  const filterCount = activeFilterCount(search);
 
-  const filterFields = (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <SelectField
-        label="Status"
-        value={search.status ?? ""}
-        onChange={(value) => setSearch({ status: (value as Search["status"]) || undefined })}
-      >
-        <option value="">Todos</option>
-        <option value="ACTIVE">Ativo</option>
-        <option value="PENDING">Pendente de confirmação</option>
-        <option value="BLOCKED">Bloqueado</option>
-      </SelectField>
-      <SelectField
-        label="Tipo de acesso"
-        value={search.role ?? ""}
-        onChange={(value) => setSearch({ role: (value as Search["role"]) || undefined })}
-      >
-        <option value="">Todos</option>
-        {accessRoles.map((value) => (
-          <option key={value} value={value}>
-            {accessRoleLabel[value]}
-          </option>
-        ))}
-      </SelectField>
-      <SelectField
-        label="Método de acesso"
-        value={search.provider ?? ""}
-        onChange={(value) => setSearch({ provider: (value as Search["provider"]) || undefined })}
-      >
-        <option value="">Todos</option>
-        {data?.availableProviders.map((provider) => (
-          <option key={provider} value={provider}>
-            {providerLabel[provider] ?? provider}
-          </option>
-        ))}
-      </SelectField>
-      <SelectField
-        label="Cadastro"
-        value={search.created ?? ""}
-        onChange={(value) => setSearch({ created: (value as Search["created"]) || undefined })}
-      >
-        <option value="">Todos</option>
-        <option value="TODAY">Hoje</option>
-        <option value="7D">Últimos 7 dias</option>
-        <option value="30D">Últimos 30 dias</option>
-        <option value="90D">Últimos 90 dias</option>
-      </SelectField>
-      <SelectField
-        label="Último acesso"
-        value={search.access ?? ""}
-        onChange={(value) => setSearch({ access: (value as Search["access"]) || undefined })}
-      >
-        <option value="">Todos</option>
-        <option value="TODAY">Hoje</option>
-        <option value="7D">Últimos 7 dias</option>
-        <option value="30D">Últimos 30 dias</option>
-        <option value="STALE">Sem acesso recente</option>
-        <option value="NEVER">Nunca acessou</option>
-      </SelectField>
-    </div>
-  );
+  const statusChips = data
+    ? ([
+        [undefined, "Todos", data.summary.total],
+        ["ACTIVE", "Ativos", data.summary.active],
+        ["PENDING", "Pendentes", data.summary.pending],
+        ["BLOCKED", "Bloqueados", data.summary.blocked],
+      ] as const)
+    : [];
 
   return (
     <div className="min-w-0 space-y-4">
-      <PageHeader title="Usuários" description="Consulta administrativa de contas cadastradas." />
+      <PageHeader title="Usuários" description="Contas cadastradas e seus acessos." />
+
       {query.isLoading ? (
         <LoadingState rows={5} label="Carregando usuários" />
       ) : query.isError ? (
@@ -515,83 +118,57 @@ function AdminUsersPage() {
         <LoadingState rows={5} label="Carregando usuários" />
       ) : (
         <>
-          <section
-            className="grid grid-cols-2 gap-2 sm:grid-cols-6"
-            aria-label="Indicadores de usuários"
+          <div
+            role="group"
+            aria-label="Situação da conta"
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
           >
-            {[
-              ["Total", data.summary.total, {}],
-              ["Ativos", data.summary.active, { status: "ACTIVE" }],
-              ["Bloqueados", data.summary.blocked, { status: "BLOCKED" }],
-              ["Usuários", data.summary.users, { role: "USER" }],
-              ["Suporte", data.summary.support, { role: "SUPORTE" }],
-              ["Administradores", data.summary.admins, { role: "ADMIN" }],
-            ].map(([label, count, patch]) => (
-              <button
-                key={String(label)}
-                type="button"
-                onClick={() => setSearch(patch as Partial<Search>)}
-                className="surface-card tappable min-h-16 p-3 text-left hover:border-primary"
+            {statusChips.map(([value, label, count]) => (
+              <Chip
+                key={label}
+                active={search.status === value}
+                onClick={() => setSearch({ status: value })}
               >
-                <span className="block text-xs text-text-secondary">{label as string}</span>
-                <strong className="font-display text-xl text-text-primary">
-                  {count as number}
-                </strong>
-              </button>
+                {label} · {count}
+              </Chip>
             ))}
-          </section>
+          </div>
 
-          <section className="surface-card space-y-3 p-3">
-            <div className="flex min-w-0 flex-wrap items-end gap-2">
-              <div className="hidden flex-1 lg:block">{filterFields}</div>
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <Button variant="outline" className="lg:hidden">
-                    <SlidersHorizontal aria-hidden />
-                    Filtros{activeCount ? ` (${activeCount})` : ""}
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="max-h-[90vh]">
-                  <DrawerHeader>
-                    <DrawerTitle>Filtrar usuários</DrawerTitle>
-                    <DrawerDescription>Selecione os critérios da listagem.</DrawerDescription>
-                  </DrawerHeader>
-                  <div className="overflow-y-auto px-4">{filterFields}</div>
-                  <DrawerFooter>
-                    {activeCount > 0 && (
-                      <Button variant="ghost" onClick={clearFilters}>
-                        Limpar filtros
-                      </Button>
-                    )}
-                    <DrawerClose asChild>
-                      <Button>Ver resultados</Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
-              <div className="ml-auto w-full sm:w-64">
-                <SelectField
-                  label="Ordenar"
-                  value={search.sort ?? "CREATED_DESC"}
-                  onChange={(value) => setSearch({ sort: value as Search["sort"] })}
-                >
-                  <option value="CREATED_DESC">Cadastro mais recente</option>
-                  <option value="CREATED_ASC">Cadastro mais antigo</option>
-                  <option value="ACCESS_DESC">Último acesso mais recente</option>
-                  <option value="NAME_ASC">Nome A–Z</option>
-                  <option value="NAME_DESC">Nome Z–A</option>
-                </SelectField>
-              </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <UserFilters
+              values={search}
+              providers={data.availableProviders}
+              onChange={(patch) => setSearch(patch)}
+              onClear={clearFilters}
+            />
+            <label className="ml-auto flex items-center gap-2 text-xs text-text-secondary">
+              <span className="sr-only sm:not-sr-only">Ordenar</span>
+              <select
+                className="h-10 rounded-lg border border-border bg-surface px-2 text-sm text-text-primary"
+                aria-label="Ordenar usuários"
+                value={search.sort ?? "CREATED_DESC"}
+                onChange={(event) => setSearch({ sort: event.target.value as Search["sort"] })}
+              >
+                {sortOptions.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {filterCount > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+              {search.role ? <span>{accessRoleLabel[search.role]}</span> : null}
+              {search.provider ? <span>· {providerLabel[search.provider]}</span> : null}
+              {search.created ? <span>· Cadastro filtrado</span> : null}
+              {search.access ? <span>· Acesso filtrado</span> : null}
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={clearFilters}>
+                Limpar filtros
+              </Button>
             </div>
-            {activeCount > 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-                <span>{activeCount} filtro(s) ativo(s)</span>
-                <Button variant="link" size="sm" onClick={clearFilters}>
-                  Limpar filtros
-                </Button>
-              </div>
-            )}
-          </section>
+          ) : null}
 
           {data.items.length === 0 ? (
             <EmptyState
@@ -600,95 +177,20 @@ function AdminUsersPage() {
               description="Revise os filtros selecionados."
             />
           ) : (
-            <>
-              <div className="space-y-2 xl:hidden">
-                {data.items.map((item) => (
-                  <article key={item.id} className="surface-card min-w-0 space-y-3 p-4">
-                    <div className="min-w-0">
-                      <h2 className="truncate font-display text-sm font-semibold">{item.name}</h2>
-                      <p className="truncate text-xs text-text-secondary">{item.email}</p>
-                    </div>
-                    <UserBadges role={item.role} status={item.status} />
-                    <dl className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <dt className="text-text-secondary">Acesso</dt>
-                        <dd>
-                          {item.providers.map((p) => providerLabel[p] ?? p).join(" + ") ||
-                            "Não informado"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-text-secondary">Cadastro</dt>
-                        <dd>{formatDate(item.createdAt)}</dd>
-                      </div>
-                      <div className="col-span-2">
-                        <dt className="text-text-secondary">Último acesso</dt>
-                        <dd>{formatAccess(item.lastAccessAt)}</dd>
-                      </div>
-                    </dl>
-                    <div className="border-t border-border pt-3">
-                      <UserActions item={item} currentUserId={user.id} />
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <div className="surface-card hidden overflow-hidden xl:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>E-mail</TableHead>
-                      <TableHead>Tipo de acesso</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Acesso</TableHead>
-                      <TableHead>Cadastro</TableHead>
-                      <TableHead>Último acesso</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="max-w-40 truncate font-medium">{item.name}</TableCell>
-                        <TableCell>{item.email}</TableCell>
-                        <TableCell>
-                          <Badge tone={roleTone(item.role)}>{accessRoleLabel[item.role]}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            tone={
-                              item.status === "ACTIVE"
-                                ? "success"
-                                : item.status === "BLOCKED"
-                                  ? "danger"
-                                  : "warning"
-                            }
-                          >
-                            {statusLabel[item.status]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {item.providers.map((p) => providerLabel[p] ?? p).join(" + ") ||
-                            "Não informado"}
-                        </TableCell>
-                        <TableCell>{formatDate(item.createdAt)}</TableCell>
-                        <TableCell>{formatAccess(item.lastAccessAt)}</TableCell>
-                        <TableCell className="max-w-56">
-                          <UserActions item={item} currentUserId={user.id} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
+            <ul className="surface-card divide-y divide-border overflow-hidden">
+              {data.items.map((item) => (
+                <UserRow key={item.id} item={item} currentUserId={user.id} onAction={setDialog} />
+              ))}
+            </ul>
           )}
+
           <footer className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
             <span>{data.total} usuário(s)</span>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                className="h-10"
                 disabled={page <= 1}
                 onClick={() => setSearch({ page: page - 1 })}
               >
@@ -696,11 +198,12 @@ function AdminUsersPage() {
                 Anterior
               </Button>
               <span aria-live="polite">
-                Página {page} de {Math.max(1, Math.ceil(data.total / pageSize))}
+                {page} de {Math.max(1, Math.ceil(data.total / pageSize))}
               </span>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-10"
                 disabled={page * pageSize >= data.total}
                 onClick={() => setSearch({ page: page + 1 })}
               >
@@ -711,6 +214,8 @@ function AdminUsersPage() {
           </footer>
         </>
       )}
+
+      <UserDialogs dialog={dialog} currentUserId={user.id} onClose={() => setDialog(null)} />
     </div>
   );
 }

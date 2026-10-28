@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { ActiveFilterChip, FilterBar } from "@/components/common/Filters";
 import { SearchInput } from "@/components/common/SearchInput";
@@ -95,7 +95,10 @@ function PoolsListPage() {
    * continuam contando o total mesmo com a listagem filtrada, sem uma segunda
    * consulta ao banco a cada abertura da tela.
    */
-  const pools = useQuery({ queryKey: privateQueryKeys.poolsAll(user.id), queryFn: () => poolService.list({}) });
+  const pools = useQuery({
+    queryKey: privateQueryKeys.poolsAll(user.id),
+    queryFn: () => poolService.list({}),
+  });
   const queryState = resolveQueryState(pools);
   const all = queryState === "success" ? (pools.data ?? []) : [];
 
@@ -103,9 +106,7 @@ function PoolsListPage() {
     activeLotteries.find((lottery) => lottery.slug === slug)?.name ?? slug;
 
   const term = normalizeName(search.q ?? "");
-  const searched = term
-    ? all.filter((pool) => normalizeName(pool.name).includes(term))
-    : all;
+  const searched = term ? all.filter((pool) => normalizeName(pool.name).includes(term)) : all;
   const byLottery = search.lottery
     ? searched.filter((pool) => pool.lotteries?.slug === search.lottery)
     : searched;
@@ -175,14 +176,6 @@ function PoolsListPage() {
       <PageHeader
         title={pageTitle}
         description="Busque, filtre e escolha o bolão que deseja abrir."
-        actions={
-          <Button asChild variant="outline" size="sm" className="h-11">
-            <Link to="/pools">
-              <ArrowLeft aria-hidden />
-              Bolões
-            </Link>
-          </Button>
-        }
       />
 
       <FilterBar
@@ -325,7 +318,17 @@ function PoolsListPage() {
                 />
                 Somente com pagamentos pendentes
               </label>
-              <label className="flex items-center gap-2 text-sm text-text-primary"><input type="checkbox" className="size-5" checked={search.archived === "yes"} onChange={(event) => setFilter({ archived: event.target.checked ? "yes" : undefined })} />Somente arquivados</label>
+              <label className="flex items-center gap-2 text-sm text-text-primary">
+                <input
+                  type="checkbox"
+                  className="size-5"
+                  checked={search.archived === "yes"}
+                  onChange={(event) =>
+                    setFilter({ archived: event.target.checked ? "yes" : undefined })
+                  }
+                />
+                Somente arquivados
+              </label>
               <label className="flex items-center gap-2 text-sm text-text-primary">
                 <input
                   type="checkbox"

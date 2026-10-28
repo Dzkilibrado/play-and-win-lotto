@@ -262,11 +262,6 @@ function ImportGamePage() {
       <PageHeader
         title="Importar jogo por foto"
         description="Fotografe o canhoto ou o comprovante. Você confere tudo antes de salvar."
-        actions={
-          <Button asChild variant="outline" size="sm" className="h-11">
-            <Link to="/games">Voltar</Link>
-          </Button>
-        }
       />
 
       {step === "capture" ? (

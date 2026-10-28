@@ -26,7 +26,7 @@ function Page() {
   return (
     <AdminSection
       title="Loterias"
-      description="Disponibilidade de cada modalidade e cadastro dos clubes da Timemania."
+      description="Quais modalidades os usuários podem usar e os clubes da Timemania."
     >
       <LotteryAvailabilityPanel />
       <LotteryClubsPanel />
