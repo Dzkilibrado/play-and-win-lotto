@@ -53,7 +53,8 @@ export function formatAccess(value: string | null, now = new Date()) {
     timeZone: "America/Sao_Paulo",
   }).format(date);
   if (day.format(date) === day.format(now)) return `Hoje, ${time}`;
-  if (day.format(date) === day.format(new Date(now.getTime() - 86_400_000))) return `Ontem, ${time}`;
+  if (day.format(date) === day.format(new Date(now.getTime() - 86_400_000)))
+    return `Ontem, ${time}`;
   return formatDate(value);
 }
 

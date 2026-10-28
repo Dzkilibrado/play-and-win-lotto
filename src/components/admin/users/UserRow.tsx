@@ -53,7 +53,9 @@ export function UserRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-text-primary">
           {item.name}
-          {isSelf ? <span className="ml-1.5 text-xs font-normal text-text-secondary">(você)</span> : null}
+          {isSelf ? (
+            <span className="ml-1.5 text-xs font-normal text-text-secondary">(você)</span>
+          ) : null}
         </p>
         <p className="truncate text-xs text-text-secondary">{item.email}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -69,23 +71,37 @@ export function UserRow({
       {hasActions ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-11 shrink-0" aria-label={`Ações para ${item.name}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11 shrink-0"
+              aria-label={`Ações para ${item.name}`}
+            >
               <MoreVertical className="size-5" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             {canChangeRole ? (
-              <DropdownMenuItem className="min-h-11" onSelect={() => onAction({ kind: "role", item })}>
+              <DropdownMenuItem
+                className="min-h-11"
+                onSelect={() => onAction({ kind: "role", item })}
+              >
                 Alterar tipo de acesso
               </DropdownMenuItem>
             ) : null}
             {canBlock ? (
-              <DropdownMenuItem className="min-h-11" onSelect={() => onAction({ kind: "block", item })}>
+              <DropdownMenuItem
+                className="min-h-11"
+                onSelect={() => onAction({ kind: "block", item })}
+              >
                 {item.status === "ACTIVE" ? "Bloquear acesso" : "Desbloquear acesso"}
               </DropdownMenuItem>
             ) : null}
             {canRecover ? (
-              <DropdownMenuItem className="min-h-11" onSelect={() => onAction({ kind: "recovery", item })}>
+              <DropdownMenuItem
+                className="min-h-11"
+                onSelect={() => onAction({ kind: "recovery", item })}
+              >
                 Enviar redefinição de senha
               </DropdownMenuItem>
             ) : null}

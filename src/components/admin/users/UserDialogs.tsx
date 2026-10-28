@@ -24,9 +24,7 @@ import {
 import { changeAdminUserRole, deleteAdminUser } from "@/lib/admin/access.functions";
 import { changeAdminUserAccess, sendAdminPasswordRecovery } from "@/lib/admin/users.functions";
 
-export type UserDialog =
-  | { kind: "role" | "block" | "delete" | "recovery"; item: AdminUser }
-  | null;
+export type UserDialog = { kind: "role" | "block" | "delete" | "recovery"; item: AdminUser } | null;
 
 function Field({
   label,
@@ -99,7 +97,11 @@ function RoleDialog({ item, currentUserId, onClose }: Props) {
         </Button>
       }
     >
-      <Field label="Novo tipo de acesso" value={role} onChange={(v) => setRole(v as AccessRole | "")}>
+      <Field
+        label="Novo tipo de acesso"
+        value={role}
+        onChange={(v) => setRole(v as AccessRole | "")}
+      >
         <option value="">Escolha uma opção</option>
         {accessRoles
           .filter((value) => value !== item.role)
@@ -109,7 +111,11 @@ function RoleDialog({ item, currentUserId, onClose }: Props) {
             </option>
           ))}
       </Field>
-      <Field label="Motivo (opcional)" value={reason} onChange={(v) => setReason(v as RoleChangeReason | "")}>
+      <Field
+        label="Motivo (opcional)"
+        value={reason}
+        onChange={(v) => setReason(v as RoleChangeReason | "")}
+      >
         <option value="">Não informar</option>
         {roleChangeReasons.map((option) => (
           <option key={option.value} value={option.value}>
@@ -117,9 +123,7 @@ function RoleDialog({ item, currentUserId, onClose }: Props) {
           </option>
         ))}
       </Field>
-      {reason === "OTHER" ? (
-        <DetailsInput value={details} onChange={setDetails} />
-      ) : null}
+      {reason === "OTHER" ? <DetailsInput value={details} onChange={setDetails} /> : null}
     </DialogShell>
   );
 }
@@ -167,7 +171,11 @@ function BlockDialog({ item, currentUserId, onClose }: Props) {
         </Button>
       }
     >
-      <Field label="Motivo (opcional)" value={reason} onChange={(v) => setReason(v as typeof reason)}>
+      <Field
+        label="Motivo (opcional)"
+        value={reason}
+        onChange={(v) => setReason(v as typeof reason)}
+      >
         <option value="">Não informar</option>
         <option value="ADMIN_REQUEST">Solicitação do administrador</option>
         <option value="SECURITY">Segurança</option>
@@ -219,7 +227,11 @@ function DeleteDialog({ item, currentUserId, onClose }: Props) {
       onClose={onClose}
       pending={mutation.isPending}
       footer={
-        <Button variant="destructive" onClick={() => mutation.mutate()} disabled={!ready || mutation.isPending}>
+        <Button
+          variant="destructive"
+          onClick={() => mutation.mutate()}
+          disabled={!ready || mutation.isPending}
+        >
           {mutation.isPending ? "Excluindo…" : "Excluir definitivamente"}
         </Button>
       }
@@ -281,7 +293,12 @@ function DetailsInput({ value, onChange }: { value: string; onChange: (value: st
   return (
     <label className="block space-y-1.5 text-sm">
       <span className="text-text-secondary">Descrição curta</span>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} maxLength={160} required />
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        maxLength={160}
+        required
+      />
     </label>
   );
 }
@@ -330,7 +347,12 @@ export function UserDialogs({
   onClose: () => void;
 }) {
   if (!dialog) return null;
-  const props = { item: dialog.item, currentUserId, onClose, key: `${dialog.kind}-${dialog.item.id}` };
+  const props = {
+    item: dialog.item,
+    currentUserId,
+    onClose,
+    key: `${dialog.kind}-${dialog.item.id}`,
+  };
   if (dialog.kind === "role") return <RoleDialog {...props} />;
   if (dialog.kind === "block") return <BlockDialog {...props} />;
   if (dialog.kind === "delete") return <DeleteDialog {...props} />;

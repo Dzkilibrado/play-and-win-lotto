@@ -10,7 +10,14 @@ describe("destino do botão Voltar", () => {
   });
 
   it("áreas de Mais voltam para Mais", () => {
-    for (const path of ["/settings", "/profile", "/statistics", "/notifications", "/lotteries", "/admin"]) {
+    for (const path of [
+      "/settings",
+      "/profile",
+      "/statistics",
+      "/notifications",
+      "/lotteries",
+      "/admin",
+    ]) {
       expect(backTargetFor(path)?.to).toBe("/more");
     }
   });
